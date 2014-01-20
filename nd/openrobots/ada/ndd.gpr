@@ -1,0 +1,22 @@
+project Ndd is
+
+   for Languages use ("Ada");
+   for Library_Name use "ndd";
+   for Object_Dir use "obj";
+   for Library_Dir use "lib";
+
+   package Ide is
+      for Vcs_Kind use "Git";
+   end Ide;
+
+   package Naming is
+      for Spec_Suffix ("c") use ".h";
+      for Body_Suffix ("c") use ".c";
+   end Naming;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-gnat12");
+   end Compiler;
+
+end Ndd;
+

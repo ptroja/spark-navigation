@@ -1,0 +1,9 @@
+*.ali
+*.o
+*.npp
+*.s
+*.*~
+auto.cgpr
+gnatprove/
+lib/
+driver/

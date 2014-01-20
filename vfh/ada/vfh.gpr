@@ -1,0 +1,17 @@
+project Vfh is
+
+   for Languages use ("Ada");
+   for Library_Name use "vfh";
+   for Library_Interface use ("algorithm");
+   for Library_Kind use "dynamic";
+   for Library_Dir use "lib";
+   for Object_Dir use "lib/obj";
+   for Source_Dirs use (".");
+   for Source_Files use ("algorithm.adb", "algorithm.ads", "algorithm-alloc.adb", "algorithm-alloc.ads", "utils.adb", "utils.ads");
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-g", "-O0", "-gnat12", "-gnato");
+   end Compiler;
+
+end Vfh;
+

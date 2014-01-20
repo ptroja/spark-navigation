@@ -1,0 +1,29 @@
+with "../../ada/formal_numerics/formal_numerics.gpr";
+
+project Ndplayer is
+
+   for Languages use ("C++", "Ada");
+--   for Source_Files use ("geometria.adb", "geometria.ads", "nd.adb", "nd.ads", "nd_plugin.cc", "nd.h");
+   for Source_Files use ("geometria.adb", "geometria.ads", "nd.adb", "nd.ads");
+   for Object_Dir use "obj";
+   for Library_Name use "nd";
+   for Library_Dir use "lib";
+   for Library_Kind use "dynamic";
+   for Source_Dirs use (".");
+
+   package Naming is
+      for Body_Suffix ("c++") use ".cc";
+      for Spec_Suffix ("c++") use ".h";
+   end Naming;
+
+   package Ide is
+      for Vcs_Kind use "Git";
+   end Ide;
+
+   package Compiler is
+     for Default_Switches ("ada") use ("-gnatwa", "-gnat12", "-g");
+     Player_Switches := ("-I/opt/player/include/player-3.1", "-I/usr/include/x86_64-linux-gnu");
+     for Switches ("nd_plugin.cc") use Compiler'Default_Switches ("C") & Player_Switches & ("-g");
+   end Compiler;
+
+end Ndplayer;

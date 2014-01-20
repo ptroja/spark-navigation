@@ -1,0 +1,20 @@
+# Desc: How to use SND library
+# Author: Luca Invernizzi, Dario Cazzaro, Joey Durham
+# Date: 12 Feb 2010
+
+# Desc: Rewrite to Player-3.x, code cleanup
+# Author: Piotr Trojanek
+# Date: 20 Oct 2013
+
+The Smooth Nearness Diagram driver builds as a plugin driver
+called libsnd.  The following directions will install the 
+driver for use in Player/Stage:
+
+- Open the CMakeLists.txt file and verify the path to Player's
+  installation.
+
+- Build libsnd.so by executing:
+            build; cd build; cmake ../; make
+
+- To test the snd driver, follow the instructions in the
+  README in the test sub-directory.

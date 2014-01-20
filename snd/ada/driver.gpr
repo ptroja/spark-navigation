@@ -1,0 +1,27 @@
+with "snd.gpr";
+
+project Driver is
+
+   for Languages use ("C++");
+
+   for Library_Name use "snd";
+   for Library_Kind use "dynamic";
+
+   for Library_Dir use "driver";
+   for Object_Dir use "driver/obj";
+
+   for Source_Dirs use (".");
+   for Source_Files use ("snd_driver.h", "snd_driver.cc", "interface.h");
+
+   package Naming is
+      for Body_Suffix ("c++") use ".cc";
+      for Spec_Suffix ("c++") use ".h";
+   end Naming;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-g", "-O0", "-gnat12");
+      Player_Switches := ("-I/opt/player/include/player-3.1", "-I/usr/include/x86_64-linux-gnu");
+      for Switches ("snd_driver.cc") use Compiler'Default_Switches ("C") & Player_Switches & ("-g");
+   end Compiler;
+
+end Driver;

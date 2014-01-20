@@ -1,0 +1,3 @@
+#!/bin/sh
+
+playerv --laser:0 --position2d:1

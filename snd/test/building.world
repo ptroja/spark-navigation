@@ -1,0 +1,45 @@
+# Desc: Stage simulation environment with building like features
+# Author:  Joey Durham
+# Date: 20 May 2009
+
+# define robot models
+#include "erratic.inc"
+include "circlebot.inc"
+
+# define 'map' object used for floorplans
+include "map.inc"
+
+# size of the world in meters
+#size [20 20]
+
+# set the resolution of the underlying raytrace model in meters
+resolution 0.02
+
+# update the screen
+#gui_interval 20
+
+# configure the GUI window
+window
+( 
+  size [ 602.000 646.000 ] 
+  center [-0.00 -0.00] 
+  scale 28.0
+)
+
+# load an environment bitmap
+map
+( 
+  bitmap "bitmaps/building.pgm"
+  size [20 20 0.5]
+  name "square"
+)
+
+# create a robot
+circlebot_perfect
+(
+  name "robot0"
+  color "gray"
+  pose [8.0 -8.0 0 90]
+  localization "gps"
+  localization_origin [0 0 0 0]
+)
