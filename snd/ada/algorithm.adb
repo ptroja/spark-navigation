@@ -268,6 +268,7 @@ package body Algorithm is
                                   iterL = Next(This.gapVec,iterR) and then
                                   This.robot.robot_Radius = This.robot.robot_Radius'Loop_Entry
                                  );
+            pragma Loop_Variant(Decreases => Last_Index(This.gapVec)-To_Index(iterL));
             if ccwDiff(Element(This.gapVec,iterR).bearing,Element(This.gapVec,iterL).bearing) < 2.0*This.robot.Scan_Res and then
               Element(This.gapVec,iterL).iDir = 1 and then Element(This.gapVec,iterR).iDir = 1
             then
@@ -323,6 +324,7 @@ package body Algorithm is
                                   riterL = Next(This.gapVec,riterR) and then
                                   This.robot.robot_Radius = This.robot.robot_Radius'Loop_Entry
                                  );
+            pragma Loop_Variant(Decreases => To_Index(riterL));
             if ccwDiff(Element(This.gapVec,riterR).bearing,Element(This.gapVec,riterL).bearing) < 2.0*This.robot.Scan_Res and then
               Element(This.gapVec,riterL).iDir = -1 and then Element(This.gapVec,riterR).iDir = -1
             then
