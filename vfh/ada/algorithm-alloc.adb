@@ -36,7 +36,7 @@ package body Algorithm.Alloc is
                       HIST_SIZE => Integer(360/sector_angle),
                       HIST_COUNT => Ada.Containers.Count_Type(360/sector_angle),
                       HIST_LAST => Integer(360/sector_angle)-1,
-                      MAX_SPEED_PLUS_1 => Ada.Containers.Count_Type(max_speed+1),
+                      MIN_TURNING_VECTOR_CAPACITY => Ada.Containers.Count_Type(max_speed)+1,
                       CELL_SECTOR_TABLES_LAST =>
                         (if SAFETY_DIST_0MS = SAFETY_DIST_1MS
                          -- For the simple case of a fixed safety_dist, keep things simple.
@@ -80,8 +80,6 @@ package body Algorithm.Alloc is
       This.all.Binary_Hist_High_1ms := Float(obs_cutoff_1ms);
       This.all.U1 := Float(weight_desired_dir);
       This.all.U2 := Float(weight_current_dir);
-
-      Ada.Text_IO.Put_Line(Integer'Image(Integer(Capacity(This.all.Candidate_Angle))));
 
       return This;
    end Create_VFH_Ptr;

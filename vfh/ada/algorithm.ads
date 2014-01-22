@@ -240,7 +240,7 @@ private
    procedure Build_Binary_Polar_Histogram(This : in out VFH; speed : Integer);
    procedure Build_Masked_Polar_Histogram(This : in out VFH; speed : Speed_Index)
    with
-     Pre => speed <= This.Current_Max_Speed;   
+     Pre => speed <= Speed_Vector.Last_Index(This.Min_Turning_Radius); -- speed <= This.Current_Max_Speed
    procedure Select_Direction(This : in out VFH);
    procedure Set_Motion(This : in out VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer);
 
