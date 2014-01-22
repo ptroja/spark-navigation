@@ -36,7 +36,7 @@ package body Algorithm.Alloc is
                       HIST_SIZE => Integer(360/sector_angle),
                       HIST_COUNT => Ada.Containers.Count_Type(360/sector_angle),
                       HIST_LAST => Integer(360/sector_angle)-1,
-                      MIN_TURNING_VECTOR_SIZE => Ada.Containers.Count_Type(max_speed+1),
+                      MAX_SPEED_PLUS_1 => Ada.Containers.Count_Type(max_speed+1),
                       CELL_SECTOR_TABLES_LAST =>
                         (if SAFETY_DIST_0MS = SAFETY_DIST_1MS
                          -- For the simple case of a fixed safety_dist, keep things simple.
@@ -65,7 +65,7 @@ package body Algorithm.Alloc is
       This.all.SECTOR_ANGLE := Integer(sector_angle);
       This.all.SAFETY_DIST_0MS := Float(safety_dist_0ms);
       This.all.SAFETY_DIST_1MS := Float(safety_dist_1ms);
-      This.all.Current_Max_Speed := Integer(max_speed);
+      This.all.Current_Max_Speed := Positive(max_speed);
       This.all.MAX_SPEED := Integer(max_speed);
       This.all.MAX_SPEED_NARROW_OPENING := Integer(max_speed_narrow_opening);
       This.all.MAX_SPEED_WIDE_OPENING := Integer(max_speed_wide_opening);

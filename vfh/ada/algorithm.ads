@@ -27,18 +27,24 @@ package Algorithm is
    
    subtype Hist_Index is Integer range 0 .. 360;
    
+   subtype Speed_Index is Integer range 0 .. 2000;
+   
+   function Integer_Eq(X,Y : Integer) return Boolean is (X = Y);
+   
    function Float_Eq(X,Y : Float) return Boolean is (X = Y);
          
    package Float_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Hist_Index,
                                                              Element_Type => Float,
                                                              "=" => Float_Eq);
-   
-   function Integer_Eq(X,Y : Integer) return Boolean is (X = Y);
-   
+     
    package Integer_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Hist_Index,
                                                                Element_Type => Integer,
-                                                              "=" => Integer_Eq);
-   
+                                                               "=" => Integer_Eq);
+
+   package Speed_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Speed_Index,
+                                                             Element_Type => Integer,
+                                                             "=" => Integer_Eq);
+
    type Border_Pair is
       record
          first, second : Integer;
@@ -52,17 +58,25 @@ package Algorithm is
                                                                    "=" => Border_Pair_Eq
                                                                   );
    
-
-   
-   -- FIXME: this is HIST_SIZE in size.
-   type History_Array is array (Integer range <>) of Float;
+   subtype Candidate_Index is Integer range 0 .. Hist_Index'Last*4;
    
    type Candidate is
       record
          Angle : Float;
-         Speed : Float;
+         Speed : Integer;
       end record;
+   
+   function Candidate_Eq(X,Y : Candidate) return Boolean is
+     (X.Angle = Y.Angle and then X.Speed = Y.Speed);
 
+   package Candidate_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Candidate_Index,
+                                                                 Element_Type => Candidate,
+                                                                 "=" => Candidate_Eq
+                                                                );   
+   
+   -- FIXME: this is HIST_SIZE in size.
+   type History_Array is array (Integer range <>) of Float;
+   
    -- Make Ada.Containers.Count_Type operators visible.
    use Ada.Containers;
    
@@ -80,7 +94,7 @@ package Algorithm is
             HIST_SIZE : Natural;                -- sectors (over 360deg)
             HIST_COUNT : Ada.Containers.Count_Type;
             HIST_LAST : Natural;
-            MIN_TURNING_VECTOR_SIZE : Ada.Containers.Count_Type;            
+            MIN_TURNING_VECTOR_CAPACITY : Ada.Containers.Count_Type;            
             CELL_SECTOR_TABLES_LAST : Natural;
             WINDOW_DIAMETER_LAST : Natural
            ) is
@@ -90,7 +104,7 @@ package Algorithm is
          -- This is public so that monitoring tools can get at it;
          -- it shouldn't be modified externally.
          -- Sweeps in an anti-clockwise direction.
-         Hist : History_Array(Integer range 0 .. HIST_LAST) := (others => 0.0);
+         Hist : History_Array(Natural range 0 .. HIST_LAST) := (others => 0.0);
          
          WINDOW_DIAMETER : Positive := WINDOW_DIAMETER_LAST+1;
       
@@ -105,7 +119,7 @@ package Algorithm is
          SECTOR_ANGLE : Positive;             -- degrees
          SAFETY_DIST_0MS : Float;            -- millimeters
          SAFETY_DIST_1MS : Float;            -- millimeters
-         Current_Max_Speed : Integer;        -- mm/sec
+         Current_Max_Speed : Positive;        -- mm/sec
          MAX_SPEED_NARROW_OPENING : Integer; -- mm/sec
          MAX_SPEED_WIDE_OPENING : Integer;   -- mm/sec
          MAX_ACCELERATION : Integer;         -- mm/sec/sec
@@ -149,13 +163,11 @@ package Algorithm is
                                     Integer range 0 .. WINDOW_DIAMETER_LAST,
                                     Integer range 0 .. WINDOW_DIAMETER_LAST
                                    );
-         Candidate_Angle : Float_Vector.Vector(HIST_COUNT);
-         Candidate_Speed : Integer_Vector.Vector(HIST_COUNT);
 
          Last_Binary_Hist : History_Array(Integer range 0 .. HIST_LAST) := (others => 1.0);
 
          -- Minimum turning radius at different speeds, in millimeters
-         Min_Turning_Radius : Integer_Vector.Vector(MIN_TURNING_VECTOR_SIZE); -- MAX_SPEED+1 is size.
+         Min_Turning_Radius : Speed_Vector.Vector(MIN_TURNING_VECTOR_CAPACITY); -- MAX_SPEED+1 is size.
 
          -- Keep track of last update, so we can monitor acceleration
          last_update_time : Ada.Real_Time.Time := Ada.Real_Time.Clock;
@@ -189,7 +201,7 @@ package Algorithm is
    function GetMinTurnrate(This : VFH) return Integer;
 
    -- Max Turnrate depends on speed
-   function GetMaxTurnrate(This : VFH; speed : Integer ) return Integer;
+   function GetMaxTurnrate(This : VFH; speed : Integer ) return Natural;
    function GetCurrentMaxSpeed(This : VFH) return Integer;
    
 
@@ -226,10 +238,9 @@ private
    -- Returns false if something got inside the safety distance, else true.
    function Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Integer) return Boolean;
    procedure Build_Binary_Polar_Histogram(This : in out VFH; speed : Integer);
-   procedure Build_Masked_Polar_Histogram(This : in out VFH; speed : Integer)
+   procedure Build_Masked_Polar_Histogram(This : in out VFH; speed : Speed_Index)
    with
      Pre => speed <= This.Current_Max_Speed;   
-   procedure Select_Candidate_Angle(This : in out VFH);
    procedure Select_Direction(This : in out VFH);
    procedure Set_Motion(This : in out VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer);
 
@@ -257,8 +268,8 @@ private
      (This.HIST_SIZE = Integer(This.HIST_COUNT) and then
       This.HIST_LAST = This.HIST_SIZE-1 and then
       This.Hist'Last = This.Last_Binary_Hist'Last and then
-      Float_Vector.First_Index(This.Candidate_Angle) = Integer_Vector.First_Index(This.Candidate_Speed) and then
-      Float_Vector.Last_Index(This.Candidate_Angle) = Integer_Vector.Last_Index(This.Candidate_Speed) and then
+      This.Hist'Last = This.HIST_LAST and then
+      Integer(This.MIN_TURNING_VECTOR_CAPACITY) = This.MAX_SPEED + 1 and then
       This.Cell_Direction'Last(1) = This.Cell_Base_Mag'Last(1) and then
       This.Cell_Direction'Last(1) = This.Cell_Mag'Last(1) and then
       This.Cell_Direction'Last(1) = This.Cell_Dist'Last(1) and then
@@ -268,6 +279,8 @@ private
       This.Cell_Direction'Last(2) = This.Cell_Dist'Last(2) and then
       This.Cell_Direction'Last(2) = This.Cell_Enlarge'Last(2) and then
       This.Cell_Direction'Last(1) = This.Cell_Sector'Last(2) and then
-      This.Cell_Direction'Last(2) = This.Cell_Sector'Last(3));     
+      This.Cell_Direction'Last(2) = This.Cell_Sector'Last(3))
+   with
+     Convention => Ghost;
 
 end Algorithm;

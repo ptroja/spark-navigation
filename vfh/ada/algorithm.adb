@@ -14,6 +14,7 @@ package body Algorithm is
    M_PI : constant := Ada.Numerics.Pi;
 
    use Integer_Vector;
+   use Speed_Vector;
    use Float_Vector;
 
    procedure Tab is
@@ -67,13 +68,13 @@ package body Algorithm is
       end;
 
       procedure SetCurrentMaxSpeed
-        (Max_Speed : Integer)
+        (Max_Speed : Positive)
       is
          use Ada.Containers;
       begin
          This.Current_Max_Speed := Integer'Min( Max_Speed, This.MAX_SPEED );
-         Integer_Vector.Set_Length(This.Min_Turning_Radius,
-                                   Ada.Containers.Count_Type(This.Current_Max_Speed)+1);
+         Set_Length(This.Min_Turning_Radius,
+                    Ada.Containers.Count_Type(This.Current_Max_Speed)+1);
 
          -- small chunks of forward movements and turns-in-place used to
          -- estimate turning radius, coz I'm too lazy to screw around with limits -> 0.
@@ -245,7 +246,7 @@ package body Algorithm is
       chosen_turnrate : out Integer)
    is
       print : Boolean := false;
-      current_pos_speed : Integer;
+      current_pos_speed : Natural;
 
       Now : constant Ada.Real_Time.Time := Ada.Real_Time.Clock;
       diff : Ada.Real_Time.Time_Span;
@@ -373,7 +374,7 @@ package body Algorithm is
    -- GetMaxTurnrate --
    --------------------
 
-   function GetMaxTurnrate (This : VFH; speed : Integer) return Integer is
+   function GetMaxTurnrate (This : VFH; speed : Integer) return Natural is
       val : Integer :=
         This.MAX_TURNRATE_0MS -
           Integer(Float(speed*( This.MAX_TURNRATE_0MS-This.MAX_TURNRATE_1MS ))/1000.0);
@@ -621,7 +622,7 @@ package body Algorithm is
 
    procedure Build_Masked_Polar_Histogram
      (This : in out VFH;
-      speed : Integer)
+      speed : Speed_Index)
    is
       -- center_x_[left|right] is the centre of the circles on either side that
       -- are blocked due to the robot's dynamics.  Units are in cells, in the robot's
@@ -640,7 +641,6 @@ package body Algorithm is
    begin
       pragma Assume(VFH_Predicate(This));
       This.Blocked_Circle_Radius := Float(Element(This.Min_Turning_Radius,speed)) + This.ROBOT_RADIUS + Float(Get_Safety_Dist(This,speed));
-
       --
       -- This loop fixes phi_left and phi_right so that they go through the inside-most
       -- occupied cells inside the left/right circles.  These circles are centred at the
@@ -651,7 +651,7 @@ package body Algorithm is
 
       --
       -- Only loop through the cells in front of us.
-      --
+      -- FIXME: range 0 .. (This.WINDOW_DIAMETER+1)/2-1
       for y in Integer range 0 .. Integer(Float'Ceiling(Float(This.WINDOW_DIAMETER)/2.0))-1 loop
          for x in This.Cell_Direction'Range(1) loop
             if This.Cell_Mag(x,y) = 0.0 then
@@ -701,63 +701,22 @@ package body Algorithm is
       end loop;
    end Build_Masked_Polar_Histogram;
 
-   ----------------------------
-   -- Select_Candidate_Angle --
-   ----------------------------
-
-   procedure Select_Candidate_Angle (This : in out VFH) is
-   begin
-      if Is_Empty(This.Candidate_Angle)
-      then
-         -- We're hemmed in by obstacles -- nowhere to go,
-         -- so brake hard and turn on the spot.
-         This.Picked_Angle := This.Last_Picked_Angle;
-         This.Max_Speed_For_Picked_Angle := 0;
-         return;
-      end if;
-
-      This.Picked_Angle := 90.0;
-      declare
-         min_weight : Float := Float'Last; -- 10000000;
-      begin
-         pragma Assume(VFH_Predicate(This));
-         for i in Integer range First_Index(This.Candidate_Angle) .. Last_Index(This.Candidate_Angle) loop
-            --printf("CANDIDATE: %f\n", Candidate_Angle[i]);
-            pragma Loop_Invariant(This.Candidate_Speed = This.Candidate_Speed'Loop_Entry and then This.Candidate_Angle = This.Candidate_Angle'Loop_Entry);
-            declare
-               weight : constant Float :=
-                 This.U1 * abs(Delta_Angle(This.Desired_Angle, Element(This.Candidate_Angle,i))) +
-                 This.U2 * abs(Delta_Angle(This.Last_Picked_Angle, Element(This.Candidate_Angle,i)));
-            begin
-               if weight < min_weight
-               then
-                  min_weight := weight;
-                  This.Picked_Angle := Element(This.Candidate_Angle,i);
-                  This.Max_Speed_For_Picked_Angle := Element(This.Candidate_Speed,i);
-               end if;
-            end;
-         end loop;
-      end;
-
-      This.Last_Picked_Angle := This.Picked_Angle;
-   end Select_Candidate_Angle;
-
    ----------------------
    -- Select_Direction --
    ----------------------
 
    procedure Select_Direction (This : in out VFH) is
-      start : Integer; left : Boolean;
+      subtype Start_Range is Integer range -1 .. This.HIST_SIZE/2-1;
+      start : Start_Range;
+      left : Boolean;
       angle, new_angle : Float;
 
       use Border_Pair_Vector;
 
-      border : Border_Pair_Vector.Vector(This.HIST_COUNT);
+      border : Border_Pair_Vector.Vector(This.HIST_COUNT+1);
       new_border : Border_Pair;
    begin
       pragma Assume(VFH_Predicate(This));
-      Clear(This.Candidate_Angle);
-      Clear(This.Candidate_Speed);
 
       --
       -- set start to sector of first obstacle
@@ -785,12 +744,13 @@ package body Algorithm is
 
       --
       -- Find the left and right borders of each opening
-      --
-
+      pragma Assert(Is_Empty(border)); pragma Assert(Capacity(border) = This.HIST_COUNT+1);
+      pragma Assert_and_cut(VFH_Predicate(This) and then Is_Empty(border) and then start >= 0 and then Capacity(border) = This.HIST_COUNT+1);
       --Put("Start: ");
       --Put_Line(Integer'Image(start));
-      left := True; pragma Assume(This.Hist'Last = This.HIST_SIZE+1);
+      left := True;
       for i in Integer range start .. start+This.HIST_SIZE loop
+         pragma Loop_Invariant(Length(border) <= Ada.Containers.Count_Type(i-start) and then Capacity(border) = This.HIST_COUNT+1);
          if This.Hist(i mod This.HIST_SIZE) = 0.0 and then left then
             new_border.first := (i mod This.HIST_SIZE) * This.SECTOR_ANGLE;
             left := False;
@@ -805,56 +765,102 @@ package body Algorithm is
             left := True;
          end if;
       end loop;
-
+      pragma Assert_and_cut(VFH_Predicate(This));
       --
       -- Consider each opening
       --
-      for i in First_Index(Border) .. Last_Index(Border) loop
-         --printf("BORDER: %f %f\n", border[i].first, border[i].second);
-         angle := Delta_Angle(Element(border,i).first, Element(border,i).second);
+      declare
+         CANDIDATE_CAPACITY : constant Ada.Containers.Count_Type := Length(Border)*4;
 
-         if abs(angle) < 10.0
-         then
-            -- ignore very narrow openings
-            null;
-         elsif abs(angle) < 80.0
-         then
-            -- narrow opening: aim for the centre
+         Candidates : Candidate_Vector.Vector(CANDIDATE_CAPACITY);
+         use Candidate_Vector;
 
-            new_angle := Float(Element(border,i).first) + Float(Element(border,i).second - Element(border,i).first) / 2.0;
+         ----------------------------
+         -- Select_Candidate_Angle --
+         ----------------------------
 
-            Append(This.Candidate_Angle,new_angle);
-            Append(This.Candidate_Speed,Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_NARROW_OPENING));
-         else
-            -- wide opening: consider the centre, and 40deg from each border
-
-            new_angle := Float(Element(border,i).first) + Float(Element(border,i).second - Element(border,i).first) / 2.0;
-
-            Append(This.Candidate_Angle,new_angle);
-            Append(This.Candidate_Speed,This.Current_Max_Speed);
-
-            new_angle := Float((Element(border,i).first + 40) mod 360);
-            Append(This.Candidate_Angle,new_angle);
-            Append(This.Candidate_Speed,Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_WIDE_OPENING));
-
-            new_angle := Float(Element(border,i).second - 40);
-            if new_angle < 0.0 then
-               new_angle := new_angle + 360.0;
-            end if;
-            Append(This.Candidate_Angle,new_angle);
-            Append(This.Candidate_Speed,Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_WIDE_OPENING));
-
-            -- See if candidate dir is in this opening
-            if Delta_Angle(This.Desired_Angle, Element(This.Candidate_Angle,Last_Index(This.Candidate_Angle)-1)) < 0.0 and then
-              Delta_Angle(This.Desired_Angle, Last_Element(This.Candidate_Angle)) > 0.0
+         procedure Select_Candidate_Angle is
+         begin
+            if Is_Empty(Candidates)
             then
-               Append(This.Candidate_Angle,This.Desired_Angle);
-               Append(This.Candidate_Speed,Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_WIDE_OPENING));
+               -- We're hemmed in by obstacles -- nowhere to go,
+               -- so brake hard and turn on the spot.
+               This.Picked_Angle := This.Last_Picked_Angle;
+               This.Max_Speed_For_Picked_Angle := 0;
+               return;
             end if;
-         end if;
-      end loop;
 
-      Select_Candidate_Angle(This);
+            This.Picked_Angle := 90.0;
+            declare
+               min_weight : Float := Float'Last; -- 10000000;
+            begin
+               pragma Assume(VFH_Predicate(This));
+               for i in Integer range First_Index(Candidates) .. Last_Index(Candidates) loop
+                  --printf("CANDIDATE: %f\n", Candidate_Angle[i]);
+                  pragma Loop_Invariant(Candidates = Candidates'Loop_Entry);
+                   declare
+                     weight : constant Float :=
+                       This.U1 * abs(Delta_Angle(This.Desired_Angle, Element(Candidates,i).Angle)) +
+                       This.U2 * abs(Delta_Angle(This.Last_Picked_Angle, Element(Candidates,i).Angle));
+                  begin
+                     if weight < min_weight
+                     then
+                        min_weight := weight;
+                        This.Picked_Angle := Element(Candidates,i).Angle;
+                        This.Max_Speed_For_Picked_Angle := Element(Candidates,i).Speed;
+                     end if;
+                  end;
+               end loop;
+            end;
+
+            This.Last_Picked_Angle := This.Picked_Angle;
+         end Select_Candidate_Angle;
+      begin
+         pragma Assert(Is_Empty(Candidates));
+         pragma Assert(Capacity(Candidates) = CANDIDATE_CAPACITY);
+         for i in First_Index(Border) .. Last_Index(Border) loop
+            pragma Loop_Invariant(Length(Candidates) <= Ada.Containers.Count_Type(i)*4);
+            --printf("BORDER: %f %f\n", border[i].first, border[i].second);
+            angle := Delta_Angle(Element(border,i).first, Element(border,i).second);
+
+            if abs(angle) < 10.0
+            then
+               -- ignore very narrow openings
+               null;
+            elsif abs(angle) < 80.0
+            then
+               -- narrow opening: aim for the centre
+
+               new_angle := Float(Element(border,i).first) + Float(Element(border,i).second - Element(border,i).first) / 2.0;
+
+               Append(Candidates,(Angle => new_angle, Speed => Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_NARROW_OPENING)));
+            else
+               -- wide opening: consider the centre, and 40deg from each border
+
+               new_angle := Float(Element(border,i).first) + Float(Element(border,i).second - Element(border,i).first) / 2.0;
+
+               Append(Candidates,(Angle => new_angle, Speed => This.Current_Max_Speed));
+
+               new_angle := Float((Element(border,i).first + 40) mod 360);
+               Append(Candidates,(Angle => new_angle, Speed => Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_WIDE_OPENING)));
+
+               new_angle := Float(Element(border,i).second - 40);
+               if new_angle < 0.0 then
+                  new_angle := new_angle + 360.0;
+               end if;
+               Append(Candidates,(Angle => new_angle, Speed => Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_WIDE_OPENING)));
+
+               -- See if candidate dir is in this opening
+               if Delta_Angle(This.Desired_Angle, Element(Candidates,Last_Index(Candidates)-1).Angle) < 0.0 and then
+                 Delta_Angle(This.Desired_Angle, Last_Element(Candidates).Angle) > 0.0
+               then
+                  Append(Candidates,(Angle => This.Desired_Angle, Speed => Integer'Min(This.Current_Max_Speed,This.MAX_SPEED_WIDE_OPENING)));
+               end if;
+            end if;
+         end loop;
+
+         Select_Candidate_Angle;
+      end;
    end Select_Direction;
 
    ----------------
@@ -994,8 +1000,8 @@ package body Algorithm is
       New_Line;
       Put_Line("Enlargement Angles:");
       Put_Line("****************");
-      for y in Integer range 0 .. This.WINDOW_DIAMETER-1 loop
-         for x in Integer range 0 .. This.WINDOW_DIAMETER-1 loop
+      for y in This.Cell_Enlarge'Range(2) loop
+         for x in This.Cell_Enlarge'Range(1) loop
             Put(Float'Image(This.Cell_Enlarge(x,y)));
             Tab;
          end loop;
@@ -1012,7 +1018,7 @@ package body Algorithm is
       Put_Line("Histogram:");
       Put_Line("****************");
 
-      --for(int x=0;x<=(HIST_SIZE/2);x++) {
+      pragma Assume(VFH_Predicate(This));
       for x in 0 .. This.HIST_SIZE/2 loop
          --printf("%d:\t%1.1f\n", (x * SECTOR_ANGLE), Hist[x]);
          Put(Integer'Image(x * This.SECTOR_ANGLE));
