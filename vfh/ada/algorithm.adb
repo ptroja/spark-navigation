@@ -819,7 +819,7 @@ package body Algorithm is
          pragma Assert(Is_Empty(Candidates));
          pragma Assert(Capacity(Candidates) = CANDIDATE_CAPACITY);
          for i in First_Index(Border) .. Last_Index(Border) loop
-            pragma Loop_Invariant(Length(Candidates) <= Ada.Containers.Count_Type(i)*4);
+            pragma Loop_Invariant(Capacity(Candidates) = CANDIDATE_CAPACITY and then Length(Candidates) <= Ada.Containers.Count_Type(i)*4);
             --printf("BORDER: %f %f\n", border[i].first, border[i].second);
             angle := Delta_Angle(Element(border,i).first, Element(border,i).second);
 

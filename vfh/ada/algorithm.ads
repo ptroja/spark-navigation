@@ -269,15 +269,23 @@ private
       This.HIST_LAST = This.HIST_SIZE-1 and then
       This.Hist'Last = This.Last_Binary_Hist'Last and then
       This.Hist'Last = This.HIST_LAST and then
-      Integer(This.MIN_TURNING_VECTOR_CAPACITY) = This.MAX_SPEED + 1 and then
+      
+      Integer(This.MIN_TURNING_VECTOR_CAPACITY) - 1= This.MAX_SPEED and then
+      
+      This.WINDOW_DIAMETER - 1 = This.WINDOW_DIAMETER_LAST and then
+      
+      This.Cell_Direction'Last(1) = THIS.WINDOW_DIAMETER_LAST and then
       This.Cell_Direction'Last(1) = This.Cell_Base_Mag'Last(1) and then
       This.Cell_Direction'Last(1) = This.Cell_Mag'Last(1) and then
       This.Cell_Direction'Last(1) = This.Cell_Dist'Last(1) and then
       This.Cell_Direction'Last(1) = This.Cell_Enlarge'Last(1) and then
+      
+      This.Cell_Direction'Last(2) = THIS.WINDOW_DIAMETER_LAST and then
       This.Cell_Direction'Last(2) = This.Cell_Base_Mag'Last(2) and then
       This.Cell_Direction'Last(2) = This.Cell_Mag'Last(2) and then
       This.Cell_Direction'Last(2) = This.Cell_Dist'Last(2) and then
       This.Cell_Direction'Last(2) = This.Cell_Enlarge'Last(2) and then
+      
       This.Cell_Direction'Last(1) = This.Cell_Sector'Last(2) and then
       This.Cell_Direction'Last(2) = This.Cell_Sector'Last(3))
    with
