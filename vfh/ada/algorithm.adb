@@ -255,7 +255,7 @@ package body Algorithm is
       speed_incr : Integer;
 
       use Ada.Real_Time;
-
+      Build_Primary_Polar_Histogram_Ret : Boolean;
    begin
 
       this.Desired_Angle := goal_direction;
@@ -289,8 +289,8 @@ package body Algorithm is
       diffSeconds := Float(Ada.Real_Time.To_Duration(diff));
 
       This.last_update_time := Now;
-
-      if not Build_Primary_Polar_Histogram(This,laser_ranges,current_pos_speed)
+      Build_Primary_Polar_Histogram(This,laser_ranges,current_pos_speed, Build_Primary_Polar_Histogram_Ret);
+      if not Build_Primary_Polar_Histogram_Ret
       then
          -- Something's inside our safety distance: brake hard and
          -- turn on the spot
@@ -496,11 +496,11 @@ package body Algorithm is
    -- Calculate_Cells_Mag --
    -------------------------
 
-   function Calculate_Cells_Mag
+   procedure Calculate_Cells_Mag
      (This : in out VFH;
       laser_ranges : Laser_Range;
-      speed : Integer)
-      return Boolean
+      speed : Integer;
+      Ret : out Boolean)
    is
       -- AB: This is a bit dodgy...  Makes it possible to miss really skinny obstacles, since if the
       --     resolution of the cells is finer than the resolution of laser_ranges, some ranges might be missed.
@@ -513,11 +513,11 @@ package body Algorithm is
       --for x in range laser_ranges'Range(1) loop
       --Put_Line(Integer'Image(x) & ": " & Float'Image(laser_ranges(x,0)));
       --end loop;
-
+      pragma Assert(VFH_Predicate(This));
       -- Only deal with the cells in front of the robot, since we can't sense behind.
-      for x in Integer range 0 .. This.WINDOW_DIAMETER-1 loop
+      for x in Integer range 0 .. This.WINDOW_DIAMETER-1 loop pragma Loop_Invariant(VFH_Predicate(This));
          for y in Integer range
-           0 .. Integer(Float'Ceiling(Float(This.WINDOW_DIAMETER)/2.0))-1 loop
+           0 .. Integer(Float'Ceiling(Float(This.WINDOW_DIAMETER)/2.0))-1 loop pragma Loop_Invariant(VFH_Predicate(This));
             --Put(Integer'Image(x) & " x " & Integer'Image(y) & ": ");
             --Put(Float'Image(This.Cell_Dist(x,y)) & ", " & Float'Image(This.Cell_Direction(x,y)));
             --New_Line;
@@ -536,7 +536,7 @@ package body Algorithm is
 
                   -- Damn, something got inside our safety_distance...
                   -- Short-circuit this process.
-                  return false;
+                  Ret := false; return;
                else
                   This.Cell_Mag(x,y) := This.Cell_Base_Mag(x,y);
                end if;
@@ -546,27 +546,29 @@ package body Algorithm is
          end loop;
       end loop;
 
-      return true;
+      Ret := true;
    end Calculate_Cells_Mag;
 
    -----------------------------------
    -- Build_Primary_Polar_Histogram --
    -----------------------------------
 
-   function Build_Primary_Polar_Histogram
+   procedure Build_Primary_Polar_Histogram
      (This : in out VFH;
       laser_ranges : Laser_Range;
-      speed : Integer)
-      return Boolean
+      speed : Integer;
+      Ret : out Boolean)
    is
       -- index into the vector of Cell_Sector tables
       speed_index : constant Integer := Get_Speed_Index( This, speed );
+      Calculate_Cells_Mag_Ret : Boolean;
    begin
-      if not Calculate_Cells_Mag( This, laser_ranges, speed )
+      Calculate_Cells_Mag( This, laser_ranges, speed, Calculate_Cells_Mag_Ret );
+      if not Calculate_Cells_Mag_Ret
       then
          -- set Hist to all blocked
          This.Hist := (others => 1.0);
-         return False;
+         Ret := False; return;
       end if;
 
       -- FIXED: we do this in the 'else' branch of the proceeding test.
@@ -591,7 +593,7 @@ package body Algorithm is
          end loop;
       end loop;
 
-      return true;
+      Ret := true;
    end Build_Primary_Polar_Histogram;
 
    ----------------------------------

@@ -234,9 +234,9 @@ private
    function Cant_Turn_To_Goal(This : VFH) return Boolean;
 
    -- Returns false if something got inside the safety distance, else true.
-   function Calculate_Cells_Mag(This : in out VFH; laser_ranges : Laser_Range; speed : Integer) return Boolean;
+   procedure Calculate_Cells_Mag(This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
    -- Returns false if something got inside the safety distance, else true.
-   function Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Integer) return Boolean;
+   procedure Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
    procedure Build_Binary_Polar_Histogram(This : in out VFH; speed : Integer);
    procedure Build_Masked_Polar_Histogram(This : in out VFH; speed : Speed_Index)
    with
