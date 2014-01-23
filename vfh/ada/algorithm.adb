@@ -22,6 +22,23 @@ package body Algorithm is
       Put(ASCII.HT);
    end Tab;
 
+   type Half_Option is (Inclusive,Exclusive);
+
+   function Up_To_Half(Size : Positive; Half : Half_Option) return Natural
+   with
+     Post => Up_To_Half'Result < Size;
+
+   function Up_To_Half(Size : Positive; Half : Half_Option) return Natural
+   is
+   begin
+      case Half is
+         when Inclusive =>
+            return (if Size=1 then 0 else (Size-1)/2+1);
+         when Exclusive =>
+            return (Size-1)/2;
+      end case;
+   end;
+
    ----------
    -- Init --
    ----------
@@ -517,7 +534,7 @@ package body Algorithm is
       -- Only deal with the cells in front of the robot, since we can't sense behind.
       for x in Integer range 0 .. This.WINDOW_DIAMETER-1 loop pragma Loop_Invariant(VFH_Predicate(This));
          for y in Integer range
-           0 .. Integer(Float'Ceiling(Float(This.WINDOW_DIAMETER)/2.0))-1 loop pragma Loop_Invariant(VFH_Predicate(This));
+           0 .. Up_To_Half(This.Cell_Direction'Length(2),Exclusive) loop pragma Loop_Invariant(VFH_Predicate(This));
             --Put(Integer'Image(x) & " x " & Integer'Image(y) & ": ");
             --Put(Float'Image(This.Cell_Dist(x,y)) & ", " & Float'Image(This.Cell_Direction(x,y)));
             --New_Line;
@@ -556,7 +573,7 @@ package body Algorithm is
    procedure Build_Primary_Polar_Histogram
      (This : in out VFH;
       laser_ranges : Laser_Range;
-      speed : Integer;
+      speed : Natural;
       Ret : out Boolean)
    is
       -- index into the vector of Cell_Sector tables
@@ -579,16 +596,17 @@ package body Algorithm is
       --  Print_Cells_Mag(This);
       --  Print_Cells_Sector(This);
       --  Print_Cells_Enlargement_Angle(This);
-
+      pragma Assert_and_cut(VFH_Predicate(This));
       -- Only have to go through the cells in front.
-      for y in 0 .. Integer(Float'Ceiling(Float(This.WINDOW_DIAMETER)/2.0)) loop
-         for x in This.Cell_Sector'Range(2) loop
+      for y in Integer range 0 .. Up_To_Half(This.Cell_Sector'Length(3),Inclusive) loop pragma Loop_Invariant(VFH_Predicate(This));
+         for x in This.Cell_Sector'Range(2) loop pragma Loop_Invariant(VFH_Predicate(This));
             for i in Integer range
               First_Index(This.Cell_Sector(speed_index,x,y)) ..
               Last_Index(This.Cell_Sector(speed_index,x,y))
-            loop
+            loop pragma Loop_Invariant(VFH_Predicate(This) and then This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+               --pragma Assert(i <= Last_Index(This.Cell_Sector(speed_index,x,y)));
                This.Hist(Element(This.Cell_Sector(speed_index,x,y),i)) :=
-                           This.Hist(Element(This.Cell_Sector(speed_index,x,y),i)) + This.Cell_Mag(x,y);
+                 This.Hist(Element(This.Cell_Sector(speed_index,x,y),i)) + This.Cell_Mag(x,y);
             end loop;
          end loop;
       end loop;
@@ -654,7 +672,7 @@ package body Algorithm is
       --
       -- Only loop through the cells in front of us.
       -- FIXME: range 0 .. (This.WINDOW_DIAMETER+1)/2-1
-      for y in Integer range 0 .. Integer(Float'Ceiling(Float(This.WINDOW_DIAMETER)/2.0))-1 loop
+      for y in Integer range 0 .. Up_To_Half(This.Cell_Direction'Length(2),Exclusive) loop
          for x in This.Cell_Direction'Range(1) loop
             if This.Cell_Mag(x,y) = 0.0 then
                null;
@@ -1036,11 +1054,11 @@ package body Algorithm is
    -- Get_Speed_Index --
    ---------------------
 
-   function Get_Speed_Index (This : VFH; speed : Integer) return Integer is
-      val : Integer := Integer(Float'Floor(
-                               (Float(speed-This.Cell_Sector'First(1))/Float(This.Current_Max_Speed))*Float(This.Cell_Sector'Length(1))));
+   function Get_Speed_Index (This : VFH; speed : Natural) return Natural is
+      val : Natural := Integer(Float'Floor(
+                               (Float(speed)/Float(This.Current_Max_Speed))*Float(This.Cell_Sector'Length(1))));
    begin
-
+      pragma Assert(VFH_Predicate(This));
       if val > This.Cell_Sector'Last(1) then
          val := This.Cell_Sector'Last(1);
       end if;

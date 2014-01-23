@@ -94,7 +94,7 @@ package Algorithm is
             HIST_SIZE : Natural;                -- sectors (over 360deg)
             HIST_COUNT : Ada.Containers.Count_Type;
             HIST_LAST : Natural;
-            MIN_TURNING_VECTOR_CAPACITY : Ada.Containers.Count_Type;            
+            MIN_TURNING_VECTOR_CAPACITY : Ada.Containers.Count_Type;
             CELL_SECTOR_TABLES_LAST : Natural;
             WINDOW_DIAMETER_LAST : Natural
            ) is
@@ -236,7 +236,7 @@ private
    -- Returns false if something got inside the safety distance, else true.
    procedure Calculate_Cells_Mag(This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
    -- Returns false if something got inside the safety distance, else true.
-   procedure Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
+   procedure Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Natural; Ret : out Boolean);
    procedure Build_Binary_Polar_Histogram(This : in out VFH; speed : Integer);
    procedure Build_Masked_Polar_Histogram(This : in out VFH; speed : Speed_Index)
    with
@@ -256,7 +256,9 @@ private
 
    -- Returns the speed index into Cell_Sector, for a given speed in mm/sec.
    -- This exists so that only a few (potentially large) Cell_Sector tables must be stored.
-   function Get_Speed_Index( This : VFH; speed : Integer) return Integer;
+   function Get_Speed_Index( This : VFH; speed : Natural) return Natural
+   with
+     Post => Get_Speed_Index'Result in This.Cell_Sector'Range(1);
 
    -- Returns the safety dist in mm for this speed.
    function Get_Safety_Dist( This : VFH; speed : Integer ) return Integer;
@@ -286,6 +288,7 @@ private
       This.Cell_Direction'Last(2) = This.Cell_Dist'Last(2) and then
       This.Cell_Direction'Last(2) = This.Cell_Enlarge'Last(2) and then
       
+      This.CELL_SECTOR_TABLES_LAST = This.Cell_Sector'Last(1) and then
       This.Cell_Direction'Last(1) = This.Cell_Sector'Last(2) and then
       This.Cell_Direction'Last(2) = This.Cell_Sector'Last(3))
    with
