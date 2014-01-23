@@ -540,7 +540,7 @@ package body Algorithm is
             --New_Line;
             if This.Cell_Direction(x,y) >= 0.0 and then
               This.Cell_Dist(x,y) + This.CELL_WIDTH / 2.0 >
-              laser_ranges(Integer(This.Cell_Direction(x,y) * 2.0),0)
+              laser_ranges(rint(This.Cell_Direction(x,y) * 2.0),0)
             then
                if This.Cell_Dist(x,y) < r and then (not (x=This.CENTER_X and then y=This.CENTER_Y))
                then
@@ -907,7 +907,7 @@ package body Algorithm is
             turnrate := GetMaxTurnrate( This, actual_speed );
          else
             --turnrate := (int)rint(((float)(Picked_Angle - 90) / 75.0) * GetMaxTurnrate( actual_speed ));
-            turnrate := Integer(((This.Picked_Angle - 90.0) / 75.0) * Float(GetMaxTurnrate( This, actual_speed )));
+            turnrate := rint(((This.Picked_Angle - 90.0) / 75.0) * Float(GetMaxTurnrate( This, actual_speed )));
 
             if turnrate > GetMaxTurnrate( This, actual_speed ) then
                turnrate := GetMaxTurnrate( This, actual_speed );

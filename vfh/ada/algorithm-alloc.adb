@@ -1,6 +1,7 @@
 with Ada.Unchecked_Deallocation;
 with Interfaces.C; use Interfaces.C;
 with Ada.Containers;
+with Utils;
 
 with Ada.Text_IO;
 
@@ -30,12 +31,14 @@ package body Algorithm.Alloc is
       weight_current_dir            : C.C_float)
       return                          VFH_Ptr
    is
+      use Utils;
+
       pragma Assert(sector_angle = FIXED_SECTOR_ANGLE);
       This : VFH_Ptr := new
         Algorithm.VFH(
-                      HIST_SIZE => Integer(360/sector_angle),
+                      HIST_SIZE => rint(360.0/Float(sector_angle)),
                       HIST_COUNT => Ada.Containers.Count_Type(360/sector_angle),
-                      HIST_LAST => Integer(360/sector_angle)-1,
+                      HIST_LAST => rint(360.0/Float(sector_angle))-1,
                       MIN_TURNING_VECTOR_CAPACITY => Ada.Containers.Count_Type(max_speed)+1,
                       CELL_SECTOR_TABLES_LAST =>
                         (if SAFETY_DIST_0MS = SAFETY_DIST_1MS
