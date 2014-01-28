@@ -393,6 +393,20 @@ void vfh_Register(DriverTable* table)
   return;
 }
 
+
+// Extra stuff for building a shared object.
+/* need the extern to avoid C++ name-mangling  */
+extern "C"
+{
+
+int player_driver_init(DriverTable* table)
+{
+	vfh_Register(table);
+	return(0);
+}
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Set up the device (called by server thread).
 int VFH_Class::Setup()
@@ -721,7 +735,7 @@ VFH_Class::ProcessLaser(const player_laser_data_t &data)
   {
   	unsigned int index = (int)rint(i/db);
   	//assert(index >= 0 && index < data.ranges_count);
-  	if(index < 0 || index >= data.ranges_count)
+  	if(index >= data.ranges_count)
           continue;
     this->laser_ranges[i*2][0] = data.ranges[index] * 1e3;
 //    this->laser_ranges[i*2][1] = index;
@@ -917,6 +931,12 @@ int VFH_Class::ProcessMessage(QueuePointer & resp_queue,
                                 PLAYER_RANGER_DATA_RANGE, this->ranger_addr))
   {
     ProcessRanger(*reinterpret_cast<player_ranger_data_range_t *> (data));
+    return 0;
+  }
+  else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_DATA,
+                                PLAYER_RANGER_DATA_INTNS, this->ranger_addr))
+  {
+    // Ignore intensity scan.
     return 0;
   }
   else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_CMD,

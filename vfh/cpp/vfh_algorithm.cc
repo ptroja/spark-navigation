@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 #include <libplayercore/playercore.h>
 
@@ -52,10 +53,10 @@ VFH_Algorithm::VFH_Algorithm( double cell_size,
     : Hist(NULL),
       CENTER_X(WINDOW_DIAMETER / 2),
       CENTER_Y(CENTER_X),
-      HIST_SIZE((int)rint(360.0 / SECTOR_ANGLE)),
       CELL_WIDTH(static_cast<float> (cell_size)),
       WINDOW_DIAMETER(window_diameter),
       SECTOR_ANGLE(sector_angle),
+      HIST_SIZE((int)rint(360.0 / this->SECTOR_ANGLE)),
       SAFETY_DIST_0MS(static_cast<float> (safety_dist_0ms)),
       SAFETY_DIST_1MS(static_cast<float> (safety_dist_1ms)),
       Current_Max_Speed(max_speed),
@@ -86,6 +87,10 @@ VFH_Algorithm::VFH_Algorithm( double cell_size,
     /*
     printf("CELL_WIDTH: %1.1f\tWINDOW_DIAMETER: %d\tSECTOR_ANGLE: %d\tROBOT_RADIUS: %1.1f\tSAFETY_DIST: %1.1f\tMAX_SPEED: %d\tMAX_TURNRATE: %d\tFree Space Cutoff: %1.1f\tObs Cutoff: %1.1f\tWeight Desired Dir: %1.1f\tWeight Current_Dir:%1.1f\n", CELL_WIDTH, WINDOW_DIAMETER, SECTOR_ANGLE, ROBOT_RADIUS, SAFETY_DIST, MAX_SPEED, MAX_TURNRATE, Binary_Hist_Low, Binary_Hist_High, U1, U2);
     */
+  std::cout << "sector_angle = " << sector_angle << std::endl;
+  std::cout << "SECTOR_ANGLE = " << this->SECTOR_ANGLE << std::endl;
+  std::cout << "HIST_SIZE.= " << this->HIST_SIZE << std::endl;
+  std::cout << "HIST_SIZE,= " << ((int)rint(360.0 / this->SECTOR_ANGLE)) << std::endl;
 }
 
 VFH_Algorithm::~VFH_Algorithm()
@@ -345,24 +350,22 @@ void VFH_Algorithm::Init()
 
 void VFH_Algorithm::VFH_Allocate() 
 {
+  {
   const std::vector<float> temp_vec(WINDOW_DIAMETER, 0.0);
-  const std::vector<std::vector<int> > temp_vec2(WINDOW_DIAMETER);
-  const std::vector<std::vector<std::vector<int> > > temp_vec4(WINDOW_DIAMETER, temp_vec2);
-
-  Cell_Direction.clear();
-  Cell_Base_Mag.clear();
-  Cell_Mag.clear();
-  Cell_Dist.clear();
-  Cell_Enlarge.clear();
-  Cell_Sector.clear();
 
   Cell_Direction.resize(WINDOW_DIAMETER, temp_vec);
   Cell_Base_Mag.resize(WINDOW_DIAMETER, temp_vec);
   Cell_Mag.resize(WINDOW_DIAMETER, temp_vec);
   Cell_Dist.resize(WINDOW_DIAMETER, temp_vec);
   Cell_Enlarge.resize(WINDOW_DIAMETER, temp_vec);
+  }
 
-  Cell_Sector.resize(NUM_CELL_SECTOR_TABLES,temp_vec4);
+  {
+  const std::vector<std::vector<int> > temp_vec2(WINDOW_DIAMETER);
+  const std::vector<std::vector<std::vector<int> > > temp_vec4(WINDOW_DIAMETER, temp_vec2);
+
+  Cell_Sector.resize(NUM_CELL_SECTOR_TABLES, temp_vec4);
+  }
 
   Hist = new float[HIST_SIZE];
   Last_Binary_Hist = new float[HIST_SIZE];

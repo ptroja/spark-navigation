@@ -22,7 +22,8 @@
 #define VFH_ALGORITHM_H
 
 #include <vector>
-#include <libplayercore/playertime.h>
+#include <libplayercore/playercore.h>
+//#include <libplayercore/playertime.h>
 
 class VFH_Algorithm
 {
@@ -130,11 +131,11 @@ private:
     float ROBOT_RADIUS;                 // millimeters
     const int CENTER_X;                 // cells
     const int CENTER_Y;                 // cells
-    const int HIST_SIZE;                // sectors (over 360deg)
 
     const float CELL_WIDTH;             // millimeters
     const int WINDOW_DIAMETER;          // cells
     const int SECTOR_ANGLE;             // degrees
+    const int HIST_SIZE;                // sectors (over 360deg)
     const float SAFETY_DIST_0MS;        // millimeters
     const float SAFETY_DIST_1MS;        // millimeters
     int Current_Max_Speed;              // mm/sec
