@@ -51,12 +51,12 @@ VFH_Algorithm::VFH_Algorithm( double cell_size,
                               double weight_desired_dir,
                               double weight_current_dir )
     : Hist(NULL),
-      CENTER_X(WINDOW_DIAMETER / 2),
-      CENTER_Y(CENTER_X),
       CELL_WIDTH(static_cast<float> (cell_size)),
       WINDOW_DIAMETER(window_diameter),
+      CENTER_X(WINDOW_DIAMETER / 2),
+      CENTER_Y(CENTER_X),
       SECTOR_ANGLE(sector_angle),
-      HIST_SIZE((int)rint(360.0 / this->SECTOR_ANGLE)),
+      HIST_SIZE((int)rint(360.0 / SECTOR_ANGLE)),
       SAFETY_DIST_0MS(static_cast<float> (safety_dist_0ms)),
       SAFETY_DIST_1MS(static_cast<float> (safety_dist_1ms)),
       Current_Max_Speed(max_speed),
@@ -87,10 +87,6 @@ VFH_Algorithm::VFH_Algorithm( double cell_size,
     /*
     printf("CELL_WIDTH: %1.1f\tWINDOW_DIAMETER: %d\tSECTOR_ANGLE: %d\tROBOT_RADIUS: %1.1f\tSAFETY_DIST: %1.1f\tMAX_SPEED: %d\tMAX_TURNRATE: %d\tFree Space Cutoff: %1.1f\tObs Cutoff: %1.1f\tWeight Desired Dir: %1.1f\tWeight Current_Dir:%1.1f\n", CELL_WIDTH, WINDOW_DIAMETER, SECTOR_ANGLE, ROBOT_RADIUS, SAFETY_DIST, MAX_SPEED, MAX_TURNRATE, Binary_Hist_Low, Binary_Hist_High, U1, U2);
     */
-  std::cout << "sector_angle = " << sector_angle << std::endl;
-  std::cout << "SECTOR_ANGLE = " << this->SECTOR_ANGLE << std::endl;
-  std::cout << "HIST_SIZE.= " << this->HIST_SIZE << std::endl;
-  std::cout << "HIST_SIZE,= " << ((int)rint(360.0 / this->SECTOR_ANGLE)) << std::endl;
 }
 
 VFH_Algorithm::~VFH_Algorithm()
@@ -202,7 +198,7 @@ void VFH_Algorithm::Init()
   //
   for(int x=0;x<WINDOW_DIAMETER;x++) {
     for(int y=0;y<WINDOW_DIAMETER;y++) {
-      Cell_Mag[x][y] = 0;    
+      Cell_Mag[x][y] = 0;
       Cell_Dist[x][y] = hypot(CENTER_X - x,CENTER_Y - y) * CELL_WIDTH;
 
       Cell_Base_Mag[x][y] = pow((3000.0f - Cell_Dist[x][y]), 4) / 100000000.0f;
@@ -256,7 +252,7 @@ void VFH_Algorithm::Init()
         // enlarged for this cell, at this speed
         if (Cell_Dist[x][y] > 0)
         {
-          float r = ROBOT_RADIUS + Get_Safety_Dist(max_speed_this_table);
+          const float r = ROBOT_RADIUS + Get_Safety_Dist(max_speed_this_table);
           // Cell_Enlarge[x][y] = (float)atan( r / Cell_Dist[x][y] ) * (180/M_PI);
           Cell_Enlarge[x][y] = static_cast<float> (asin( r / Cell_Dist[x][y] ) * (180.0f/M_PI));
         }
@@ -597,8 +593,9 @@ void VFH_Algorithm::Select_Direction()
   int start;
   bool left;
   float angle, new_angle;
-  std::vector<std::pair<int,int> > border;
-  std::pair<int,int> new_border;
+  typedef std::vector<std::pair<int,int> > borders_t;
+  borders_t border;
+  borders_t::value_type new_border;
 
   Candidate_Angle.clear();
   Candidate_Speed.clear();
@@ -803,6 +800,11 @@ printf("%d: %f\n", x, this->laser_ranges[x][0]);
   {
       for(int y=0;y<(int)ceil(WINDOW_DIAMETER/2.0);y++) 
       {
+          //printf("%2d x %2d : %f, %f\n", x, y, Cell_Direction[x][y], Cell_Dist[x][y]);
+          int idx = (int)rint(Cell_Direction[x][y] * 2.0);
+          if (!(idx >= 0 && idx <= 360)) {
+            printf("idx = %d\n", idx);
+          }
           if ((Cell_Dist[x][y] + CELL_WIDTH / 2.0) > 
               laser_ranges[(int)rint(Cell_Direction[x][y] * 2.0)][0]) 
           {

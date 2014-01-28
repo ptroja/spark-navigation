@@ -720,7 +720,7 @@ void
 VFH_Class::ProcessLaser(const player_laser_data_t &data)
 {
 //  double b = RTOD(data.min_angle);
-  double db = RTOD(data.resolution);
+  const double db = RTOD(data.resolution);
 
   this->laser_count = 361;
   //if (!laser_ranges)
@@ -735,7 +735,7 @@ VFH_Class::ProcessLaser(const player_laser_data_t &data)
   {
   	unsigned int index = (int)rint(i/db);
   	//assert(index >= 0 && index < data.ranges_count);
-  	if(index >= data.ranges_count)
+  	if(index < 0 || index >= data.ranges_count)
           continue;
     this->laser_ranges[i*2][0] = data.ranges[index] * 1e3;
 //    this->laser_ranges[i*2][1] = index;
@@ -758,7 +758,6 @@ VFH_Class::ProcessLaser(const player_laser_data_t &data)
 void
 VFH_Class::ProcessSonar(const player_sonar_data_t &data)
 {
-  double b;
   double cone_width = 30.0;
   int count = 361;
   float sonarDistToCenter = 0.0;
@@ -773,7 +772,7 @@ VFH_Class::ProcessSonar(const player_sonar_data_t &data)
   //b += 90.0;
   for(int i = 0; i < (int)data.ranges_count; i++)
   {
-    for(b = RTOD(this->sonar_poses[i].pyaw) + 90.0 - cone_width/2.0;
+    for(double b = RTOD(this->sonar_poses[i].pyaw) + 90.0 - cone_width/2.0;
         b < RTOD(this->sonar_poses[i].pyaw) + 90.0 + cone_width/2.0;
         b+=0.5)
     {
@@ -1041,7 +1040,7 @@ void VFH_Class::DoOneUpdate()
   this->ProcessMessages();
 
   if(!this->active_goal)
-    return;
+    return;//continue;
 
   // Figure how far, in distance and orientation, we are from the goal
   const double dist = hypot(goal_x - this->odom_pose[0], goal_y - this->odom_pose[1]);
@@ -1083,6 +1082,7 @@ void VFH_Class::DoOneUpdate()
       this->turnrate = (int)(2.0 * escape_turnrate_deg *
                              rand()/(RAND_MAX+1.0)) -
               escape_turnrate_deg/2 + 1;
+      printf("random turnrate = %d\n", turnrate);
     }
     else
       this->turnrate = 0;
@@ -1132,7 +1132,7 @@ void VFH_Class::DoOneUpdate()
       this->speed =
               (int)rint(vfh_Algorithm->GetCurrentMaxSpeed() / 2.0);
       //printf("slowing down from %d to %d\n",
-	//     foo, this->speed);
+      //     foo, this->speed);
     }
 
     PutCommand( this->speed, this->turnrate );

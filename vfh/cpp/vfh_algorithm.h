@@ -129,31 +129,31 @@ private:
     // Data
 
     float ROBOT_RADIUS;                 // millimeters
-    const int CENTER_X;                 // cells
-    const int CENTER_Y;                 // cells
 
     const float CELL_WIDTH;             // millimeters
     const int WINDOW_DIAMETER;          // cells
+    const int CENTER_X;                 // cells
+    const int CENTER_Y;                 // cells
     const int SECTOR_ANGLE;             // degrees
     const int HIST_SIZE;                // sectors (over 360deg)
     const float SAFETY_DIST_0MS;        // millimeters
     const float SAFETY_DIST_1MS;        // millimeters
-    int Current_Max_Speed;              // mm/sec
+    int Current_Max_Speed;        // mm/sec
     const int MAX_SPEED;                // mm/sec
     const int MAX_SPEED_NARROW_OPENING; // mm/sec
     const int MAX_SPEED_WIDE_OPENING;   // mm/sec
-    const int MAX_ACCELERATION;   // mm/sec/sec
-    int MIN_TURNRATE;             // deg/sec -- not actually used internally
+    const int MAX_ACCELERATION;         // mm/sec/sec
+    int MIN_TURNRATE;                   // deg/sec -- not actually used internally
 
     const int NUM_CELL_SECTOR_TABLES;
 
     // Scale turnrate linearly between these two
-    int MAX_TURNRATE_0MS;       // deg/sec
-    int MAX_TURNRATE_1MS;       // deg/sec
-    double MIN_TURN_RADIUS_SAFETY_FACTOR;
-    float Binary_Hist_Low_0ms, Binary_Hist_High_0ms;
-    float Binary_Hist_Low_1ms, Binary_Hist_High_1ms;
-    float U1, U2;
+    const int MAX_TURNRATE_0MS;       // deg/sec
+    const int MAX_TURNRATE_1MS;       // deg/sec
+    const double MIN_TURN_RADIUS_SAFETY_FACTOR;
+    const float Binary_Hist_Low_0ms, Binary_Hist_High_0ms;
+    const float Binary_Hist_Low_1ms, Binary_Hist_High_1ms;
+    const float U1, U2;
     float Desired_Angle, Dist_To_Goal, Goal_Distance_Tolerance;
     float Picked_Angle, Last_Picked_Angle;
     int   Max_Speed_For_Picked_Angle;
