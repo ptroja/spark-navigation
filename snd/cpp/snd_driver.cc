@@ -178,6 +178,7 @@ driver
 #include "snd_driver.h"
 #include "snd_algo.h"
 
+#include "clock.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //                           BUILDING A SHARED OBJECT                         //
@@ -227,6 +228,7 @@ SmoothND::SmoothND(ConfigFile* cf, int section) :
 	config_ranger_ready(false),
 	next_goal_ready(false)
 {
+	statReset(&this->statistics);
 	PLAYER_MSG0(1,"INITIALIZING INTERFACE ...");
 
 	// My position interface
@@ -458,7 +460,9 @@ void SmoothND::Main()
 		// message.
 		this->ProcessMessages();
 
+		statStart(&this->statistics);
 		algo.step();
+		statStop(&this->statistics);
 
 		// Sleep (or you might, for example, block on a read() instead)
 		usleep(50000);
@@ -673,6 +677,8 @@ void SmoothND::NewGoalData(double goalX, double goalY, double goalA)
 
 void SmoothND::GoalReached()
 {
+	statPrint(&this->statistics);
+	statReset(&this->statistics);
 	next_goal_ready = false;
 }
 

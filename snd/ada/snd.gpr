@@ -13,7 +13,7 @@ library project Snd is
       "spaces-angles.ads", "spaces-poses.adb", "spaces-poses.ads", "spaces-positions.adb", "spaces-positions.ads", "valleys.adb", "valleys.ads");
 
    package Compiler is
-      for Default_Switches ("ada") use ("-g", "-O0", "-gnat12", "-gnato");
+      for Default_Switches ("ada") use ("-g", "-O2", "-gnat12");
    end Compiler;
 
 end Snd;

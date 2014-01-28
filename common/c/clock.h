@@ -1,5 +1,5 @@
-#ifndef _CLOCK_H
-#define _CLOCK_H
+#ifndef _STATISTICS_H
+#define _STATISTICS_H
 
 #include <time.h>
 
@@ -7,17 +7,26 @@
 extern "C" {
 #endif
 
-struct timespec
-evAddTime(struct timespec addend1, struct timespec addend2);
+typedef struct stat {
+  unsigned int count;
+  struct timespec total_time;
+  struct timespec start;
+} stat_t;
 
-struct timespec
-evSubTime(struct timespec minuend, struct timespec subtrahend);
+void
+statReset(stat_t * s);
 
-struct timespec
-evNowTime(void);
+void
+statStart(stat_t * s);
+
+void
+statStop(stat_t * s);
+
+void
+statPrint(const stat_t * s);
 
 #ifdef __cplusplus /* If this is a C++ compiler, end C linkage */
 }
 #endif
 
-#endif /* _CLOCK_H */
+#endif /* _STATISTICS_H */

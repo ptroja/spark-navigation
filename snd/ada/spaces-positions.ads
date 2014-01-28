@@ -48,9 +48,9 @@ package Spaces.Positions is
    function Create(theta : Angle) return Position;
 
    --  \brief d theta constructor */
-   function Create(d : Float; theta : Angle) return Position
-   with
-     Post => (if d /= 0.0 then Create'Result /= Zero_Position);
+   function Create(d : Float; theta : Angle) return Position;
+   --with
+   --  Post => (if d /= 0.0 then Create'Result /= Zero_Position);
 
    --  \brief  Sets x coordinate.
    procedure setX (This : in out Position; x : Float);

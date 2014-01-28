@@ -5,6 +5,8 @@
 
 #define BILLION 1000000000
 
+static const clockid_t m = CLOCK_MONOTONIC;
+
 struct timespec
 evAddTime(struct timespec addend1, struct timespec addend2) {
   struct timespec x;
@@ -44,4 +46,32 @@ evNowTime(void)
 
   tsnow.tv_sec = tsnow.tv_nsec = 0;
   return (tsnow);
+}
+
+void
+statReset(stat_t * s)
+{
+  s->total_time.tv_sec = 0;
+  s->total_time.tv_nsec = 0;
+  s->count = 0;
+}
+
+void
+statStart(stat_t * s)
+{
+  s->start = evNowTime();
+}
+
+void
+statStop(stat_t * s)
+{
+  s->total_time = evAddTime(s->total_time, evSubTime(evNowTime(), s->start));
+
+  s->count++;
+}
+
+void
+statPrint(const stat_t * s)
+{
+  printf("Statistics: count = %u, total time = %lu.%09lu\n", s->count, s->total_time.tv_sec, s->total_time.tv_nsec);
 }

@@ -29,7 +29,7 @@
 
 #include <vector>
 #include <libplayercore/playercore.h>
-
+#include "clock.h"
 #include "interface.h"
 
 enum DriveTypes {
@@ -68,6 +68,8 @@ private:
     Device *odom_out_dev;
     // player_position2d_geom_t robot_geom;
     bool first_goal_has_been_set_to_init_position;
+
+    stat_t statistics;
 protected:
     void SetSpeedCmd(player_position2d_cmd_vel_t cmd);
 

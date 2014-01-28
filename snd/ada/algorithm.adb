@@ -15,7 +15,7 @@ package body Algorithm is
    use Gap_Vectors;
    use type Ada.Containers.Count_Type;
 
-   gDebug : constant Natural := 100;
+   gDebug : constant Integer := -1;
 
    M_PI : constant := Ada.Numerics.Pi;
 

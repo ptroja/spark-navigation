@@ -56,7 +56,7 @@ Valley::Valley( Gap rG, Gap oG ) :
 {}
 
 // Use gDebug to set verbosity of output, -1 for silent, 0 for hardly any output, 5 for normal debug
-static int gDebug=1;
+static int gDebug=-1;
 
 SND_algorithm::SND_algorithm( Robot_Proxy & r ) :
   robot(r),

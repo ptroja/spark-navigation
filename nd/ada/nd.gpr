@@ -1,6 +1,6 @@
-with "../../ada/formal_numerics/formal_numerics.gpr";
+with "../../../ada/formal_numerics/formal_numerics.gpr";
 
-project Ndplayer is
+project Nd is
 
    for Languages use ("C++", "Ada");
 --   for Source_Files use ("geometria.adb", "geometria.ads", "nd.adb", "nd.ads", "nd_plugin.cc", "nd.h");
@@ -26,4 +26,4 @@ project Ndplayer is
      for Switches ("nd_plugin.cc") use Compiler'Default_Switches ("C") & Player_Switches & ("-g");
    end Compiler;
 
-end Ndplayer;
+end Nd;
