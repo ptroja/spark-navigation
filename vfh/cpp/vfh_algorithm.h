@@ -75,7 +75,7 @@ public:
     int GetCurrentMaxSpeed() const { return Current_Max_Speed; }
 
     // Set methods
-    void SetRobotRadius( float robot_radius ) { this->ROBOT_RADIUS = robot_radius; }
+    void SetRobotRadius( float robot_radius ) { printf("SetRobotRadius(%f)\n", robot_radius); this->ROBOT_RADIUS = robot_radius; }
     void SetMinTurnrate( int min_turnrate ) { MIN_TURNRATE = min_turnrate; }
     void SetCurrentMaxSpeed( int Max_Speed );
 

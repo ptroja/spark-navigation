@@ -85,7 +85,20 @@ VFH_Algorithm::VFH_Algorithm( double cell_size,
 {
     // it works now; let's leave the verbose debug statement out
     /*
-    printf("CELL_WIDTH: %1.1f\tWINDOW_DIAMETER: %d\tSECTOR_ANGLE: %d\tROBOT_RADIUS: %1.1f\tSAFETY_DIST: %1.1f\tMAX_SPEED: %d\tMAX_TURNRATE: %d\tFree Space Cutoff: %1.1f\tObs Cutoff: %1.1f\tWeight Desired Dir: %1.1f\tWeight Current_Dir:%1.1f\n", CELL_WIDTH, WINDOW_DIAMETER, SECTOR_ANGLE, ROBOT_RADIUS, SAFETY_DIST, MAX_SPEED, MAX_TURNRATE, Binary_Hist_Low, Binary_Hist_High, U1, U2);
+    printf("CELL_WIDTH: %1.1f\t"
+           "WINDOW_DIAMETER: %d\t"
+           "SECTOR_ANGLE: %d\t"
+           "ROBOT_RADIUS: %1.1f\t"
+           "SAFETY_DIST: %1.1f\t"
+           "MAX_SPEED: %d\t"
+           "MAX_TURNRATE: %d\t"
+           "Free Space Cutoff: %1.1f\t"
+           "Obs Cutoff: %1.1f\t"
+           "Weight Desired Dir: %1.1f\t"
+           "Weight Current_Dir:%1.1f\n",
+           CELL_WIDTH, WINDOW_DIAMETER, SECTOR_ANGLE,
+           ROBOT_RADIUS, SAFETY_DIST, MAX_SPEED, MAX_TURNRATE,
+           Binary_Hist_Low, Binary_Hist_High, U1, U2);
     */
 }
 
@@ -183,6 +196,8 @@ void VFH_Algorithm::Init()
 {
   VFH_Allocate();
 
+  //printf("Init::ROBOT_RADIUS = %f\n", this->ROBOT_RADIUS);
+
   for(int x=0;x<HIST_SIZE;x++) {
     Hist[x] = 0;
     Last_Binary_Hist[x] = 1;
@@ -251,7 +266,8 @@ void VFH_Algorithm::Init()
         // Set Cell_Enlarge to the _angle_ by which a an obstacle must be 
         // enlarged for this cell, at this speed
         if (Cell_Dist[x][y] > 0)
-        {
+        {  
+          //printf("use Init::ROBOT_RADIUS = %f\n", this->ROBOT_RADIUS);  
           const float r = ROBOT_RADIUS + Get_Safety_Dist(max_speed_this_table);
           // Cell_Enlarge[x][y] = (float)atan( r / Cell_Dist[x][y] ) * (180/M_PI);
           Cell_Enlarge[x][y] = static_cast<float> (asin( r / Cell_Dist[x][y] ) * (180.0f/M_PI));
@@ -792,7 +808,7 @@ printf("%d: %f\n", x, this->laser_ranges[x][0]);
   // AB: This is a bit dodgy...  Makes it possible to miss really skinny obstacles, since if the 
   //     resolution of the cells is finer than the resolution of laser_ranges, some ranges might be missed.
   //     Rather than looping over the cells, should perhaps loop over the laser_ranges.
-
+  //printf("::Calculate_Cells_Mag ROBOT_RADIUS = %f\n", ROBOT_RADIUS);
   const float r = ROBOT_RADIUS + Get_Safety_Dist(speed);
 
   // Only deal with the cells in front of the robot, since we can't sense behind.
@@ -802,11 +818,12 @@ printf("%d: %f\n", x, this->laser_ranges[x][0]);
       {
           //printf("%2d x %2d : %f, %f\n", x, y, Cell_Direction[x][y], Cell_Dist[x][y]);
           int idx = (int)rint(Cell_Direction[x][y] * 2.0);
-          if (!(idx >= 0 && idx <= 360)) {
-            printf("idx = %d\n", idx);
+          if (idx < 0 || idx > 360) {
+            //printf("idx = %d\n", idx);
           }
-          if ((Cell_Dist[x][y] + CELL_WIDTH / 2.0) > 
-              laser_ranges[(int)rint(Cell_Direction[x][y] * 2.0)][0]) 
+          if (idx >= 0 && idx <= 360 &&
+              (Cell_Dist[x][y] + CELL_WIDTH / 2.0) > 
+              laser_ranges[idx][0]) 
           {
               if ( Cell_Dist[x][y] < r && !(x==CENTER_X && y==CENTER_Y) )
               {
@@ -905,7 +922,7 @@ void VFH_Algorithm::Build_Masked_Polar_Histogram(int speed)
   angle_ahead = 90;
   phi_left  = 180;
   phi_right = 0;
-
+  //printf("::Build_Masked_Polar_Histogram ROBOT_RADIUS = %f\n", ROBOT_RADIUS);
   Blocked_Circle_Radius = Min_Turning_Radius[speed] + ROBOT_RADIUS + Get_Safety_Dist(speed);
 
   //
