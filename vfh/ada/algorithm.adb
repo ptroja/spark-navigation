@@ -598,12 +598,13 @@ package body Algorithm is
       --  Print_Cells_Enlargement_Angle(This);
       pragma Assert_and_cut(VFH_Predicate(This));
       -- Only have to go through the cells in front.
-      for y in Integer range 0 .. Up_To_Half(This.Cell_Sector'Length(3),Inclusive) loop pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
-         for x in This.Cell_Sector'Range(2) loop pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+      for y in Integer range 0 .. Up_To_Half(This.Cell_Sector'Length(3),Inclusive) loop --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+         for x in This.Cell_Sector'Range(2) loop --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
             for i in Integer range
               First_Index(This.Cell_Sector(speed_index,x,y)) ..
               Last_Index(This.Cell_Sector(speed_index,x,y))
-            loop pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+            loop
+               --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
                This.Hist(Element(This.Cell_Sector(speed_index,x,y),i)) :=
                  This.Hist(Element(This.Cell_Sector(speed_index,x,y),i)) + This.Cell_Mag(x,y);
             end loop;

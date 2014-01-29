@@ -341,6 +341,7 @@ class VFH_Class : public ThreadedDriver
     player_devaddr_t ranger_addr;
     int num_rangers;
     player_pose3d_t * ranger_poses;
+    player_ranger_config_t ranger_config;
 
     // Laser range and bearing values
     int laser_count;
@@ -399,8 +400,8 @@ extern "C"
 
 int player_driver_init(DriverTable* table)
 {
-        vfh_Register(table);
-        return(0);
+  vfh_Register(table);
+  return(0);
 }
 
 }
@@ -430,6 +431,11 @@ int VFH_Class::Setup()
   rotatedir = 1;
   escapedir = 1;
   escaping = false;
+
+  // Allocate and intialize (need to be done after SetupOdom,
+  // which configures robot radius based on geometry of the
+  // underlying position2d device).
+  Init(vfh_Algorithm);
 
   // Start the driver thread.
   if( ! synchronous_mode )
@@ -613,29 +619,58 @@ int VFH_Class::SetupRanger()
     return -1;
   }
 
-  player_ranger_geom_t* cfg;
   Message* msg;
 
-  // Get the ranger poses
-  if(!(msg = this->ranger->Request(this->InQueue,
-                                   PLAYER_MSGTYPE_REQ,
-                                   PLAYER_RANGER_REQ_GET_GEOM,
-                                   NULL, 0, NULL,false)))
   {
-    PLAYER_ERROR("failed to get ranger geometry");
-    return(-1);
+    // Get the ranger poses
+    if(!(msg = this->ranger->Request(this->InQueue,
+                                     PLAYER_MSGTYPE_REQ,
+                                     PLAYER_RANGER_REQ_GET_GEOM,
+                                     NULL, 0, NULL,false)))
+    {
+      PLAYER_ERROR("failed to get ranger geometry");
+      return(-1);
+    }
+  
+    // Store the ranger poses
+    const player_ranger_geom_t* geom = (player_ranger_geom_t*)msg->GetPayload();
+    this->num_rangers = geom->element_poses_count;
+    this->ranger_poses = new player_pose3d_t[num_rangers];
+    for(int i=0;i<this->num_rangers;i++)
+    {
+      this->ranger_poses[i] = geom->element_poses[i];
+    }
+  
+    delete msg;
   }
 
-  // Store the ranger poses
-  cfg = (player_ranger_geom_t*)msg->GetPayload();
-  this->num_rangers = cfg->element_poses_count;
-  this->ranger_poses = new player_pose3d_t[num_rangers];
-  for(int i=0;i<this->num_rangers;i++)
   {
-    this->ranger_poses[i] = cfg->element_poses[i];
+    // Get the ranger poses
+    if(!(msg = this->ranger->Request(this->InQueue,
+                                     PLAYER_MSGTYPE_REQ,
+                                     PLAYER_RANGER_REQ_GET_CONFIG,
+                                     NULL, 0, NULL,false)))
+    {
+      PLAYER_ERROR("failed to get ranger configuration");
+      return(-1);
+    }
+  
+    // Store the configuration
+    this->ranger_config = *(player_ranger_config_t*)msg->GetPayload();
+    /*
+    std::cout << "min_angle " << config->min_angle
+              << " max_angle " << config->max_angle
+              << " angular_res " << config->angular_res
+              << " min_range " << config->min_range
+              << " max_range " << config->max_range
+              << " range_res " << config->range_res
+              << " frequency " << config->frequency
+              << std::endl;
+    */
+    // FIXME
+  
+    delete msg;
   }
-
-  delete msg;
 
   this->laser_count = 0;
   //this->laser_ranges = NULL;
@@ -660,7 +695,7 @@ int VFH_Class::ShutdownSonar()
   this->sonar->Unsubscribe(this->InQueue);
   //delete [] laser_ranges;
   //laser_ranges = NULL;
-  delete [] sonar_poses;
+  if (sonar_poses) delete [] sonar_poses;
   sonar_poses = NULL;
   return 0;
 }
@@ -672,7 +707,7 @@ int VFH_Class::ShutdownRanger()
   this->ranger->Unsubscribe(this->InQueue);
   //delete [] laser_ranges;
   //laser_ranges = NULL;
-  delete [] ranger_poses;
+  if(ranger_poses) delete [] ranger_poses;
   ranger_poses = NULL;
   return 0;
 }
@@ -718,7 +753,7 @@ void
 VFH_Class::ProcessLaser(const player_laser_data_t &data)
 {
 //  double b = RTOD(data.min_angle);
-  double db = RTOD(data.resolution);
+  const double db = RTOD(data.resolution);
 
   this->laser_count = 361;
   //if (!laser_ranges)
@@ -733,7 +768,7 @@ VFH_Class::ProcessLaser(const player_laser_data_t &data)
   {
   	unsigned int index = (int)rint(i/db);
   	//assert(index >= 0 && index < data.ranges_count);
-  	if(index < 0 || index >= data.ranges_count)
+  	if(index >= data.ranges_count)
           continue;
     this->laser_ranges[i*2][0] = data.ranges[index] * 1e3;
 //    this->laser_ranges[i*2][1] = index;
@@ -756,10 +791,8 @@ VFH_Class::ProcessLaser(const player_laser_data_t &data)
 void
 VFH_Class::ProcessSonar(const player_sonar_data_t &data)
 {
-  double b;
   double cone_width = 30.0;
   int count = 361;
-  float sonarDistToCenter = 0.0;
 
   this->laser_count = count;
   //if (!laser_ranges)
@@ -771,7 +804,7 @@ VFH_Class::ProcessSonar(const player_sonar_data_t &data)
   //b += 90.0;
   for(int i = 0; i < (int)data.ranges_count; i++)
   {
-    for(b = RTOD(this->sonar_poses[i].pyaw) + 90.0 - cone_width/2.0;
+    for(double b = RTOD(this->sonar_poses[i].pyaw) + 90.0 - cone_width/2.0;
         b < RTOD(this->sonar_poses[i].pyaw) + 90.0 + cone_width/2.0;
         b+=0.5)
     {
@@ -783,7 +816,7 @@ VFH_Class::ProcessSonar(const player_sonar_data_t &data)
       // laser ranges, we must make the sonar ranges appear like laser ranges. To do this, we take
       // into account the offset of a sonar's geometry from the center. Simply add the distance from
       // the center of the robot to a sonar to the sonar's range reading.
-      sonarDistToCenter = static_cast<float> (sqrt(pow(this->sonar_poses[i].px,2) + pow(this->sonar_poses[i].py,2)));
+      const double sonarDistToCenter = hypot(this->sonar_poses[i].px,this->sonar_poses[i].py);
       this->laser_ranges[(int)rint(b * 2)][0] = (sonarDistToCenter + data.ranges[i]) * 1e3;
       this->laser_ranges[(int)rint(b * 2)][1] = b;
     }
@@ -805,50 +838,70 @@ VFH_Class::ProcessSonar(const player_sonar_data_t &data)
 void
 VFH_Class::ProcessRanger(const player_ranger_data_range_t &data)
 {
-  int i;
-  double b, r;
-  double cone_width = 50.0;  // TODO take the cone with from ranger configuration
-  int count = 361;
-  float rangerDistToCenter = 0.0;
+  const double cone_width = 50.0;  // TODO take the cone with from ranger configuration
+  const int count = 361;
 
   this->laser_count = count;
   //if (!laser_ranges)
 	  //this->laser_ranges = new double[laser_count][2];
 
-  for(i = 0; i < laser_count; i++)
-    this->laser_ranges[i][0] = -1;
+  for(int i = 0; i < laser_count; i++)
+    this->laser_ranges[i][0] = -1.0;
 
   //b += 90.0;
-  for(i = 0; i < (int)data.ranges_count; i++)
-  {
-    for(b = RTOD(this->ranger_poses[i].pyaw) + 90.0 - cone_width/2.0;
-        b < RTOD(this->ranger_poses[i].pyaw) + 90.0 + cone_width/2.0;
-        b+=0.5)
+  if (this->num_rangers == 1) {
+    //const double rangerDistToCenter = hypot(this->ranger_poses[0].px,this->ranger_poses[0].py);
+#if 0
+    for(int i = 0; i < (int)data.ranges_count; i++) {
+        this->laser_ranges[(int)rint(b * 2)][0] = (rangerDistToCenter + data.ranges[i]) * 1e3;
+        printf("i = %d\tb = %f\trangerDistToCenter = %f\tlaser_ranges[%d] = %f\n", i, b, rangerDistToCenter, (int)rint(b * 2), (rangerDistToCenter + data.ranges[i]) * 1e3);
+        this->laser_ranges[(int)rint(b * 2)][1] = b; //intensity
+    }
+#else
+    assert((int)data.ranges_count == 180);
+    const float db = 1.0;
+    for(int i = 0; i < (int)data.ranges_count ; ++i)
     {
-      if((b < 0) || (rint(b*2) >= count))
-        continue;
-      // Rangers give distance readings from the perimeter of the robot while lasers give distance
-      // from the laser; hence, typically the distance from a single point, like the center.
-      // Since this version of the VFH+ algorithm was written for lasers and we pass the algorithm
-      // laser ranges, we must make the ranger readings appear like laser ranges. To do this, we take
-      // into account the offset of a ranger's geometry from the center. Simply add the distance from
-      // the center of the robot to each device to the ranger's distance reading.
-      rangerDistToCenter = static_cast<float> (sqrt(pow(this->ranger_poses[i].px,2) + pow(this->ranger_poses[i].py,2)));
-      this->laser_ranges[(int)rint(b * 2)][0] = (rangerDistToCenter + data.ranges[i]) * 1e3;
-      this->laser_ranges[(int)rint(b * 2)][1] = b;
+    	unsigned int index = (int)rint(i/db);
+    	//assert(index >= 0 && index < data.ranges_count);
+    	if(index >= data.ranges_count)
+            continue;
+      this->laser_ranges[i*2][0] = data.ranges[index] * 1e3;
+      this->laser_ranges[i*2][1] = 0.0;
+#endif
+    }
+  } else {
+    for(int i = 0; i < (int)data.ranges_count; i++)
+    {
+      for(double b = RTOD(this->ranger_poses[i].pyaw) + 90.0 - cone_width/2.0;
+          b < RTOD(this->ranger_poses[i].pyaw) + 90.0 + cone_width/2.0;
+          b+=0.5)
+      {
+        if((b < 0) || (rint(b*2) >= count))
+          continue;
+        // Rangers give distance readings from the perimeter of the robot while lasers give distance
+        // from the laser; hence, typically the distance from a single point, like the center.
+        // Since this version of the VFH+ algorithm was written for lasers and we pass the algorithm
+        // laser ranges, we must make the ranger readings appear like laser ranges. To do this, we take
+        // into account the offset of a ranger's geometry from the center. Simply add the distance from
+        // the center of the robot to each device to the ranger's distance reading.
+        const double rangerDistToCenter = hypot(this->ranger_poses[i].px,this->ranger_poses[i].py);
+        this->laser_ranges[(int)rint(b * 2)][0] = (rangerDistToCenter + data.ranges[i]) * 1e3;
+        this->laser_ranges[(int)rint(b * 2)][1] = b; //intensity
+      }
     }
   }
 
-  r = 1000000.0;
-  for (i = 0; i < laser_count; i++)
+  double r = 1000000.0;
+  for (int i = 0; i < laser_count; i++)
   {
-    if (this->laser_ranges[i][0] != -1) {
+    if (this->laser_ranges[i][0] != -1.0) {
       r = this->laser_ranges[i][0];
     } else {
       this->laser_ranges[i][0] = r;
     }
   }
-  r = 1000000.0;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1131,7 +1184,7 @@ void VFH_Class::DoOneUpdate()
       this->speed =
               (int)rint(GetCurrentMaxSpeed(vfh_Algorithm) / 2.0);
       //printf("slowing down from %d to %d\n",
-	//     foo, this->speed);
+      //     foo, this->speed);
     }
 
     PutCommand( this->speed, this->turnrate );
@@ -1362,11 +1415,12 @@ VFH_Class::VFH_Class( ConfigFile* cf, int section)
   memset(&this->sonar_addr,0,sizeof(player_devaddr_t));
   cf->ReadDeviceAddr(&this->sonar_addr, section, "requires",
                      PLAYER_SONAR_CODE, -1, NULL);
+  this->sonar_poses = NULL;
   this->ranger = NULL;
   memset(&this->ranger_addr,0,sizeof(player_devaddr_t));
   cf->ReadDeviceAddr(&this->ranger_addr, section, "requires",
                      PLAYER_RANGER_CODE, -1, NULL);
-
+  this->ranger_poses = NULL;
   if((!this->laser_addr.interf && !this->sonar_addr.interf && !this->ranger_addr.interf) ||
      (this->laser_addr.interf && this->sonar_addr.interf)  ||
      (this->laser_addr.interf && this->ranger_addr.interf) ||
@@ -1379,10 +1433,6 @@ VFH_Class::VFH_Class( ConfigFile* cf, int section)
 
   // Laser settings
   //TODO this->laser_max_samples = cf->ReadInt(section, "laser_max_samples", 10);
-
-  // FIXME
-  // Allocate and intialize
-  Init(vfh_Algorithm);
 }
 
 

@@ -290,8 +290,8 @@ private
       
       This.CELL_SECTOR_TABLES_LAST = This.Cell_Sector'Last(1) and then
       This.Cell_Direction'Last(1) = This.Cell_Sector'Last(2) and then
-      This.Cell_Direction'Last(2) = This.Cell_Sector'Last(3))
-   with
-     Convention => Ghost;
+      This.Cell_Direction'Last(2) = This.Cell_Sector'Last(3));
+   --with
+     --Convention => Ghost;
 
 end Algorithm;
