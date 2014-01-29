@@ -32,6 +32,8 @@
 #include <cerrno>
 #include <ctime>
 
+#include "clock.h"
+
 #include <libplayercore/playercore.h>
 #include "vfh_algorithm.h"
 
@@ -378,6 +380,8 @@ class VFH_Class : public ThreadedDriver
 
   /* end of moved vars - rtv*/
 
+  // Performance data.
+  stat_t statistics;
 };
 
 // Initialization function
@@ -1153,6 +1157,10 @@ void VFH_Class::DoOneUpdate()
     PutCommand( this->speed, this->turnrate );
     this->turninginplace = false;
     this->planner_data.done = 1;
+
+    // Print statistics.
+    statPrint(&this->statistics);
+    statReset(&this->statistics);
   }
   // CASE 3: The robot is too far from the goal position, so invoke VFH to
   //         get there.
@@ -1167,6 +1175,7 @@ void VFH_Class::DoOneUpdate()
     while (Desired_Angle < 0)
       Desired_Angle += 360.0;
 
+    statStart(&this->statistics);
     vfh_Algorithm->Update_VFH( this->laser_ranges,
                                (int)(this->odom_vel[0]),
                                Desired_Angle,
@@ -1174,6 +1183,7 @@ void VFH_Class::DoOneUpdate()
                                static_cast<float> (this->dist_eps * 1000),
                                this->speed,
                                this->turnrate );
+    statStop(&this->statistics);
 
     // HACK: if we're within twice the distance threshold,
     // and still going fast, slow down.
@@ -1432,6 +1442,8 @@ VFH_Class::VFH_Class( ConfigFile* cf, int section)
 
   // Laser settings
   //TODO this->laser_max_samples = cf->ReadInt(section, "laser_max_samples", 10);
+
+  statReset(&this->statistics);
 }
 
 
