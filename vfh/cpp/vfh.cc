@@ -391,9 +391,7 @@ VFH_Init(ConfigFile* cf, int section)
 void vfh_Register(DriverTable* table)
 {
   table->AddDriver("vfh",  VFH_Init);
-  return;
 }
-
 
 // Extra stuff for building a shared object.
 /* need the extern to avoid C++ name-mangling  */
@@ -402,8 +400,8 @@ extern "C"
 
 int player_driver_init(DriverTable* table)
 {
-	vfh_Register(table);
-	return(0);
+  vfh_Register(table);
+  return(0);
 }
 
 }
@@ -479,7 +477,6 @@ void VFH_Class::Update()
 {
   if( synchronous_mode )
     this->DoOneUpdate();
-
   // otherwise, a dedicated thread is running: see VFH_Class::Main()
 }
 
@@ -1225,7 +1222,7 @@ void VFH_Class::DoOneUpdate()
     if(turnrate < 0)
       turnrate = MIN(turnrate,-this->vfh_Algorithm->GetMinTurnrate());
     else
-      turnrate = MAX(turnrate,this->vfh_Algorithm->GetMinTurnrate());
+      turnrate = MAX(turnrate,+this->vfh_Algorithm->GetMinTurnrate());
 
     this->PutCommand( this->speed, this->turnrate );
   }
