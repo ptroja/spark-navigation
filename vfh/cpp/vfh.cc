@@ -341,6 +341,7 @@ class VFH_Class : public ThreadedDriver
     player_devaddr_t ranger_addr;
     int num_rangers;
     player_pose3d_t * ranger_poses;
+    player_ranger_config_t ranger_config;
 
     // Laser range and bearing values
     int laser_count;
@@ -623,26 +624,56 @@ int VFH_Class::SetupRanger()
 
   Message* msg;
 
-  // Get the ranger poses
-  if(!(msg = this->ranger->Request(this->InQueue,
-                                   PLAYER_MSGTYPE_REQ,
-                                   PLAYER_RANGER_REQ_GET_GEOM,
-                                   NULL, 0, NULL,false)))
   {
-    PLAYER_ERROR("failed to get ranger geometry");
-    return(-1);
+    // Get the ranger poses
+    if(!(msg = this->ranger->Request(this->InQueue,
+                                     PLAYER_MSGTYPE_REQ,
+                                     PLAYER_RANGER_REQ_GET_GEOM,
+                                     NULL, 0, NULL,false)))
+    {
+      PLAYER_ERROR("failed to get ranger geometry");
+      return(-1);
+    }
+  
+    // Store the ranger poses
+    const player_ranger_geom_t* geom = (player_ranger_geom_t*)msg->GetPayload();
+    this->num_rangers = geom->element_poses_count;
+    this->ranger_poses = new player_pose3d_t[num_rangers];
+    for(int i=0;i<this->num_rangers;i++)
+    {
+      this->ranger_poses[i] = geom->element_poses[i];
+    }
+  
+    delete msg;
   }
 
-  // Store the ranger poses
-  const player_ranger_geom_t* cfg = (player_ranger_geom_t*)msg->GetPayload();
-  this->num_rangers = cfg->element_poses_count;
-  this->ranger_poses = new player_pose3d_t[num_rangers];
-  for(int i=0;i<this->num_rangers;i++)
   {
-    this->ranger_poses[i] = cfg->element_poses[i];
+    // Get the ranger poses
+    if(!(msg = this->ranger->Request(this->InQueue,
+                                     PLAYER_MSGTYPE_REQ,
+                                     PLAYER_RANGER_REQ_GET_CONFIG,
+                                     NULL, 0, NULL,false)))
+    {
+      PLAYER_ERROR("failed to get ranger configuration");
+      return(-1);
+    }
+  
+    // Store the configuration
+    this->ranger_config = *(player_ranger_config_t*)msg->GetPayload();
+    /*
+    std::cout << "min_angle " << config->min_angle
+              << " max_angle " << config->max_angle
+              << " angular_res " << config->angular_res
+              << " min_range " << config->min_range
+              << " max_range " << config->max_range
+              << " range_res " << config->range_res
+              << " frequency " << config->frequency
+              << std::endl;
+    */
+    // FIXME
+  
+    delete msg;
   }
-
-  delete msg;
 
   this->laser_count = 0;
   //this->laser_ranges = NULL;
@@ -832,7 +863,7 @@ VFH_Class::ProcessRanger(const player_ranger_data_range_t &data)
 #else
     assert((int)data.ranges_count == 180);
     const float db = 1.0;
-    for(int i = 0; i < 180; i++)
+    for(int i = 0; i < (int)data.ranges_count ; ++i)
     {
     	unsigned int index = (int)rint(i/db);
     	//assert(index >= 0 && index < data.ranges_count);
