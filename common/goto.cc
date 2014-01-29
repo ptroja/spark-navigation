@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <libplayerc++/playerc++.h>
 
 #include <iostream>
-#include <stdlib.h> // for atof()
+#include <cmath>
+#include <cstdlib> // for atof()
 #if !defined (WIN32)
   #include <unistd.h>
 #endif
@@ -154,10 +155,25 @@ main(int argc, char **argv)
 
     pp->GoTo(gTarget);
 
+    robot->Read();
+
     for (;;)
     {
-      timespec sleep = {0, 100000000}; // 100 ms
-      nanosleep(&sleep, NULL);
+      //timespec sleep = {0, 100000000}; // 100 ms
+      //nanosleep(&sleep, NULL);
+      robot->Read();
+      const double dist = hypot(pp->GetXPos()-gTarget.px, pp->GetYPos()-gTarget.py);
+      printf("speed(x,y,yaw): %f %f %f\tpose(x,y,yaw): %f %f %f\tdist: %.2f\n",
+	pp->GetXSpeed(), pp->GetYSpeed(), pp->GetYawSpeed(),
+	pp->GetXPos(), pp->GetYPos(), pp->GetYaw(),
+        dist
+      );
+
+      if (dist < 0.5 &&
+          std::abs(pp->GetXSpeed()) == 0.0 &&
+          std::abs(pp->GetYSpeed()) == 0.0 &&
+          std::abs(pp->GetYawSpeed()) == 0.0)
+         break;
     }
   }
   catch (PlayerCc::PlayerError & e)
