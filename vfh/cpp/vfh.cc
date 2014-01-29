@@ -621,7 +621,6 @@ int VFH_Class::SetupRanger()
     return -1;
   }
 
-  player_ranger_geom_t* cfg;
   Message* msg;
 
   // Get the ranger poses
@@ -635,7 +634,7 @@ int VFH_Class::SetupRanger()
   }
 
   // Store the ranger poses
-  cfg = (player_ranger_geom_t*)msg->GetPayload();
+  const player_ranger_geom_t* cfg = (player_ranger_geom_t*)msg->GetPayload();
   this->num_rangers = cfg->element_poses_count;
   this->ranger_poses = new player_pose3d_t[num_rangers];
   for(int i=0;i<this->num_rangers;i++)
@@ -668,7 +667,7 @@ int VFH_Class::ShutdownSonar()
   this->sonar->Unsubscribe(this->InQueue);
   //delete [] laser_ranges;
   //laser_ranges = NULL;
-  delete [] sonar_poses;
+  if (sonar_poses) delete [] sonar_poses;
   sonar_poses = NULL;
   return 0;
 }
@@ -680,7 +679,7 @@ int VFH_Class::ShutdownRanger()
   this->ranger->Unsubscribe(this->InQueue);
   //delete [] laser_ranges;
   //laser_ranges = NULL;
-  delete [] ranger_poses;
+  if(ranger_poses) delete [] ranger_poses;
   ranger_poses = NULL;
   return 0;
 }
@@ -741,7 +740,7 @@ VFH_Class::ProcessLaser(const player_laser_data_t &data)
   {
   	unsigned int index = (int)rint(i/db);
   	//assert(index >= 0 && index < data.ranges_count);
-  	if(index < 0 || index >= data.ranges_count)
+  	if(index >= data.ranges_count)
           continue;
     this->laser_ranges[i*2][0] = data.ranges[index] * 1e3;
 //    this->laser_ranges[i*2][1] = index;
@@ -819,38 +818,62 @@ VFH_Class::ProcessRanger(const player_ranger_data_range_t &data)
 	  //this->laser_ranges = new double[laser_count][2];
 
   for(int i = 0; i < laser_count; i++)
-    this->laser_ranges[i][0] = -1;
+    this->laser_ranges[i][0] = -1.0;
 
   //b += 90.0;
-  for(int i = 0; i < (int)data.ranges_count; i++)
-  {
-    for(double b = RTOD(this->ranger_poses[i].pyaw) + 90.0 - cone_width/2.0;
-        b < RTOD(this->ranger_poses[i].pyaw) + 90.0 + cone_width/2.0;
-        b+=0.5)
+  if (this->num_rangers == 1) {
+    //const double rangerDistToCenter = hypot(this->ranger_poses[0].px,this->ranger_poses[0].py);
+#if 0
+    for(int i = 0; i < (int)data.ranges_count; i++) {
+        this->laser_ranges[(int)rint(b * 2)][0] = (rangerDistToCenter + data.ranges[i]) * 1e3;
+        printf("i = %d\tb = %f\trangerDistToCenter = %f\tlaser_ranges[%d] = %f\n", i, b, rangerDistToCenter, (int)rint(b * 2), (rangerDistToCenter + data.ranges[i]) * 1e3);
+        this->laser_ranges[(int)rint(b * 2)][1] = b; //intensity
+    }
+#else
+    assert((int)data.ranges_count == 180);
+    const float db = 1.0;
+    for(int i = 0; i < 180; i++)
     {
-      if((b < 0) || (rint(b*2) >= count))
-        continue;
-      // Rangers give distance readings from the perimeter of the robot while lasers give distance
-      // from the laser; hence, typically the distance from a single point, like the center.
-      // Since this version of the VFH+ algorithm was written for lasers and we pass the algorithm
-      // laser ranges, we must make the ranger readings appear like laser ranges. To do this, we take
-      // into account the offset of a ranger's geometry from the center. Simply add the distance from
-      // the center of the robot to each device to the ranger's distance reading.
-      const double rangerDistToCenter = hypot(this->ranger_poses[i].px,this->ranger_poses[i].py);
-      this->laser_ranges[(int)rint(b * 2)][0] = (rangerDistToCenter + data.ranges[i]) * 1e3;
-      this->laser_ranges[(int)rint(b * 2)][1] = b;
+    	unsigned int index = (int)rint(i/db);
+    	//assert(index >= 0 && index < data.ranges_count);
+    	if(index >= data.ranges_count)
+            continue;
+      this->laser_ranges[i*2][0] = data.ranges[index] * 1e3;
+      this->laser_ranges[i*2][1] = 0.0;
+#endif
+    }
+  } else {
+    for(int i = 0; i < (int)data.ranges_count; i++)
+    {
+      for(double b = RTOD(this->ranger_poses[i].pyaw) + 90.0 - cone_width/2.0;
+          b < RTOD(this->ranger_poses[i].pyaw) + 90.0 + cone_width/2.0;
+          b+=0.5)
+      {
+        if((b < 0) || (rint(b*2) >= count))
+          continue;
+        // Rangers give distance readings from the perimeter of the robot while lasers give distance
+        // from the laser; hence, typically the distance from a single point, like the center.
+        // Since this version of the VFH+ algorithm was written for lasers and we pass the algorithm
+        // laser ranges, we must make the ranger readings appear like laser ranges. To do this, we take
+        // into account the offset of a ranger's geometry from the center. Simply add the distance from
+        // the center of the robot to each device to the ranger's distance reading.
+        const double rangerDistToCenter = hypot(this->ranger_poses[i].px,this->ranger_poses[i].py);
+        this->laser_ranges[(int)rint(b * 2)][0] = (rangerDistToCenter + data.ranges[i]) * 1e3;
+        this->laser_ranges[(int)rint(b * 2)][1] = b; //intensity
+      }
     }
   }
 
   double r = 1000000.0;
   for (int i = 0; i < laser_count; i++)
   {
-    if (this->laser_ranges[i][0] != -1) {
+    if (this->laser_ranges[i][0] != -1.0) {
       r = this->laser_ranges[i][0];
     } else {
       this->laser_ranges[i][0] = r;
     }
   }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1363,11 +1386,12 @@ VFH_Class::VFH_Class( ConfigFile* cf, int section)
   memset(&this->sonar_addr,0,sizeof(player_devaddr_t));
   cf->ReadDeviceAddr(&this->sonar_addr, section, "requires",
                      PLAYER_SONAR_CODE, -1, NULL);
+  this->sonar_poses = NULL;
   this->ranger = NULL;
   memset(&this->ranger_addr,0,sizeof(player_devaddr_t));
   cf->ReadDeviceAddr(&this->ranger_addr, section, "requires",
                      PLAYER_RANGER_CODE, -1, NULL);
-
+  this->ranger_poses = NULL;
   if((!this->laser_addr.interf && !this->sonar_addr.interf && !this->ranger_addr.interf) ||
      (this->laser_addr.interf && this->sonar_addr.interf)  ||
      (this->laser_addr.interf && this->ranger_addr.interf) ||
