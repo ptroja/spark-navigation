@@ -355,7 +355,7 @@ void VFH_Algorithm::Init()
     }
   }
 
-  assert( GlobalTime->GetTime( &last_update_time ) == 0 );
+  GlobalTime->GetTime( &last_update_time );
 
   // Print_Cells_Sector();
 }
@@ -427,7 +427,7 @@ void VFH_Algorithm::Update_VFH(double laser_ranges[361][2],
   timeval now;
   timeval diff;
   double  diffSeconds;
-  assert( GlobalTime->GetTime( &now ) == 0 );
+  GlobalTime->GetTime( &now );
   
   TIMESUB( &now, &last_update_time, &diff );
   diffSeconds = diff.tv_sec + ( (double)diff.tv_usec / 1000000 );
