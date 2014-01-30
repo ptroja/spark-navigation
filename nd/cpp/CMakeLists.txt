@@ -1,2 +1,9 @@
-PLAYERDRIVER_OPTION (nd build_nd ON)
-PLAYERDRIVER_ADD_DRIVER (nd build_nd SOURCES geometria.cc nd.cc nd_plugin.cc)
+CMAKE_MINIMUM_REQUIRED (VERSION 2.4 FATAL_ERROR)
+PROJECT (nd_driver)
+
+# Include this CMake module to get most of the settings needed to build
+SET (CMAKE_MODULE_PATH "/opt/player/share/cmake/Modules")
+INCLUDE (UsePlayerPlugin)
+
+include_directories(../../common/c)
+PLAYER_ADD_PLUGIN_DRIVER (nd SOURCES geometria.cc nd.cc nd_plugin.cc ../../common/c/clock.c)

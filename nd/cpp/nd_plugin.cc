@@ -859,14 +859,13 @@ ND::SetDirection(int dir)
   {
     this->NDparametros.front = static_cast<float> (this->robot_geom.size.sl/2.0 + this->robot_geom.pose.px + this->safety_dist); // Distance to the front
     this->NDparametros.back = static_cast<float> (this->robot_geom.size.sl/2.0 - this->robot_geom.pose.px + this->safety_dist);  // Distance to the back
-    InicializarND(&this->NDparametros);
   }
   else
   {
     this->NDparametros.front = static_cast<float> (this->robot_geom.size.sl/2.0 - this->robot_geom.pose.px + this->safety_dist); // Distance to the front
     this->NDparametros.back = static_cast<float> (this->robot_geom.size.sl/2.0 + this->robot_geom.pose.px + this->safety_dist);  // Distance to the back
-    InicializarND(&this->NDparametros);
   }
+  InicializarND(&this->NDparametros);
   this->current_dir = dir;
 }
 
@@ -1260,13 +1259,13 @@ ND::angle_diff(double a, double b)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Extra stuff for building a shared object.
-#if 0
+#if 1
 /* need the extern to avoid C++ name-mangling  */
 extern "C" {
   int player_driver_init(DriverTable* table)
   {
     puts("ND driver initializing");
-    ND_Register(table);
+    nd_Register(table);
     puts("ND initialization done");
     return(0);
   }
