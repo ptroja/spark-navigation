@@ -12,7 +12,7 @@ package geometria is
    function ARCOTANGENTE(x,y : Unbounded_Float) return Unbounded_Float
      is (Arctan (y,x))
    with
-     Pre => X /= 0.0 or Y /= 0.0;
+     Pre => X /= 0.0 or else Y /= 0.0;
 
    function ARCOCOSENO(x,r : Unbounded_Float) return Unbounded_Float
      is (Arccos (x / r))
@@ -29,11 +29,11 @@ package geometria is
                           s : in Unbounded_Float)
    with
      Pre => i <= s,
-     Post => (i <= n) and ( n <= s);
+     Post => i <= n and then n <= s;
 
    function Hypot(x,y : in Unbounded_Float) return Unbounded_Float
    with
-     Post => (if x /= 0.0 or y /= 0.0 then Hypot'Result > 0.0 else Hypot'Result >= 0.0);
+     Post => (if x /= 0.0 or else y /= 0.0 then Hypot'Result > 0.0 else Hypot'Result >= 0.0);
    pragma Import(C, Hypot, "hypotf");
 
    --
@@ -78,18 +78,18 @@ package geometria is
 
    procedure ConstruirCoordenadasCxy(p : out TCoordenadas; x,y : in Unbounded_Float)
    with
-     Post => (p.x = x and p.y = y);
+     Post => p.x = x and then p.y = y;
 
    procedure ConstruirCoordenadasCra(p : out TCoordenadas; r : Unbounded_Float; a : Unbounded_Float);
 
    procedure ConstruirCoordenadasPC(p : out TCoordenadasPolares; q : in TCoordenadas)
    with
-     Pre => q.x /= 0.0 or q.y /= 0.0,
+     Pre => q.x /= 0.0 or else q.y /= 0.0,
      Post => p.r > 0.0 and then p.a in -Pi .. Pi;
 
    procedure ConstruirCoordenadasPxy(p : out TCoordenadasPolares; x,y : in Unbounded_Float)
    with
-     Pre => x /= 0.0 or y /= 0.0,
+     Pre => x /= 0.0 or else y /= 0.0,
      Post => p.r > 0.0 and then p.a in -Pi .. Pi;
 
    procedure ConstruirCoordenadasPra(p : out TCoordenadasPolares; r : Unbounded_Float ; a : Unbounded_Float);
@@ -97,7 +97,7 @@ package geometria is
    -- Paso de cartesianas a polares, pero con el m�dulo al cuadrado.
    procedure ConstruirCoordenadasPcC(p : out TCoordenadasPolares; q : in TCoordenadas)
    with
-     Pre => q.x /= 0.0 or q.y /= 0.0,
+     Pre => q.x /= 0.0 or else q.y /= 0.0,
      Post => p.r > 0.0;
 
    --
@@ -105,11 +105,11 @@ package geometria is
    --
    procedure SumarCoordenadasCxy(p : in out TCoordenadas; x, y : Unbounded_Float)
    with
-     Post => p.x = p.x'Old + x and p.y = p.y'Old + y;
+     Post => p.x = p.x'Old + x and then p.y = p.y'Old + y;
 
    procedure SumarCoordenadasCxyC(p : TCoordenadas; x,y : Unbounded_Float; q : out TCoordenadas)
    with
-     Post => q.x = p.x + x and q.y = p.y + y;
+     Post => q.x = p.x + x and then q.y = p.y + y;
 
    procedure SumarCoordenadasCra(p : in out TCoordenadas; r : Unbounded_Float; a : Unbounded_Float);
    procedure SumarCoordenadasCraC(p : TCoordenadas; r : Unbounded_Float; a : Unbounded_Float; q : out TCoordenadas);

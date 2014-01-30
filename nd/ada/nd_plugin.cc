@@ -187,6 +187,8 @@ driver
 #include <libplayercore/playercore.h>
 #include "nd.h"
 
+#include "clock.h"
+
 #ifndef SIGN
   #define SIGN(x) (((x) == 0) ? 0 : (((x) > 0) ? 1 : -1))
 #endif
@@ -195,7 +197,12 @@ driver
   #define hypot _hypot
 #endif
 
-class ND : public ThreadedDriver 
+extern "C" {
+  void ndinit(void);
+  void ndfinal(void);
+}
+
+class ND : public ThreadedDriver
 {
   public:
     // Constructor
@@ -299,6 +306,9 @@ class ND : public ThreadedDriver
     int * bad_sonars;
     int bad_sonar_count;
     int sonar_buffer;
+
+    // Performance data.
+    stat_t statistics;
 };
 
 // Initialization function
@@ -311,16 +321,9 @@ ND_Init(ConfigFile* cf, int section)
 // a driver registration function
 void nd_Register(DriverTable* table)
 {
-  table->AddDriver("ndada",  ND_Init);
+  table->AddDriver("nd",  ND_Init);
   return;
 }
-
-/*
-extern "C" {
-  void adainit();
-  void adafinal();
-}
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -399,7 +402,7 @@ ND::ND( ConfigFile* cf, int section)
     return;
   }
   this->dir = 1;
-  //adainit();
+
   return;
 }
 
@@ -407,13 +410,12 @@ ND::ND( ConfigFile* cf, int section)
 ND::~ND()
 {
   if (bad_sonars) delete [] bad_sonars;
-  //adafinal();
   return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Set up the device (called by server thread).
-int ND::MainSetup() 
+int ND::MainSetup()
 {
   // Initialise the underlying position device.
   if (this->SetupOdom() != 0)
@@ -442,12 +444,17 @@ int ND::MainSetup()
 
   this->waiting = false;
 
+  // Initialize Ada subsystem.
+  ndinit();
+
+  statReset(&this->statistics);
+
   return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Shutdown the device (called by server thread).
-void ND::MainQuit() 
+void ND::MainQuit()
 {
   // Stop the laser
   if(this->laser)
@@ -459,6 +466,9 @@ void ND::MainQuit()
 
   // Stop the odom device.
   this->ShutdownOdom();
+
+  // Finalize Ada subsystem.
+  ndfinal();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -655,8 +665,6 @@ ND::PutPositionCmd(double vx, double va)
   cmd.state = 1;
   // cmd.type = 0;
   //printf("sending: %.3f %.3f\n", vx, RTOD(va));
-
-  //return;
 
   this->odom->PutMsg(this->InQueue,
                      PLAYER_MSGTYPE_CMD,
@@ -1094,6 +1102,10 @@ ND::Main()
       this->active_goal = false;
       this->PutPositionCmd(0.0,0.0);
       PLAYER_MSG0(1, "At goal");
+      // Print statistics.
+      statPrint(&this->statistics);
+      statReset(&this->statistics);
+      exit(0);
       continue;
     }
     else
@@ -1112,11 +1124,13 @@ ND::Main()
         // can attain the goal heading
         this->SetDirection(1);
 
+        statStart(&this->statistics);
         cmd_vel = IterarND(goal,
                            static_cast<float> (this->dist_eps),
                            &pose,
                            &this->obstacles);
                            //NULL);
+        statStop(&this->statistics);
         if(!cmd_vel)
         {
           // Emergency stop
@@ -1210,11 +1224,13 @@ ND::Main()
         else
           this->SetDirection(1);
 
+        statStart(&this->statistics);
         cmd_vel = IterarND(goal,
                            static_cast<float> (this->dist_eps),
                            &pose,
                            &this->obstacles);
                            //NULL);
+        statStop(&this->statistics);
         if(!cmd_vel)
         {
           // Emergency stop
@@ -1283,9 +1299,9 @@ ND::angle_diff(double a, double b)
 extern "C" {
   int player_driver_init(DriverTable* table)
   {
-    puts("NDAda driver initializing");
+    puts("ND driver initializing");
     nd_Register(table);
-    puts("NDAda initialization done");
+    puts("ND initialization done");
     return(0);
   }
 }

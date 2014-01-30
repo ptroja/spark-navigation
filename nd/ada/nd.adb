@@ -64,16 +64,17 @@ is
      Pre => angulo in -Pi .. Pi;
 
    function ObtenerSectorP(p : in TCoordenadasPolares) return SECTOR_ID is
-      FACTOR : constant Float := (-Float(SECTORES)/(2.0*PI));
-      SUMANDO : constant Float := ((Float(SECTORES)+1.0)/2.0);
+      FACTOR : constant := -Float(SECTORES)/(2.0*PI);
+      SUMANDO : constant := (Float(SECTORES)+1.0)/2.0;
    begin
-      return (Integer(FACTOR*p.a+SUMANDO)) mod SECTORES;
+      return Integer(FACTOR*p.a+SUMANDO) mod SECTORES;
    end;
+   pragma inline(ObtenerSectorP);
 
    function DistanciaSectorialOrientada(s1, s2 : in SECTOR_ID) return SECTOR_ID
    is
    begin
-      if (s1 <= s2) then
+      if s1 <= s2 then
          return s2-s1;
       else
          return ((s2+SECTORES)-s1) mod SECTORES;
@@ -99,13 +100,13 @@ is
                                                                              -- arctan(y > 0, x < 0)
       limite.a:=ARCOTANGENTE(robot.Dimensiones.Rear,robot.Dimensiones.Left); -- limite.a in ( pi/2 ; pi )
       li:=angulo2sector(limite.a);                                           -- li in 0..45
-      if sector2angulo(li)>limite.a and li < SECTOR_ID'Last then
+      if sector2angulo(li)>limite.a and then li < SECTOR_ID'Last then
          li := SECTOR_ID'Succ(li);
       end if;
 
       ConstruirCoordenadasPxy(limite,robot.Dimensiones.Front,robot.Dimensiones.Left); -- limite.a in ( 0 ; pi/2 )
       ld:=angulo2sector(limite.a);                                                    -- ld in 46 ..90
-      if sector2angulo(ld)>limite.a and ld < SECTOR_ID'Last then
+      if sector2angulo(ld)>limite.a and then ld < SECTOR_ID'Last then
          ld := SECTOR_ID'Succ(ld);
       end if;
 
@@ -144,7 +145,7 @@ is
       -- de cada sector.
       robot.ds := (others => dmax);
    end;
-   procedure InicializarDS(dsmax, dsmin : in Positive_Float) with Pre => (robot.Dimensiones.Front-robot.Dimensiones.Rear)-(dsmax-dsmin)>=0.0 and dsmax > dsmin;
+   procedure InicializarDS(dsmax, dsmin : in Positive_Float) with Pre => (robot.Dimensiones.Front-robot.Dimensiones.Rear)-(dsmax-dsmin)>=0.0 and then dsmax > dsmin;
    procedure InicializarDS(dsmax, dsmin : in Positive_Float) is
 
       p1,p2 : TCoordenadas;
@@ -191,23 +192,23 @@ is
 
          -- C�lculo de la distancia de seguridad correspondiente a la bisectriz del sector i.
 
-         if (angulo>=limite1) then
+         if angulo>=limite1 then
 
             -- r1
             distancia:=q1.x/cos(angulo);
 
-         elsif (angulo>=limite2) then
+         elsif angulo>=limite2 then
 
             -- r2
             distancia:=p1.x*cos(angulo)+p1.y*sin(angulo);
             distancia:=distancia+sqrt(CUADRADO(distancia)-m);
 
-         elsif (angulo>=limite3) then
+         elsif angulo>=limite3 then
 
             -- r3
             distancia:=a/(b*sin(angulo)-c*cos(angulo));
 
-         elsif (angulo>=limite4) then
+         elsif angulo>=limite4 then
 
             -- r4
             distancia:=p2.x*cos(angulo)+p2.y*sin(angulo);
@@ -235,7 +236,7 @@ is
       robot.geometriaRect := parametros.geometryRect;
       robot.holonomo:=parametros.holonomic;
 
-      if (parametros.geometryRect) then
+      if parametros.geometryRect then
          -- Cuadrado
 
          robot.Dimensiones.Rear:=-parametros.back;
@@ -265,7 +266,7 @@ is
 
       robot.T:=parametros.T;
 
-      if (not robot.holonomo) then
+      if not robot.holonomo then
          robot.H(0,0):=exp(-parametros.almax*parametros.T/parametros.vlmax); -- in (0.0 .. 1.0)
          robot.H(0,1):=0.0; -- Se tiene en cuenta m�s adelante y no se incluye en las ecuaciones.
          robot.H(1,0):=0.0; -- Se tiene en cuenta m�s adelante y no se incluye en las ecuaciones.
@@ -300,15 +301,15 @@ is
          ConstruirCoordenadasPcC(pp,p);
 
          j:=ObtenerSectorP(pp);
-         if (nd.d(j).r < 0.0) or (pp.r < nd.d(j).r) then
+         if nd.d(j).r < 0.0 or else pp.r < nd.d(j).r then
             nd.d(j):=pp;
          end if;
       end loop;
 
       for i in SECTOR_ID'Range loop
-         if (nd.d(i).r >= 0.0) then
+         if nd.d(i).r >= 0.0 then
             nd.d(i).r:=Sqrt(nd.d(i).r);
-            if i/=SECTORES/2 and nd.d(i).r<robot.E(i)+0.01 then
+            if i/=SECTORES/2 and then nd.d(i).r<robot.E(i)+0.01 then
                nd.d(i).r:=robot.E(i)+0.01;
             end if;
          end if;
@@ -333,7 +334,7 @@ is
       ConstruirCoordenadasPC(pp,p);
 
       for i in angulo2sector(pp.a) .. angulo2sector(-pp.a) loop
-         if ((nd.d(i).r>=0.0) and (nd.d(i).r<=pp.r) and (abs(nd.d(i).a)<=pp.a)) then
+         if nd.d(i).r>=0.0 and then nd.d(i).r<=pp.r and then abs(nd.d(i).a)<=pp.a then
             return True;
          end if;
       end loop;
@@ -375,16 +376,16 @@ is
          distancia_j:=nd.d(j).r;
          no_obstaculo_j:=(distancia_j<=0.0);
 
-         if (no_obstaculo_i and no_obstaculo_j) then
+         if no_obstaculo_i and then no_obstaculo_j then
             null;
          else
-            if (no_obstaculo_i or no_obstaculo_j) then
+            if no_obstaculo_i or else no_obstaculo_j then
                discontinuidad:=i;
                ascendente:=no_obstaculo_i;
                return;
             end if;
 
-            if (abs(distancia_i-distancia_j)>=robot.discontinuidad) then
+            if abs(distancia_i-distancia_j)>=robot.discontinuidad then
                discontinuidad:=i;
                ascendente:=(distancia_i>distancia_j);
                return;
@@ -405,9 +406,9 @@ is
                                     )
    with
      Pre => (direccion_tipo = DIRECCION_DISCONTINUIDAD_INICIAL and then region.principio /= -1)
-     or
+     or else
        (direccion_tipo = DIRECCION_DISCONTINUIDAD_FINAL and then region.final /= -1)
-     or
+     or else
        (direccion_tipo = DIRECCION_OBJETIVO);
 
 
@@ -439,14 +440,14 @@ is
 
       region.direccion_tipo:=direccion_tipo;
 
-      if (region.direccion_tipo=DIRECCION_OBJETIVO) then
+      if region.direccion_tipo=DIRECCION_OBJETIVO then
 
          region.direccion_sector:=nd.objetivo.s;
          objetivo_intermedio_polares:=nd.objetivo.p1;
 
       else
 
-         if (region.direccion_tipo=DIRECCION_DISCONTINUIDAD_INICIAL) then
+         if region.direccion_tipo=DIRECCION_DISCONTINUIDAD_INICIAL then
             region.direccion_sector:=region.principio;
             sector_auxiliar:=DECREMENTAR_SECTOR(region.direccion_sector);
          else
@@ -454,7 +455,7 @@ is
             sector_auxiliar:=INCREMENTAR_SECTOR(region.direccion_sector);
          end if;
 
-         if (nd.d(region.direccion_sector).r<0.0) then
+         if nd.d(region.direccion_sector).r<0.0 then
             ConstruirCoordenadasPra(objetivo_intermedio_polares,nd.d(sector_auxiliar).r+DISTANCIA_INFINITO,
                                     BisectrizAnguloNoOrientado(sector2angulo(region.direccion_sector),nd.d(sector_auxiliar).a));
          else
@@ -475,23 +476,23 @@ is
       nl:=0;
       nr:=0;
       for i in SECTOR_ID'Range loop
-         pragma Loop_Invariant(nl <= i and nr <= i);
+         pragma Loop_Invariant(nl <= i and then nr <= i);
 
-         if (nd.d(i).r<0.0) then-- Si no existe un obst�culo en el sector actual, pasamos al siguiente sector.
+         if nd.d(i).r<0.0 then-- Si no existe un obst�culo en el sector actual, pasamos al siguiente sector.
             null;
          else
 
             ConstruirCoordenadasCra(p,nd.d(i).r,nd.d(i).a-region.direccion_angulo);
-            if ((p.x<0.0) or (p.x>=objetivo_intermedio.x) or (abs(p.y)>robot.discontinuidad)) then -- Si el obst�culo no est�Een el rect�ngulo que consideramos, pasamos al siguiente sector.
+            if p.x<0.0 or else p.x>=objetivo_intermedio.x or else abs(p.y)>robot.discontinuidad then -- Si el obst�culo no est�Een el rect�ngulo que consideramos, pasamos al siguiente sector.
                null;
             else
 
-               if (DISTANCIA_CUADRADO2(p,objetivo_intermedio)<limite) then -- Si el objetivo intermedio est�Een colisi�n con el obst�culo, es inalcanzable.
+               if DISTANCIA_CUADRADO2(p,objetivo_intermedio)<limite then -- Si el objetivo intermedio est�Een colisi�n con el obst�culo, es inalcanzable.
                   ret := False; -- Objetivo intermedio inalcanzable.
                   return;
                end if;
 
-               if (p.y>0.0) then
+               if p.y>0.0 then
                   FL(nl):=p;
                   nl := nl + 1;
                else
@@ -508,7 +509,7 @@ is
       limite:=CUADRADO(robot.discontinuidad); -- Para no hacer ra�es cuadradas dentro de los bucles.
       for i in 0 .. nl-1 loop
          for j in 0 .. nr-1 loop
-            if (DISTANCIA_CUADRADO2(FL(i),FR(j))<limite) then
+            if DISTANCIA_CUADRADO2(FL(i),FR(j))<limite then
                ret := False;
                return;
             end if;
@@ -523,7 +524,7 @@ is
       IZQUIERDA : constant Boolean := VERDADERO;
       DERECHA : constant Boolean := FALSO;
 
-      objetivo_a_la_vista : constant Boolean :=(nd.d(nd.objetivo.s).r<0.0) or (nd.objetivo.p1.r<=nd.d(nd.objetivo.s).r);
+      objetivo_a_la_vista : constant Boolean :=nd.d(nd.objetivo.s).r<0.0 or else nd.objetivo.p1.r<=nd.d(nd.objetivo.s).r;
 
       indice,indice_izquierda,indice_derecha,indice_auxiliar : SECTOR_ID;
       distancia_izquierda,distancia_derecha : SECTOR_ID;
@@ -543,14 +544,14 @@ is
       -- Buscamos la primera discontinuidad.
 
       SiguienteDiscontinuidad(nd,nd.objetivo.s,IZQUIERDA,nd.regiones.vector(indice).principio,nd.regiones.vector(indice).principio_ascendente);
-      if (nd.regiones.vector(indice).principio=-1) then
+      if nd.regiones.vector(indice).principio=-1 then
 
          -- No hay discontinuidades.
 
          nd.regiones.vector(indice).principio:=SECTOR_ID'First;
          nd.regiones.vector(indice).final:=SECTOR_ID'Last;
 
-         if (objetivo_a_la_vista) then
+         if objetivo_a_la_vista then
             nd.regiones.vector(indice).direccion_tipo:=DIRECCION_OBJETIVO;
             nd.regiones.vector(indice).direccion_sector:=nd.objetivo.s;
             nd.regiones.vector(indice).direccion_angulo:=nd.objetivo.p1.a;
@@ -563,16 +564,16 @@ is
          return;
       end if;
 
-      pragma Assert_And_Cut (nd.regiones.vector(indice).principio /= -1 and nd.regiones.longitud = 1);
+      pragma Assert_And_Cut (nd.regiones.vector(indice).principio /= -1 and then nd.regiones.longitud = 1);
 
       -- Existe al menos una discontinuidad.
 
       SiguienteDiscontinuidad(nd,nd.objetivo.s,DERECHA,nd.regiones.vector(indice).final,nd.regiones.vector(indice).final_ascendente);
-      if (nd.regiones.vector(indice).final=DECREMENTAR_SECTOR(nd.regiones.vector(indice).principio)) then
+      if nd.regiones.vector(indice).final=DECREMENTAR_SECTOR(nd.regiones.vector(indice).principio) then
 
          -- Hay una sola discontinuidad.
 
-         if (objetivo_a_la_vista) then
+         if objetivo_a_la_vista then
             nd.regiones.vector(indice).direccion_tipo:=DIRECCION_OBJETIVO;
             nd.regiones.vector(indice).direccion_sector:=nd.objetivo.s;
             nd.regiones.vector(indice).direccion_angulo:=nd.objetivo.p1.a;
@@ -607,15 +608,15 @@ is
          return;
       end if;
 
-      pragma Assert_And_Cut (nd.regiones.vector(indice).principio /= -1 and nd.regiones.longitud = 1);
+      pragma Assert_And_Cut (nd.regiones.vector(indice).principio /= -1 and then nd.regiones.longitud = 1);
 
       -- Hay dos o m�s discontinuidades.
 
-      if (objetivo_a_la_vista) then
+      if objetivo_a_la_vista then
 
          -- Regi�n del objetivo.
 
-         if ((not nd.regiones.vector(indice).principio_ascendente) and (not nd.regiones.vector(indice).final_ascendente)) then
+         if (not nd.regiones.vector(indice).principio_ascendente) and then (not nd.regiones.vector(indice).final_ascendente) then
 
             -- Regi�n artificial.
 
@@ -669,11 +670,11 @@ is
          distancia_izquierda:=DistanciaSectorialOrientada(nd.regiones.vector(indice_izquierda).principio,nd.objetivo.s);
          distancia_derecha:=DistanciaSectorialOrientada(nd.objetivo.s,nd.regiones.vector(indice_derecha).final);
 
-         if (distancia_izquierda<=distancia_derecha) then
+         if distancia_izquierda<=distancia_derecha then
 
             -- Probamos por la regi�n izquierda.
 
-            if (nd.regiones.vector(indice_izquierda).principio_ascendente) then
+            if nd.regiones.vector(indice_izquierda).principio_ascendente then
 
                declare
                   ret : Boolean;
@@ -681,14 +682,14 @@ is
                   ObjetivoAlcanzableSPARK(nd,nd.regiones.vector(indice_izquierda),DIRECCION_DISCONTINUIDAD_INICIAL,ret);
 
                   if ret then
-                     if (nd.regiones.vector(indice_derecha).principio_ascendente or nd.regiones.vector(indice_derecha).final_ascendente) then
+                     if nd.regiones.vector(indice_derecha).principio_ascendente or else nd.regiones.vector(indice_derecha).final_ascendente then
                         nd.region:=indice_izquierda;
                         return;
                      end if;
 
                      nd.regiones.longitud := nd.regiones.longitud - 1;
 
-                     if (indice_derecha>indice_izquierda) then
+                     if indice_derecha>indice_izquierda then
                         nd.region:=indice_izquierda;
                         return;
                      end if;
@@ -699,7 +700,7 @@ is
                   end if;
                end;
 
-               if (indice_izquierda/=indice_derecha) then
+               if indice_izquierda/=indice_derecha then
                   nd.regiones.vector(indice_izquierda).descartada:=VERDADERO;
                end if;
 
@@ -717,7 +718,7 @@ is
 
             else -- Principio descendente: Ser�Eun final ascendente en la siguiente regi�n izquierda.
 
-               if (indice_izquierda/=indice_derecha) then
+               if indice_izquierda/=indice_derecha then
 
                   nd.regiones.vector(indice_izquierda).final:=DECREMENTAR_SECTOR(nd.regiones.vector(indice_izquierda).principio);
                   nd.regiones.vector(indice_izquierda).final_ascendente:=not nd.regiones.vector(indice_izquierda).principio_ascendente;
@@ -744,14 +745,14 @@ is
                   ObjetivoAlcanzableSPARK(nd,nd.regiones.vector(indice_izquierda),DIRECCION_DISCONTINUIDAD_FINAL,ret);
 
                   if ret then
-                     if (nd.regiones.vector(indice_derecha).principio_ascendente or nd.regiones.vector(indice_derecha).final_ascendente) then
+                     if nd.regiones.vector(indice_derecha).principio_ascendente or else nd.regiones.vector(indice_derecha).final_ascendente then
                         nd.region:=indice_izquierda;
                         return;
                      end if;
 
                      nd.regiones.longitud := nd.regiones.longitud - 1;
 
-                     if (indice_derecha>indice_izquierda) then
+                     if indice_derecha>indice_izquierda then
                         nd.region:=indice_izquierda;
                         return;
                      end if;
@@ -768,7 +769,7 @@ is
 
             -- Probamos por la regi�n derecha.
 
-            if (nd.regiones.vector(indice_derecha).final_ascendente) then
+            if nd.regiones.vector(indice_derecha).final_ascendente then
 
                declare
                   ret : Boolean;
@@ -776,12 +777,12 @@ is
                   ObjetivoAlcanzableSPARK(nd,nd.regiones.vector(indice_derecha),DIRECCION_DISCONTINUIDAD_FINAL,ret);
 
                   if ret then
-                     if (nd.regiones.vector(indice_izquierda).principio_ascendente or nd.regiones.vector(indice_izquierda).final_ascendente) then
+                     if nd.regiones.vector(indice_izquierda).principio_ascendente or else nd.regiones.vector(indice_izquierda).final_ascendente then
                         nd.region:=indice_derecha;
                         return;
                      end if;
 
-                     if (indice_izquierda>indice_derecha) then
+                     if indice_izquierda>indice_derecha then
                         nd.regiones.longitud := nd.regiones.longitud - 1;
                         nd.region:=indice_derecha;
                         return;
@@ -794,7 +795,7 @@ is
                   end if;
                end;
 
-               if (indice_derecha/=indice_izquierda) then
+               if indice_derecha/=indice_izquierda then
                   nd.regiones.vector(indice_derecha).descartada:=VERDADERO;
                end if;
 
@@ -812,7 +813,7 @@ is
 
             else -- Final descendente: Ser�Eun principio ascendente en la siguiente regi�n derecha.
 
-               if (indice_derecha/=indice_izquierda) then
+               if indice_derecha/=indice_izquierda then
 
                   nd.regiones.vector(indice_derecha).principio:=INCREMENTAR_SECTOR(nd.regiones.vector(indice_derecha).final);
                   nd.regiones.vector(indice_derecha).principio_ascendente:=not nd.regiones.vector(indice_derecha).final_ascendente;
@@ -838,12 +839,12 @@ is
                begin
                   ObjetivoAlcanzableSPARK(nd,nd.regiones.vector(indice_derecha),DIRECCION_DISCONTINUIDAD_INICIAL,ret);
                   if ret then
-                     if (nd.regiones.vector(indice_izquierda).principio_ascendente or nd.regiones.vector(indice_izquierda).final_ascendente) then
+                     if nd.regiones.vector(indice_izquierda).principio_ascendente or else nd.regiones.vector(indice_izquierda).final_ascendente then
                         nd.region:=indice_derecha;
                         return;
                      end if;
 
-                     if (indice_izquierda>indice_derecha) then
+                     if indice_izquierda>indice_derecha then
                         nd.regiones.longitud := nd.regiones.longitud - 1;
                         nd.region:=indice_derecha;
                         return;
@@ -860,7 +861,7 @@ is
 
          end if;
 
-         exit when not ((distancia_izquierda<SECTORES/2) or (distancia_derecha<SECTORES/2));
+         exit when not (distancia_izquierda<SECTORES/2 or else distancia_derecha<SECTORES/2);
       end loop;
 
       -- *region_izquierda == *region_derecha (al menos los campos que determinan la region) y son las dos �ltimas del vector.
@@ -873,7 +874,7 @@ is
    procedure ConstruirDR(nd : in out TInfoND) is
    begin
       for i in SECTOR_ID'Range loop
-         if (nd.d(i).r<0.0) then
+         if nd.d(i).r<0.0 then
             nd.dr(i):=-1.0;
          else
             nd.dr(i):=nd.d(i).r-robot.E(i);
@@ -890,7 +891,7 @@ is
                               sector : in SECTOR_ID;
                               valor : in Float) is
    begin
-      if ((sector_minimo=-1) or (valor<valor_minimo)) then
+      if sector_minimo=-1 or else valor<valor_minimo then
          sector_minimo:=sector;
          valor_minimo:=valor;
       end if;
@@ -927,10 +928,10 @@ is
       for i in SECTOR_ID'Range loop
          pragma Loop_Invariant (nd.region = nd.region'Loop_Entry);
 
-         if ((nd.dr(i)>=0.0) and (nd.dr(i)<=robot.ds(i))) then
+         if nd.dr(i)>=0.0 and then nd.dr(i)<=robot.ds(i) then
             angulo:=nd.d(i).a;
             --       if (AnguloNormalizado(angulo-beta)>=0) then --
-            if (angulo>=beta) then
+            if angulo>=beta then
                -- ACTUALIZAR_OBSTACULO_IZQUIERDA
                ActualizarMinimo(nd.obstaculo_izquierda,min_izq,i,nd.dr(i)/robot.ds(i));
             else
@@ -964,7 +965,7 @@ is
       region : constant TRegion := nd.regiones.vector(nd.region);
       final : Integer := region.final;
    begin
-      if (region.principio>region.final) then
+      if region.principio>region.final then
          final := final + SECTORES;
       end if;
 
@@ -976,14 +977,14 @@ is
    function solHSWR(nd : in TInfoND) return Float
    with
      Pre => nd.region /= -1 and then
-     (nd.regiones.vector(nd.region).principio /= -1 and
-     nd.regiones.vector(nd.region).final /= -1);
+     (nd.regiones.vector(nd.region).principio /= -1 and then
+      nd.regiones.vector(nd.region).final /= -1);
 
    function solHSWR(nd : in TInfoND) return Float is
       region : constant TRegion := nd.regiones.vector(nd.region);
    begin
 
-      if (region.direccion_tipo=DIRECCION_DISCONTINUIDAD_INICIAL) then
+      if region.direccion_tipo=DIRECCION_DISCONTINUIDAD_INICIAL then
          return(nd.d(DECREMENTAR_SECTOR(region.principio)).a
                 -Arctan((robot.discontinuidad/2.0+robot.ds(SECTORES/2)),nd.d(DECREMENTAR_SECTOR(region.principio)).r));
       else
@@ -996,8 +997,8 @@ is
 
    function solLS1(nd : in TInfoND) return Float
    with
-     Pre => nd.region /= -1 and
-     (nd.obstaculo_derecha /= -1 or nd.obstaculo_izquierda /= -1);
+     Pre => nd.region /= -1 and then
+     (nd.obstaculo_derecha /= -1 or else nd.obstaculo_izquierda /= -1);
 
    function solLS1(nd : in TInfoND) return Float is
       region : constant TRegion := nd.regiones.vector(nd.region);
@@ -1007,12 +1008,12 @@ is
    begin
       --float angulo_objetivo=nd.regiones.vector(nd.region).direccion_angulo;
 
-      if (region.principio>region.final) then
+      if region.principio>region.final then
          final:=final+SECTORES;
       end if;
 
-      if (final - nd.regiones.vector(nd.region).principio > SECTORES/4) then
-         if (region.direccion_tipo=DIRECCION_DISCONTINUIDAD_INICIAL) then
+      if final - nd.regiones.vector(nd.region).principio > SECTORES/4 then
+         if region.direccion_tipo=DIRECCION_DISCONTINUIDAD_INICIAL then
             angulo_parcial:=nd.d(DECREMENTAR_SECTOR(region.principio)).a
               -Arctan((robot.discontinuidad/2.0+robot.ds(SECTORES/2)),nd.d(DECREMENTAR_SECTOR(region.principio)).r);
          else
@@ -1023,7 +1024,7 @@ is
          angulo_parcial:=sector2angulo(((region.principio+final)/2) mod SECTORES);
       end if;
 
-      if (nd.obstaculo_izquierda/=-1) then
+      if nd.obstaculo_izquierda/=-1 then
          angulo_cota:=AnguloNormalizado(nd.d(nd.obstaculo_izquierda).a+PI-angulo_parcial)+angulo_parcial;
          dist_obs_dsegur:=nd.dr(nd.obstaculo_izquierda)/robot.ds(nd.obstaculo_izquierda);
       else
@@ -1037,9 +1038,9 @@ is
       -- Codigo Minguez
       anguloPrueba:=angulo_parcial * dist_obs_dsegur  + angulo_cota * (1.0-dist_obs_dsegur);
 
-      if (anguloPrueba>Pi) then
+      if anguloPrueba>Pi then
          anguloPrueba:=(Pi-0.01);
-      elsif (anguloPrueba<-Pi) then
+      elsif anguloPrueba<-Pi then
          anguloPrueba:=-(Pi+0.01);
       end if;
 
@@ -1051,8 +1052,8 @@ is
 
    function solLSG(nd : in TInfoND) return Float
    with
-     Pre => nd.region /= -1 and
-     (nd.obstaculo_derecha /= -1 or nd.obstaculo_izquierda /= -1);
+     Pre => nd.region /= -1 and then
+     (nd.obstaculo_derecha /= -1 or else nd.obstaculo_izquierda /= -1);
 
    function solLSG(nd : in TInfoND) return Float is
       angulo_parcial,dist_obs_dsegur,angulo_cota,anguloPrueba : Float;
@@ -1060,7 +1061,7 @@ is
 
       angulo_parcial := nd.regiones.vector(nd.region).direccion_angulo;
 
-      if (nd.obstaculo_izquierda/=-1) then
+      if nd.obstaculo_izquierda/=-1 then
          angulo_cota := AnguloNormalizado(nd.d(nd.obstaculo_izquierda).a+PI-angulo_parcial)+angulo_parcial;
          dist_obs_dsegur := nd.dr(nd.obstaculo_izquierda)/robot.ds(nd.obstaculo_izquierda);
       else
@@ -1074,9 +1075,9 @@ is
       anguloPrueba:=angulo_parcial * dist_obs_dsegur  + angulo_cota * (1.0-dist_obs_dsegur);
 
       -- Codigo Minguez
-      if (anguloPrueba>Pi) then
+      if anguloPrueba>Pi then
          anguloPrueba:=(Pi-0.01);
-      elsif (anguloPrueba<-Pi) then
+      elsif anguloPrueba<-Pi then
          anguloPrueba:=-(Pi+0.01);
       end if;
 
@@ -1087,16 +1088,16 @@ is
 
    function solLS2(nd : TInfoND) return Float
    with
-     Pre => nd.region /= -1 and
-     nd.obstaculo_izquierda /= -1 and
+     Pre => nd.region /= -1 and then
+     nd.obstaculo_izquierda /= -1 and then
      nd.obstaculo_derecha /= -1;
 
    function solLS2(nd : TInfoND) return Float is
       ci : constant Float := nd.dr(nd.obstaculo_izquierda)/robot.ds(nd.obstaculo_izquierda);
       cd : constant Float := nd.dr(nd.obstaculo_derecha)/robot.ds(nd.obstaculo_derecha);
       -- �ngulos cota izquierdo y derecho.
-      ad : constant Float := Pi/2.0;
-      ai : constant Float := -Pi/2.0;
+      ad : constant := Pi/2.0;
+      ai : constant := -Pi/2.0;
       ang_par : constant Float := nd.regiones.vector(nd.region).direccion_angulo;
    begin
 
@@ -1108,7 +1109,7 @@ is
       --    return AnguloNormalizado((ad+ai)/2.0F+(ci-cd)/(ci+cd)*(ad-ai)/2.0F);
       --  */
 
-      if (ci<=cd) then
+      if ci<=cd then
          return AnguloNormalizado(ang_par+(ci-cd)/(ci+cd)*(ang_par-ai));
       else
          return AnguloNormalizado(ang_par+(ci-cd)/(ci+cd)*(ad-ang_par));
@@ -1128,22 +1129,22 @@ is
       final : Integer := region.final;
    begin
 
-      if (region.principio>region.final) then
+      if region.principio>region.final then
          final := final + SECTORES;
       end if;
 
       ObtenerObstaculos(nd,nd.regiones.vector(nd.region).direccion_angulo);
 
-      if (nd.obstaculo_izquierda = -1 and nd.obstaculo_derecha = -1 ) then
-         if (region.direccion_tipo=DIRECCION_OBJETIVO) then
+      if nd.obstaculo_izquierda = -1 and then nd.obstaculo_derecha = -1 then
+         if region.direccion_tipo=DIRECCION_OBJETIVO then
             nd.situacion := HSGR;
             nd.angulosin:=solHSGR(nd);
             nd.angulo:=nd.angulosin;
-         elsif (final - nd.regiones.vector(nd.region).principio > SECTORES/4) then
+         elsif final - nd.regiones.vector(nd.region).principio > SECTORES/4 then
             nd.situacion := HSWR;
 
             pragma Assume (nd.region /= -1 and then
-                             (nd.regiones.vector(nd.region).principio /= -1 and
+                             (nd.regiones.vector(nd.region).principio /= -1 and then
                                 nd.regiones.vector(nd.region).final /= -1));
 
             nd.angulosin:= solHSWR(nd);
@@ -1155,11 +1156,11 @@ is
             nd.angulo:=nd.angulosin;
          end if;
       else
-         if (nd.obstaculo_izquierda/=-1 and nd.obstaculo_derecha/=-1) then
+         if nd.obstaculo_izquierda/=-1 and then nd.obstaculo_derecha/=-1 then
             nd.situacion := LS2;
             nd.angulo:=solLS2(nd);
             nd.angulosin:=nd.angulo;
-         elsif (region.direccion_tipo=DIRECCION_OBJETIVO ) then
+         elsif region.direccion_tipo=DIRECCION_OBJETIVO then
             nd.situacion := LSG;
             nd.angulo:=solLSG(nd);
             nd.angulosin:=nd.angulo;
@@ -1182,13 +1183,13 @@ is
    begin
       -- Velocidad lineal del robot.
 
-      if (nd.obstaculo_izquierda/=-1) then
+      if nd.obstaculo_izquierda/=-1 then
          ci := nd.dr(nd.obstaculo_izquierda)/robot.ds(nd.obstaculo_izquierda);
       else
          ci := 1.0;
       end if;
 
-      if (nd.obstaculo_derecha/=-1) then
+      if nd.obstaculo_derecha/=-1 then
          cd := nd.dr(nd.obstaculo_derecha)/robot.ds(nd.obstaculo_derecha);
       else
          cd := 1.0;
@@ -1214,12 +1215,12 @@ is
       cvmax : constant Float := MAXIMO(0.2,MINIMO(ci,cd));
    begin
       -- Coeficiente de distancia por la izquierda.
-      if (nd.obstaculo_izquierda/=-1) then
+      if nd.obstaculo_izquierda/=-1 then
          ci := nd.dr(nd.obstaculo_izquierda)/robot.ds(nd.obstaculo_izquierda);
       end if;
 
       -- Coeficiente de distancia por la derecha.
-      if (nd.obstaculo_derecha/=-1) then
+      if nd.obstaculo_derecha/=-1 then
          cd := nd.dr(nd.obstaculo_derecha)/robot.ds(nd.obstaculo_derecha);
       end if;
 
@@ -1256,23 +1257,23 @@ is
       ConstruirCoordenadasPxy(esquina,robot.Dimensiones.Front,robot.Dimensiones.Left);
 
       if nd.obstaculo_derecha/=-1 then
-         derecha:=(abs(nd.d(nd.obstaculo_derecha).a)<=esquina.a) and (nd.d(nd.obstaculo_derecha).r<=esquina.r+robot.enlarge);
+         derecha:=(abs(nd.d(nd.obstaculo_derecha).a)<=esquina.a) and then (nd.d(nd.obstaculo_derecha).r<=esquina.r+robot.enlarge);
       else
          derecha:=false;
       end if;
       if nd.obstaculo_izquierda/=-1 then
-         izquierda:=(abs(nd.d(nd.obstaculo_izquierda).a)<=esquina.a) and (nd.d(nd.obstaculo_izquierda).r<=esquina.r+robot.enlarge);
+         izquierda:=(abs(nd.d(nd.obstaculo_izquierda).a)<=esquina.a) and then (nd.d(nd.obstaculo_izquierda).r<=esquina.r+robot.enlarge);
       else
          izquierda:=false;
       end if;
 
-      if (derecha and izquierda) then
+      if derecha and then izquierda then
          velocidades.w:=0.0;
          --    printf("giro brusco central\n");
          return;
       end if;
 
-      if (derecha or izquierda) then
+      if derecha or else izquierda then
          velocidades.v:=0.0;
          --    printf("giro brusco lateral\n");
       end if;
@@ -1294,35 +1295,35 @@ is
 
       loop
          pragma Loop_Invariant(i < SECTOR_ID'Last);
-         if (((nd.d(i).a<-PI/2.0) or (nd.d(i).a>PI/2.0)) and (nd.d(i).r>=0.0) and (nd.dr(i)<=robot.enlarge/2.0)) then
+         if (nd.d(i).a<-PI/2.0 or else nd.d(i).a>PI/2.0) and then nd.d(i).r>=0.0 and then nd.dr(i)<=robot.enlarge/2.0 then
 
             ConstruirCoordenadasCP(p,nd.d(i));
 
-            if (p.y>=robot.Dimensiones.Left) then -- Obst�culo a la izquierda.
+            if p.y>=robot.Dimensiones.Left then -- Obst�culo a la izquierda.
 
-               if (obstaculo_derecha) then
+               if obstaculo_derecha then
                   return CUTTING_AMBOS;
                end if;
 
                obstaculo_izquierda:=True;
                resultado:=CUTTING_IZQUIERDA;
 
-            elsif (p.y<=robot.Dimensiones.Right) then -- Obst�culo a la derecha.
+            elsif p.y<=robot.Dimensiones.Right then -- Obst�culo a la derecha.
 
-               if (obstaculo_izquierda) then
+               if obstaculo_izquierda then
                   return CUTTING_AMBOS;
                end if;
 
                obstaculo_derecha:=True;
                resultado:=CUTTING_DERECHA;
 
-            elsif (p.x<=robot.Dimensiones.Rear) then-- Obst�culo detr�s.
+            elsif p.x<=robot.Dimensiones.Rear then-- Obst�culo detr�s.
                return CUTTING_AMBOS;
             end if;
          end if;
 
          i := i + 1;
-         if (i=SECTORES/4+1) then
+         if i=SECTORES/4+1 then
             i:=3*SECTORES/4;
          end if;
 
@@ -1340,13 +1341,13 @@ is
    is
       F : TCoordenadas;
    begin
-      if (robot.aceleracion_angular_maxima*robot.T<abs(nd.velocidades.w)) then
-         if (nd.velocidades.w>0.0) then
+      if robot.aceleracion_angular_maxima*robot.T<abs(nd.velocidades.w) then
+         if nd.velocidades.w>0.0 then
             velocidades.w := nd.velocidades.w-robot.aceleracion_angular_maxima*robot.T;
          else
             velocidades.w := nd.velocidades.w+robot.aceleracion_angular_maxima*robot.T;
          end if;
-         if (robot.aceleracion_lineal_maxima*robot.T<nd.velocidades.v) then
+         if robot.aceleracion_lineal_maxima*robot.T<nd.velocidades.v then
             velocidades.v:= nd.velocidades.v-robot.aceleracion_lineal_maxima*robot.T;
          else
             velocidades.v:=0.0;
@@ -1368,10 +1369,10 @@ is
    begin
       nd.cutting := ObtenerSituacionCutting(nd); --,velocidades.w);
 
-      if (nd.cutting = CUTTING_IZQUIERDA and velocidades.w>=0.0)
-        or
-          (nd.cutting = CUTTING_DERECHA and velocidades.w<=0.0)
-        or
+      if (nd.cutting = CUTTING_IZQUIERDA and then velocidades.w>=0.0)
+        or else
+          (nd.cutting = CUTTING_DERECHA and then velocidades.w<=0.0)
+        or else
           (nd.cutting = CUTTING_NINGUNO)
       then
          return;
@@ -1450,8 +1451,8 @@ is
 
       -- Evaluaci�n de la necesidad de una parada de emergencia.
       -- Solo en el caso de robot rectangular
-      if (robot.geometriaRect) then
-         if (ParadaEmergencia(nd)) then
+      if robot.geometriaRect then
+         if ParadaEmergencia(nd) then
             --printf("ND . Parada Emergencia\n");
             -- return 0;
             return Null_TVelocities;
@@ -1461,7 +1462,7 @@ is
       -- Selecci�n de la regi�n por la cual avanzar�Eel robot.
 
       SeleccionarRegionSPARK(nd);
-      if (nd.region < 0) then
+      if nd.region < 0 then
          --printf("ND . No encuentra region\n");
          return Null_TVelocities;
       end if;
@@ -1472,21 +1473,21 @@ is
 
       -- Deteccion de fin de trayecto. -- Despu�s de considerar la necesidad de una parada de emergencia.
       -- Caso geometria rectangular
-      if (robot.geometriaRect) then
+      if robot.geometriaRect then
          -- Replaced this check with the user-specified goal tolerance - BPG
          --      /*
          --      -- Cuadrado
          --      if ((nd.objetivo.c1.x>=robot.Dimensiones(0)) and (nd.objetivo.c1.x<=robot.Dimensiones(2)) and
          --  	(nd.objetivo.c1.y>=robot.Dimensiones(3)) and (nd.objetivo.c1.y<=robot.Dimensiones(1))) {
          --          */
-         if(hypot(objetivo.x - movimiento.SR1.posicion.x,
-                  objetivo.y - movimiento.SR1.posicion.y) < goal_tol) then
+         if hypot(objetivo.x - movimiento.SR1.posicion.x,
+                  objetivo.y - movimiento.SR1.posicion.y) < goal_tol then
             -- Ya hemos llegado.
             velocidades.v:=0.0;
             velocidades.w:=0.0;
             return velocidades'Access;
          end if;
-      elsif ( hypot(nd.objetivo.c1.x, nd.objetivo.c1.y)< robot.R ) then
+      elsif hypot(nd.objetivo.c1.x, nd.objetivo.c1.y)< robot.R then
          -- Redondo
          velocidades.v:=0.0;
          velocidades.w:=0.0;
@@ -1503,7 +1504,7 @@ is
 
 
       -- En funcion del tipo de robot.
-      if (robot.holonomo) then -- ya se han aplicado cotas al angulo
+      if robot.holonomo then -- ya se han aplicado cotas al angulo
          --    printf("Movimiento Holonomo\n");
          --    velocidades.v= nd.velocidad*fabs(DistanciaAngular(fabs(nd.angulo),Pi/2))/(Pi/2);
          velocidades.v := nd.velocidad*abs(AmplitudAnguloNoOrientado(abs(nd.angulo),Pi/2.0))/(Pi/2.0);
@@ -1530,7 +1531,7 @@ is
          --**/printf("<Vr,Wr>=<%f,%f>\n",velocidades.v,velocidades.w);
 
          -- Aplicar correcciones al movimiento calculado.
-         if (robot.geometriaRect) then
+         if robot.geometriaRect then
             -- Cuadrado
             GiroBrusco(nd,velocidades);
             -- /* printf("Entra en cutting %d\n",robot.geometriaRect); */

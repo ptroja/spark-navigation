@@ -2,8 +2,8 @@ package body geometria is
 
    function Atan2(x, y : in Unbounded_Float) return Unbounded_Float
    with
-     Pre => X /= 0.0 or Y /= 0.0,
-     Post => (Atan2'Result in -Pi .. Pi);
+     Pre => X /= 0.0 or else Y /= 0.0,
+     Post => Atan2'Result in -Pi .. Pi;
 
    function Atan2(x, y : in Unbounded_Float) return Unbounded_Float renames Arctan;
 
@@ -28,6 +28,7 @@ package body geometria is
       p.x := Dx * coseno + Dy * seno;
       p.y := -Dx * seno + Dy * coseno;
    end;
+   pragma Inline(TransformacionDirecta);
 
    procedure TRANSFORMACION01(SR1 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
    procedure TRANSFORMACION12(SR2 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
@@ -39,9 +40,9 @@ package body geometria is
 
    procedure AplicarCotas (n : in out Unbounded_Float; i, s : Unbounded_Float) is
    begin
-      if (n < i) then
+      if n < i then
          n := i;
-      elsif (n > s) then
+      elsif n > s then
          n := s;
       end if;
    end;
@@ -251,10 +252,10 @@ package body geometria is
       -- Todos los par�metros deben pertenecer al intervalo (-PI,PI].
       -- Si limite1==limite2, entonces el intervalo es de longitud 0.
 
-      if (limite2 >= limite1) then
-         return ((angulo >= limite1) and (angulo <= limite2));
+      if limite2 >= limite1 then
+         return angulo >= limite1 and then angulo <= limite2;
       else
-         return ((angulo >= limite1) or (angulo <= limite2));
+         return angulo >= limite1 or else angulo <= limite2;
       end if;
    end;
 
@@ -271,10 +272,10 @@ package body geometria is
       -- Devuelve la bisectriz del �ngulo de "limite1" a "limite2" en
       -- sentido contrario a las agujas del reloj.
 
-      if (limite1 <= limite2) then
+      if limite1 <= limite2 then
          return resultado;
       else
-         return AnguloNormalizado (resultado + Pi);
+         return AnguloNormalizado(resultado + Pi);
       end if;
    end;
 
@@ -292,7 +293,7 @@ package body geometria is
       --"limite2", ya sea en el sentido de las agujas del reloj o en el
       --opuesto.
 
-      if (abs (limite1 - limite2) <= Pi) then
+      if abs (limite1 - limite2) <= Pi then
          return resultado;
       else
          return AnguloNormalizado (resultado + Pi);
@@ -312,7 +313,7 @@ package body geometria is
       -- Devuelve la amplitud del �ngulo de "limite1" a "limite2" en sentido
       --contrario a las agujas del reloj.
 
-      if (limite1 <= limite2) then
+      if limite1 <= limite2 then
          return amplitud;
       else
          return 2.0 * Pi - amplitud;
@@ -333,7 +334,7 @@ package body geometria is
       --"limite2", ya sea en el sentido de las agujas del reloj o en el
       --opuesto.
 
-      if (amplitud <= Pi) then
+      if amplitud <= Pi then
          return amplitud;
       else
          return 2.0 * Pi - amplitud;
@@ -367,25 +368,25 @@ package body geometria is
       ConstruirCoordenadasCP (p1, pp1temp);
       ConstruirCoordenadasCP (p2, pp2temp);
 
-      if ((p1.y * p2.y > 0.0) or ((p1.y = p2.y) and (p1.y /= 0.0)))  -- No hay
-                                                                     --punto
-                                                                     --de
-                                                                     --corte.
+      if p1.y * p2.y > 0.0 or else (p1.y = p2.y and then p1.y /= 0.0)  -- No hay
+                                                                       --punto
+                                                                       --de
+                                                                       --corte.
       then
          return;
       end if;
 
-      if ((p1.y = 0.0) and (p2.y = 0.0) and (p1.x * p2.x <= 0.0)) then
+      if p1.y = 0.0 and then p2.y = 0.0 and then p1.x * p2.x <= 0.0 then
          distancia := 0.0;
          return;
       end if;
 
-      if ((p1.y = 0.0) or (p2.y = 0.0)) then
-         if ((p1.y = 0.0) and (p1.x >= 0.0) and (p1.x <= distancia)) then
+      if p1.y = 0.0 or else p2.y = 0.0 then
+         if p1.y = 0.0 and then p1.x >= 0.0 and then p1.x <= distancia then
             distancia := p1.x;
          end if;
 
-         if ((p2.y = 0.0) and (p2.x >= 0.0) and (p2.x <= distancia)) then
+         if p2.y = 0.0 and then p2.x >= 0.0 and then p2.x <= distancia then
             distancia := p2.x;
          end if;
 
@@ -393,7 +394,7 @@ package body geometria is
       end if;
 
       x := (p1.x * p2.y - p2.x * p1.y) / (p2.y - p1.y);
-      if ((x >= 0.0) and (x < distancia)) then
+      if x >= 0.0 and then x < distancia then
          distancia := x;
       end if;
    end;

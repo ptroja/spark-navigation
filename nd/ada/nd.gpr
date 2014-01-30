@@ -1,29 +1,23 @@
 with "../../../ada/formal_numerics/formal_numerics.gpr";
 
-project Nd is
+library project Nd is
 
-   for Languages use ("C++", "Ada");
---   for Source_Files use ("geometria.adb", "geometria.ads", "nd.adb", "nd.ads", "nd_plugin.cc", "nd.h");
-   for Source_Files use ("geometria.adb", "geometria.ads", "nd.adb", "nd.ads");
-   for Object_Dir use "obj";
+   for Languages use ("Ada");
    for Library_Name use "nd";
-   for Library_Dir use "lib";
+   for Library_Interface use ("nd");
    for Library_Kind use "dynamic";
+   for Library_Dir use "lib";
+   for Object_Dir use "lib/obj";
    for Source_Dirs use (".");
-
-   package Naming is
-      for Body_Suffix ("c++") use ".cc";
-      for Spec_Suffix ("c++") use ".h";
-   end Naming;
-
-   package Ide is
-      for Vcs_Kind use "Git";
-   end Ide;
+   for Source_Files use ("geometria.adb", "geometria.ads", "nd.adb", "nd.ads");
 
    package Compiler is
-     for Default_Switches ("ada") use ("-gnatwa", "-gnat12", "-g");
-     Player_Switches := ("-I/opt/player/include/player-3.1", "-I/usr/include/x86_64-linux-gnu");
-     for Switches ("nd_plugin.cc") use Compiler'Default_Switches ("C") & Player_Switches & ("-g");
+      for Default_Switches ("ada") use ("-gnatVn", "-msse2", "-mfpmath=sse", "-gnatn", "-O3", "-g", "-gnat12", "-gnatp", "-gnatyAx");
    end Compiler;
 
+   package Builder is
+      for Default_Switches ("ada") use ("-g");
+   end Builder;
+
 end Nd;
+
