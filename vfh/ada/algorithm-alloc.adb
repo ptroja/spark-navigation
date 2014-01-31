@@ -3,7 +3,7 @@ with Interfaces.C; use Interfaces.C;
 with Ada.Containers;
 with Utils;
 
-with Ada.Text_IO;
+--with Ada.Text_IO;
 
 package body Algorithm.Alloc is
 

@@ -242,7 +242,7 @@ private
    with
      Pre => speed <= Speed_Vector.Last_Index(This.Min_Turning_Radius); -- speed <= This.Current_Max_Speed
    procedure Select_Direction(This : in out VFH);
-   procedure Set_Motion(This : in out VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer);
+   procedure Set_Motion(This : in VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer);
 
    -- AB: This doesn't seem to be implemented anywhere...
    -- int Read_Min_Turning_Radius_From_File(char *filename);

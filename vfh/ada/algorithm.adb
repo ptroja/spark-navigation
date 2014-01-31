@@ -1,6 +1,5 @@
 with Ada.Numerics;
 with Ada.Numerics.Elementary_Functions;
-with Ada.Real_Time;
 with Ada.Text_IO;
 with Ada.Float_Text_IO;
 with Utils;
@@ -598,16 +597,25 @@ package body Algorithm is
       --  Print_Cells_Enlargement_Angle(This);
       pragma Assert_and_cut(VFH_Predicate(This));
       -- Only have to go through the cells in front.
-      for y in Integer range 0 .. Up_To_Half(This.Cell_Sector'Length(3),Inclusive) loop --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
-         for x in This.Cell_Sector'Range(2) loop --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
-            for i in Integer range
-              First_Index(This.Cell_Sector(speed_index,x,y)) ..
-              Last_Index(This.Cell_Sector(speed_index,x,y))
-            loop
-               --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
-               This.Hist(Element(This.Cell_Sector(speed_index,x,y),i)) :=
-                 This.Hist(Element(This.Cell_Sector(speed_index,x,y),i)) + This.Cell_Mag(x,y);
-            end loop;
+      for y in Integer range 0 .. Up_To_Half(This.Cell_Sector'Length(3),Inclusive) loop
+         --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+         for x in This.Cell_Sector'Range(2) loop
+            --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+            declare
+               Cell_Max_x_y : constant Float := This.Cell_Mag(x,y);
+            begin
+               for i in Integer range
+                 First_Index(This.Cell_Sector(speed_index,x,y)) ..
+                 Last_Index(This.Cell_Sector(speed_index,x,y))
+               loop
+                  declare
+                     idx : constant Integer := Element(This.Cell_Sector(speed_index,x,y),i);
+                  begin
+                     --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+                     This.Hist(idx) := This.Hist(idx) + Cell_Max_x_y;
+                  end;
+               end loop;
+            end;
          end loop;
       end loop;
 
@@ -647,13 +655,13 @@ package body Algorithm is
       -- center_x_[left|right] is the centre of the circles on either side that
       -- are blocked due to the robot's dynamics.  Units are in cells, in the robot's
       -- local coordinate system (+y is forward).
-      center_x_right : constant Float := Float(This.CENTER_X) + (Float(Element(This.Min_Turning_Radius,speed)) / Float(This.CELL_WIDTH));
-      center_x_left  : constant Float := Float(This.CENTER_X) - (Float(Element(This.Min_Turning_Radius,speed)) / Float(This.CELL_WIDTH));
+      center_x_right : constant Float := Float(This.CENTER_X) + (Float(Element(This.Min_Turning_Radius,speed)) / This.CELL_WIDTH);
+      center_x_left  : constant Float := Float(This.CENTER_X) - (Float(Element(This.Min_Turning_Radius,speed)) / This.CELL_WIDTH);
       center_y       : constant Float := Float(This.CENTER_Y);
 
       dist_r, dist_l : Float;
 
-      angle_ahead : Float := 90.0;
+      angle_ahead : constant := 90.0;
       phi_left  : Float := 180.0;
       phi_right : Float := 0.0;
 
@@ -681,7 +689,7 @@ package body Algorithm is
             then
                -- The cell is between phi_right and angle_ahead
 
-               dist_r := hypot(center_x_right - Float(x), center_y - Float(y)) * Float(This.CELL_WIDTH);
+               dist_r := hypot(center_x_right - Float(x), center_y - Float(y)) * This.CELL_WIDTH;
                if dist_r < This.Blocked_Circle_Radius
                then
                   phi_right := This.Cell_Direction(x,y);
@@ -692,7 +700,7 @@ package body Algorithm is
             then
                -- The cell is between phi_left and angle_ahead
 
-               dist_l := hypot(center_x_left - Float(x), center_y - Float(y)) * Float(This.CELL_WIDTH);
+               dist_l := hypot(center_x_left - Float(x), center_y - Float(y)) * This.CELL_WIDTH;
                if dist_l < This.Blocked_Circle_Radius
                then
                   phi_left := This.Cell_Direction(x,y);
@@ -888,7 +896,7 @@ package body Algorithm is
    ----------------
 
    procedure Set_Motion
-     (This : in out VFH;
+     (This : in VFH;
       speed : in out Integer;
       turnrate : out Integer;
       actual_speed : Integer)
