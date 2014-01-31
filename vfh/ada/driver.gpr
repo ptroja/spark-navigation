@@ -1,3 +1,4 @@
+with "../../common/c/clock.gpr";
 with "vfh.gpr";
 
 project Driver is
@@ -19,9 +20,8 @@ project Driver is
    end Naming;
 
    package Compiler is
-      for Default_Switches ("ada") use ("-g", "-O0", "-gnat12");
       Player_Switches := ("-I/opt/player/include/player-3.1", "-I/usr/include/x86_64-linux-gnu");
-      for Switches ("vfh.cc") use Compiler'Default_Switches ("C") & Player_Switches & ("-g");
+      for Switches ("vfh.cc") use Compiler'Default_Switches ("C") & Player_Switches & ("-O3");
    end Compiler;
 
 end Driver;

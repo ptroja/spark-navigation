@@ -1245,6 +1245,8 @@ ND::Main()
 
         vx = cmd_vel->v;
         va = cmd_vel->w;
+        //printf("(vx,va) = ( %f , %f )\n", vx, va);
+        //continue;
       }
 
       if(!vx && !va)

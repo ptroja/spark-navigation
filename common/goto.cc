@@ -163,7 +163,7 @@ main(int argc, char **argv)
       //nanosleep(&sleep, NULL);
       robot->Read();
       const double dist = hypot(pp->GetXPos()-gTarget.px, pp->GetYPos()-gTarget.py);
-      printf("speed(x,y,yaw): %f %f %f\tpose(x,y,yaw): %f %f %f\tdist: %.2f\n",
+      printf("speed(x,y,yaw): %+.2f %+.2f %+.2f\tpose(x,y,yaw): %+.2f %+.2f %+.2f\tdist: %.2f\n",
 	pp->GetXSpeed(), pp->GetYSpeed(), pp->GetYawSpeed(),
 	pp->GetXPos(), pp->GetYPos(), pp->GetYaw(),
         dist
