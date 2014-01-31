@@ -32,14 +32,10 @@ is
    function MAXIMO(a,b : Float) return Float renames Float'Max;
 
    function INCREMENTAR_SECTOR(s : SECTOR_ID) return SECTOR_ID is
-   begin
-      return (s + 1) mod SECTORES;
-   end;
+     ((s + 1) mod SECTORES);
 
    function DECREMENTAR_SECTOR(s : SECTOR_ID) return SECTOR_ID is
-   begin
-      return (s + (SECTORES-1)) mod SECTORES;
-   end;
+     ((s + (SECTORES-1)) mod SECTORES);
 
    function sector2angulo (sector : SECTOR_ID) return Float
      is (PI*(1.0-2.0*(Float(sector)/Float(SECTORES))));
@@ -348,8 +344,7 @@ is
                                      discontinuidad : in out SECTOR_ID_Optional;
                                      ascendente : out Boolean) is
       --# hide SiguienteDiscontinuidad;
-      i : SECTOR_ID;
-      j : SECTOR_ID;
+      i,j : SECTOR_ID;
       distancia_i,distancia_j : Float;
       no_obstaculo_i,no_obstaculo_j : Boolean;
    begin
@@ -360,15 +355,13 @@ is
       no_obstaculo_j:=(distancia_j<0.0);
 
       loop
+         -- FIXME: j rolls up or down over SECTOR_ID'Range.
+         pragma Loop_Variant(Decreases => (if izquierda then j else -j));
          i:=j;
          distancia_i:=distancia_j;
          no_obstaculo_i:=no_obstaculo_j;
 
-         if izquierda then
-            j := DECREMENTAR_SECTOR(i);
-         else
-            j := INCREMENTAR_SECTOR(i);
-         end if;
+         j := (if izquierda then DECREMENTAR_SECTOR(i) else INCREMENTAR_SECTOR(i));
 
          distancia_j:=nd.d(j).r;
          no_obstaculo_j:=(distancia_j<=0.0);
@@ -1291,6 +1284,7 @@ is
 
       loop
          pragma Loop_Invariant(i < SECTOR_ID'Last);
+         pragma Loop_Variant(Increases => i);
          if (nd.d(i).a<-PI/2.0 or else nd.d(i).a>PI/2.0) and then nd.d(i).r>=0.0 and then nd.dr(i)<=robot.enlarge/2.0 then
 
             ConstruirCoordenadasCP(p,nd.d(i));
