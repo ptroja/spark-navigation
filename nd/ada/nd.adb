@@ -18,8 +18,6 @@ is
    -- FILE *depuracion;
    --   iteracion : Integer := 0;
 
-   velocidades : aliased TVelocities; -- Resultado de IterarND(). -- aliased
-
    robot : TInfoRobot;
 
    -- ----------------------------------------------------------------------------
@@ -33,17 +31,17 @@ is
    function MINIMO(a,b : Float) return Float renames Float'Min;
    function MAXIMO(a,b : Float) return Float renames Float'Max;
 
-   function INCREMENTAR_SECTOR(s : in SECTOR_ID) return SECTOR_ID is
+   function INCREMENTAR_SECTOR(s : SECTOR_ID) return SECTOR_ID is
    begin
       return (s + 1) mod SECTORES;
    end;
 
-   function DECREMENTAR_SECTOR(s : in SECTOR_ID) return SECTOR_ID is
+   function DECREMENTAR_SECTOR(s : SECTOR_ID) return SECTOR_ID is
    begin
       return (s + (SECTORES-1)) mod SECTORES;
    end;
 
-   function sector2angulo (sector : in SECTOR_ID) return Float
+   function sector2angulo (sector : SECTOR_ID) return Float
      is (PI*(1.0-2.0*(Float(sector)/Float(SECTORES))));
 --     with
 --       Post => sector2angulo'Result in -Pi .. Pi and
@@ -58,20 +56,20 @@ is
 --        return FACTOR*(Float(sector)+SUMANDO);
 --     end;
 
-   function angulo2sector(angulo : in Unbounded_Float) return SECTOR_ID
+   function angulo2sector(angulo : Unbounded_Float) return SECTOR_ID
      is (Integer((-Float(SECTORES)/(2.0*PI))*angulo+((Float(SECTORES+1))/2.0)))
    with
      Pre => angulo in -Pi .. Pi;
 
-   function ObtenerSectorP(p : in TCoordenadasPolares) return SECTOR_ID is
+   function ObtenerSectorP(p : TCoordenadasPolares) return SECTOR_ID is
       FACTOR : constant := -Float(SECTORES)/(2.0*PI);
       SUMANDO : constant := (Float(SECTORES)+1.0)/2.0;
    begin
       return Integer(FACTOR*p.a+SUMANDO) mod SECTORES;
    end;
-   pragma inline(ObtenerSectorP);
+   pragma Inline(ObtenerSectorP);
 
-   function DistanciaSectorialOrientada(s1, s2 : in SECTOR_ID) return SECTOR_ID
+   function DistanciaSectorialOrientada(s1, s2 : SECTOR_ID) return SECTOR_ID
    is
    begin
       if s1 <= s2 then
@@ -138,15 +136,15 @@ is
       robot.E := (others => robot.R);
    end;
 
-   procedure InicializarDSRedondo(dmax : in Positive_Float) is
+   procedure InicializarDSRedondo(dmax : Positive_Float) is
    begin
       -- Calcula la distancia desde el origen (punto de coordenadas 0.0F,0.0F)
       -- hasta el per�etro (que contiene el origen) en la direcci�n de la bisectriz
       -- de cada sector.
       robot.ds := (others => dmax);
    end;
-   procedure InicializarDS(dsmax, dsmin : in Positive_Float) with Pre => (robot.Dimensiones.Front-robot.Dimensiones.Rear)-(dsmax-dsmin)>=0.0 and then dsmax > dsmin;
-   procedure InicializarDS(dsmax, dsmin : in Positive_Float) is
+   procedure InicializarDS(dsmax, dsmin : Positive_Float) with Pre => (robot.Dimensiones.Front-robot.Dimensiones.Rear)-(dsmax-dsmin)>=0.0 and then dsmax > dsmin;
+   procedure InicializarDS(dsmax, dsmin : Positive_Float) is
 
       p1,p2 : TCoordenadas;
       q1,q2,q3 : TCoordenadas;
@@ -231,7 +229,7 @@ is
       robot.ds(SECTORES/2):=q4.r-robot.E(SECTORES/2); -- = q4.x/(float)cos(0.0F) - ...;
    end;
 
-   procedure InicializarND(parametros : in TParametersND) is
+   procedure InicializarND(parametros : TParametersND) is
    begin
       robot.geometriaRect := parametros.geometryRect;
       robot.holonomo:=parametros.holonomic;
@@ -285,7 +283,7 @@ is
    --
    --  -- IterarND / SectorizarMapa
    --
-   procedure SectorizarMapa(mapa : in TInfoEntorno; nd : in out TInfoND) is
+   procedure SectorizarMapa(mapa : TInfoEntorno; nd : in out TInfoND) is
       p : TCoordenadas;
       pp : TCoordenadasPolares; -- Modulos al cuadrado para evitar ra�es innecesarias.
       j : Integer;
@@ -320,7 +318,7 @@ is
    --
    --  -- IterarND / ParadaEmergencia
    --
-   function ParadaEmergencia(nd : in TInfoND) return Boolean is
+   function ParadaEmergencia(nd : TInfoND) return Boolean is
       p : TCoordenadas;
       pp : TCoordenadasPolares;
    begin
@@ -345,9 +343,9 @@ is
 
    -- IterarND / SeleccionarRegiones / SiguienteDiscontinuidad
 
-   procedure SiguienteDiscontinuidad(nd : in TInfoND;
-                                     principio : in SECTOR_ID;
-                                     izquierda : in Boolean;
+   procedure SiguienteDiscontinuidad(nd : TInfoND;
+                                     principio : SECTOR_ID;
+                                     izquierda : Boolean;
                                      discontinuidad : in out SECTOR_ID_Optional;
                                      ascendente : out Boolean) is
       --# hide SiguienteDiscontinuidad;
@@ -399,9 +397,9 @@ is
       discontinuidad:=-1;
    end;
 
-   procedure ObjetivoAlcanzableSPARK(nd : in TInfoND;
+   procedure ObjetivoAlcanzableSPARK(nd : TInfoND;
                                      region : in out TRegion;
-                                     direccion_tipo : in DIRECTION_TYPE;
+                                     direccion_tipo : DIRECTION_TYPE;
                                      ret : out Boolean
                                     )
    with
@@ -412,9 +410,9 @@ is
        (direccion_tipo = DIRECCION_OBJETIVO);
 
 
-   procedure ObjetivoAlcanzableSPARK(nd : in TInfoND;
+   procedure ObjetivoAlcanzableSPARK(nd : TInfoND;
                                      region : in out TRegion;
-                                     direccion_tipo : in DIRECTION_TYPE;
+                                     direccion_tipo : DIRECTION_TYPE;
                                      ret : out Boolean
                                     )
    is
@@ -888,8 +886,8 @@ is
 
    procedure ActualizarMinimo(sector_minimo : in out SECTOR_ID_Optional;
                               valor_minimo : in out Float;
-                              sector : in SECTOR_ID;
-                              valor : in Float) is
+                              sector : SECTOR_ID;
+                              valor : Float) is
    begin
       if sector_minimo=-1 or else valor<valor_minimo then
          sector_minimo:=sector;
@@ -900,12 +898,12 @@ is
    -- IterarND / control_angulo / ObtenerObstaculos
 
    procedure ObtenerObstaculos(nd : in out TInfoND;
-                               beta : in Float)
+                               beta : Float)
    with
      Post => nd.region = nd.region'Old;
 
    procedure ObtenerObstaculos(nd : in out TInfoND;
-                               beta : in Float) is
+                               beta : Float) is
       p : TCoordenadas;
       pp : TCoordenadasPolares;
       angulo : Float;
@@ -946,22 +944,22 @@ is
 
    -- IterarND / control_angulo / solHSGR
 
-   function solHSGR(nd : in TInfoND) return Float
+   function solHSGR(nd : TInfoND) return Float
    with
      Pre => nd.region /= -1;
 
-   function solHSGR(nd : in TInfoND) return Float is
+   function solHSGR(nd : TInfoND) return Float is
    begin
       return nd.regiones.vector(nd.region).direccion_angulo;
    end;
 
    -- IterarND / control_angulo / solHSNR
 
-   function solHSNR(nd : in TInfoND) return Float
+   function solHSNR(nd : TInfoND) return Float
    with
      Pre => nd.region /= -1;
 
-   function solHSNR(nd : in TInfoND) return Float is
+   function solHSNR(nd : TInfoND) return Float is
       region : constant TRegion := nd.regiones.vector(nd.region);
       final : Integer := region.final;
    begin
@@ -974,13 +972,13 @@ is
 
    -- IterarND / control_angulo / solHSWR
 
-   function solHSWR(nd : in TInfoND) return Float
+   function solHSWR(nd : TInfoND) return Float
    with
      Pre => nd.region /= -1 and then
      (nd.regiones.vector(nd.region).principio /= -1 and then
       nd.regiones.vector(nd.region).final /= -1);
 
-   function solHSWR(nd : in TInfoND) return Float is
+   function solHSWR(nd : TInfoND) return Float is
       region : constant TRegion := nd.regiones.vector(nd.region);
    begin
 
@@ -995,12 +993,12 @@ is
 
    -- IterarND / control_angulo / solLS1
 
-   function solLS1(nd : in TInfoND) return Float
+   function solLS1(nd : TInfoND) return Float
    with
      Pre => nd.region /= -1 and then
      (nd.obstaculo_derecha /= -1 or else nd.obstaculo_izquierda /= -1);
 
-   function solLS1(nd : in TInfoND) return Float is
+   function solLS1(nd : TInfoND) return Float is
       region : constant TRegion := nd.regiones.vector(nd.region);
       anguloPrueba : Float;
       angulo_parcial,dist_obs_dsegur,angulo_cota : Float;
@@ -1050,12 +1048,12 @@ is
 
    -- IterarND / control_angulo / solLSG
 
-   function solLSG(nd : in TInfoND) return Float
+   function solLSG(nd : TInfoND) return Float
    with
      Pre => nd.region /= -1 and then
      (nd.obstaculo_derecha /= -1 or else nd.obstaculo_izquierda /= -1);
 
-   function solLSG(nd : in TInfoND) return Float is
+   function solLSG(nd : TInfoND) return Float is
       angulo_parcial,dist_obs_dsegur,angulo_cota,anguloPrueba : Float;
    begin
 
@@ -1203,7 +1201,7 @@ is
    -- Cutting / GenerarMovimientoFicticio
 
 
-   procedure GenerarMovimientoFicticio(nd : in TInfoND;
+   procedure GenerarMovimientoFicticio(nd : TInfoND;
 --                                       angulo : in Float;
                                        velocidades : out TVelocities)
 
@@ -1248,7 +1246,7 @@ is
    --
    -- GiroBrusco
 
-   procedure GiroBrusco(nd : in TInfoND;
+   procedure GiroBrusco(nd : TInfoND;
                         velocidades : in out TVelocities) is
       --# hide GiroBrusco;
       esquina : TCoordenadasPolares;
@@ -1281,7 +1279,7 @@ is
 
    -- Cutting / ObtenerSituacionCutting
 
-   function ObtenerSituacionCutting(nd : in TInfoND)
+   function ObtenerSituacionCutting(nd : TInfoND)
 --                                    w : in Float)
                                     return CUTTING_TYPE
    is
@@ -1411,17 +1409,15 @@ is
 
    -- IterarND
 
-   Null_TVelocities : constant access TVelocities := null;
-
    function IterarND(objetivo : TCoordenadas;
                      goal_tol : Float;
-                     movimiento : access TInfoMovimiento;
-                     mapa : access TInfoEntorno
+                     movimiento : TInfoMovimiento;
+                     mapa : TInfoEntorno
                      --,void *informacion
-                    ) return access TVelocities is
+                    ) return TVelocities_Option is
       --# hide IterarND;
       nd : TInfoND;
-
+      velocidades : TVelocities;
    begin
       -- Devuelve NULL si se requiere una parada de emergencia o si no encuentra una regi�n por la que hacer avanzar el robot.
       -- Devuelve un puntero a (0.0F,0.0F) si se ha alcanzado el objetivo.
@@ -1447,7 +1443,7 @@ is
 
       -- Sectorizaci�n del mapa.
 
-      SectorizarMapa(mapa.all,nd);
+      SectorizarMapa(mapa,nd);
 
       -- Evaluaci�n de la necesidad de una parada de emergencia.
       -- Solo en el caso de robot rectangular
@@ -1455,7 +1451,7 @@ is
          if ParadaEmergencia(nd) then
             --printf("ND . Parada Emergencia\n");
             -- return 0;
-            return Null_TVelocities;
+            return (Opt => O_NONE);
          end if;
       end if;
 
@@ -1464,7 +1460,7 @@ is
       SeleccionarRegionSPARK(nd);
       if nd.region < 0 then
          --printf("ND . No encuentra region\n");
-         return Null_TVelocities;
+         return (Opt => O_NONE);
       end if;
 
       -- Construcci�n de la distancia desde el per�etro del robot al obst�culo m�s cercano en cada sector.
@@ -1485,13 +1481,13 @@ is
             -- Ya hemos llegado.
             velocidades.v:=0.0;
             velocidades.w:=0.0;
-            return velocidades'Access;
+            return (Opt => O_SOME, value => velocidades);
          end if;
       elsif hypot(nd.objetivo.c1.x, nd.objetivo.c1.y)< robot.R then
          -- Redondo
          velocidades.v:=0.0;
          velocidades.w:=0.0;
-         return velocidades'Access;
+         return (Opt => O_SOME, value => velocidades);
       end if;
 
       -- C�lculo del movimiento del robot.
@@ -1556,7 +1552,7 @@ is
       -- Devoluci�n de resultados.
 
       --fclose(depuracion);
-      return velocidades'Access;
+      return (Opt => O_SOME, value => velocidades);
    end;
 
 end nd;

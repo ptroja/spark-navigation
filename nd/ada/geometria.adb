@@ -1,11 +1,11 @@
 package body geometria is
 
-   function Atan2(x, y : in Unbounded_Float) return Unbounded_Float
+   function Atan2(x, y : Unbounded_Float) return Unbounded_Float
    with
      Pre => X /= 0.0 or else Y /= 0.0,
      Post => Atan2'Result in -Pi .. Pi;
 
-   function Atan2(x, y : in Unbounded_Float) return Unbounded_Float renames Arctan;
+   function Atan2(x, y : Unbounded_Float) return Unbounded_Float renames Arctan;
 
    -- Note: We must swap the arguments.
 --     function ARCOTANGENTE(x,y : Unbounded_Float) return Unbounded_Float
@@ -62,7 +62,7 @@ package body geometria is
 
    procedure ConstruirCoordenadasCP
      (p : out TCoordenadas;
-      q : in TCoordenadasPolares)
+      q : TCoordenadasPolares)
    is
    begin
       p.x := q.r * Cos (q.a);
@@ -75,7 +75,7 @@ package body geometria is
 
    procedure ConstruirCoordenadasCxy
      (p    : out TCoordenadas;
-      x, y : in Unbounded_Float)
+      x, y : Unbounded_Float)
    is
    begin
       p.x := x;
@@ -102,7 +102,7 @@ package body geometria is
 
    procedure ConstruirCoordenadasPC
      (p : out TCoordenadasPolares;
-      q : in TCoordenadas)
+      q : TCoordenadas)
    is
    begin
       p.r := Hypot (q.x, q.y);
@@ -115,7 +115,7 @@ package body geometria is
 
    procedure ConstruirCoordenadasPxy
      (p    : out TCoordenadasPolares;
-      x, y : in Unbounded_Float)
+      x, y : Unbounded_Float)
    is
    begin
       p.r := Hypot (x, y);
@@ -142,7 +142,7 @@ package body geometria is
 
    procedure ConstruirCoordenadasPcC
      (p : out TCoordenadasPolares;
-      q : in TCoordenadas)
+      q : TCoordenadas)
    is
    begin
       p.r := q.x * q.x + q.y * q.y; -- yes, square (?!).
@@ -153,7 +153,7 @@ package body geometria is
    -- SumarCoordenadasCxy --
    -------------------------
 
-   procedure SumarCoordenadasCxy (p : in out TCoordenadas; x, y : in Unbounded_Float) is
+   procedure SumarCoordenadasCxy (p : in out TCoordenadas; x, y : Unbounded_Float) is
    begin
       p.x := p.x + x;
       p.y := p.y + y;
@@ -164,8 +164,8 @@ package body geometria is
    --------------------------
 
    procedure SumarCoordenadasCxyC
-     (p    : in TCoordenadas;
-      x, y : in Unbounded_Float;
+     (p    : TCoordenadas;
+      x, y : Unbounded_Float;
       q    : out TCoordenadas)
    is
    begin
@@ -229,7 +229,7 @@ package body geometria is
    -- AnguloNormalizado --
    -----------------------
 
-   function AnguloNormalizado (angulo : in Unbounded_Float) return Unbounded_Float is
+   function AnguloNormalizado (angulo : Unbounded_Float) return Unbounded_Float is
    begin
       -- Debe pertenecer a (-PI,PI].
       -- Todos los �ngulos que proceden de un "atan2" pertenecen a ese
@@ -242,7 +242,7 @@ package body geometria is
    ----------------------------------------------
 
    function AnguloPerteneceIntervaloOrientadoCerrado
-     (angulo, limite1, limite2 : in Unbounded_Float)
+     (angulo, limite1, limite2 : Unbounded_Float)
       return                     Boolean
    is
    begin
@@ -264,7 +264,7 @@ package body geometria is
    ------------------------------
 
    function BisectrizAnguloOrientado
-     (limite1, limite2 : in Unbounded_Float)
+     (limite1, limite2 : Unbounded_Float)
       return             Unbounded_Float
    is
       resultado : constant Unbounded_Float := (limite1 + limite2) / 2.0;
@@ -284,7 +284,7 @@ package body geometria is
    --------------------------------
 
    function BisectrizAnguloNoOrientado
-     (limite1, limite2 : in Unbounded_Float)
+     (limite1, limite2 : Unbounded_Float)
       return             Unbounded_Float
    is
       resultado : constant Unbounded_Float := (limite1 + limite2) / 2.0;
@@ -305,7 +305,7 @@ package body geometria is
    -----------------------------
 
    function AmplitudAnguloOrientado
-     (limite1, limite2 : in Unbounded_Float)
+     (limite1, limite2 : Unbounded_Float)
       return             Unbounded_Float
    is
       amplitud : constant Unbounded_Float := limite2 - limite1;
@@ -325,7 +325,7 @@ package body geometria is
    -------------------------------
 
    function AmplitudAnguloNoOrientado
-     (limite1, limite2 : in Unbounded_Float)
+     (limite1, limite2 : Unbounded_Float)
       return             Unbounded_Float
    is
       amplitud : constant Unbounded_Float := abs (limite1 - limite2);
@@ -346,8 +346,8 @@ package body geometria is
    ----------------------------------
 
    procedure MinimaDistanciaCuadradoCorte
-     (pp1, pp2  : in TCoordenadasPolares;
-      angulo    : in Unbounded_Float;
+     (pp1, pp2  : TCoordenadasPolares;
+      angulo    : Unbounded_Float;
       distancia : in out Unbounded_Float)
    is
       pp1temp : TCoordenadasPolares := pp1;

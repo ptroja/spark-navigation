@@ -25,13 +25,13 @@ package geometria is
      Pre => r /= 0.0 and then abs(y/r) <= 1.0;
 
    procedure AplicarCotas(n : in out Unbounded_Float;
-                          i : in Unbounded_Float;
-                          s : in Unbounded_Float)
+                          i : Unbounded_Float;
+                          s : Unbounded_Float)
    with
      Pre => i <= s,
      Post => i <= n and then n <= s;
 
-   function Hypot(x,y : in Unbounded_Float) return Unbounded_Float
+   function Hypot(x,y : Unbounded_Float) return Unbounded_Float
    with
      Post => (if x /= 0.0 or else y /= 0.0 then Hypot'Result > 0.0 else Hypot'Result >= 0.0);
    pragma Import(C, Hypot, "hypotf");
@@ -74,20 +74,20 @@ package geometria is
    --
    -- Construcci�n de coordenadas.
    --
-   procedure ConstruirCoordenadasCP(p : out TCoordenadas; q : in TCoordenadasPolares);
+   procedure ConstruirCoordenadasCP(p : out TCoordenadas; q : TCoordenadasPolares);
 
-   procedure ConstruirCoordenadasCxy(p : out TCoordenadas; x,y : in Unbounded_Float)
+   procedure ConstruirCoordenadasCxy(p : out TCoordenadas; x,y : Unbounded_Float)
    with
      Post => p.x = x and then p.y = y;
 
    procedure ConstruirCoordenadasCra(p : out TCoordenadas; r : Unbounded_Float; a : Unbounded_Float);
 
-   procedure ConstruirCoordenadasPC(p : out TCoordenadasPolares; q : in TCoordenadas)
+   procedure ConstruirCoordenadasPC(p : out TCoordenadasPolares; q : TCoordenadas)
    with
      Pre => q.x /= 0.0 or else q.y /= 0.0,
      Post => p.r > 0.0 and then p.a in -Pi .. Pi;
 
-   procedure ConstruirCoordenadasPxy(p : out TCoordenadasPolares; x,y : in Unbounded_Float)
+   procedure ConstruirCoordenadasPxy(p : out TCoordenadasPolares; x,y : Unbounded_Float)
    with
      Pre => x /= 0.0 or else y /= 0.0,
      Post => p.r > 0.0 and then p.a in -Pi .. Pi;
@@ -95,7 +95,7 @@ package geometria is
    procedure ConstruirCoordenadasPra(p : out TCoordenadasPolares; r : Unbounded_Float ; a : Unbounded_Float);
 
    -- Paso de cartesianas a polares, pero con el m�dulo al cuadrado.
-   procedure ConstruirCoordenadasPcC(p : out TCoordenadasPolares; q : in TCoordenadas)
+   procedure ConstruirCoordenadasPcC(p : out TCoordenadasPolares; q : TCoordenadas)
    with
      Pre => q.x /= 0.0 or else q.y /= 0.0,
      Post => p.r > 0.0;
@@ -119,7 +119,7 @@ package geometria is
    --
 
    -- Transformaciones directas.
-   procedure TransformacionDirecta(SR : in TSR; p : in out TCoordenadas);
+   procedure TransformacionDirecta(SR : TSR; p : in out TCoordenadas);
 
    procedure TRANSFORMACION01(SR1 : TSR; p : in out TCoordenadas);
    procedure TRANSFORMACION12(SR2 : TSR; p : in out TCoordenadas);
@@ -153,23 +153,23 @@ package geometria is
    -- �ngulos e intervalos de �ngulos.                                          */
    --
 
-   function AnguloNormalizado(angulo : in Unbounded_Float) return Unbounded_Float;
+   function AnguloNormalizado(angulo : Unbounded_Float) return Unbounded_Float;
 
    -- Esta funci�n devuelve 1 si el �ngulo est� entre los l�mites; 0 en caso contrario.
    -- Todos los par�metros deben pertenecer al intervalo (-PI,PI].
-   function AnguloPerteneceIntervaloOrientadoCerrado(angulo, limite1, limite2 : in Unbounded_Float) return Boolean;
+   function AnguloPerteneceIntervaloOrientadoCerrado(angulo, limite1, limite2 : Unbounded_Float) return Boolean;
 
    -- Devuelve la bisectriz del �ngulo de "limite1" a "limite2" en sentido contrario a las agujas del reloj.
-   function BisectrizAnguloOrientado(limite1, limite2 : in Unbounded_Float) return Unbounded_Float;
+   function BisectrizAnguloOrientado(limite1, limite2 : Unbounded_Float) return Unbounded_Float;
 
    -- Devuelve la bisectriz del menor �ngulo formado por "limite1" y "limite2", ya sea en el sentido de las agujas del reloj o en el opuesto.
-   function BisectrizAnguloNoOrientado(limite1, limite2 : in Unbounded_Float) return Unbounded_Float;
+   function BisectrizAnguloNoOrientado(limite1, limite2 : Unbounded_Float) return Unbounded_Float;
 
    -- Devuelve la amplitud del �ngulo de "limite1" a "limite2" en sentido contrario a las agujas del reloj.
-   function AmplitudAnguloOrientado(limite1, limite2 : in Unbounded_Float) return Unbounded_Float;
+   function AmplitudAnguloOrientado(limite1, limite2 : Unbounded_Float) return Unbounded_Float;
 
    -- Devuelve la amplitud del menor �ngulo formado por "limite1" y "limite2", ya sea en el sentido de las agujas del reloj o en el opuesto.
-   function AmplitudAnguloNoOrientado(limite1, limite2 : in Unbounded_Float) return Unbounded_Float;
+   function AmplitudAnguloNoOrientado(limite1, limite2 : Unbounded_Float) return Unbounded_Float;
 
    --
    -- Cortes entre dos segmentos, uno de los cuales tiene como uno de sus       */
@@ -181,6 +181,6 @@ package geometria is
    -- "p1" y "p2" son los extremos de un segmento.
    -- "angulo" es la direcci�n de corte (desde el origen).
    -- "distancia" es la menor distancia obtenida hasta el momento.
-   procedure MinimaDistanciaCuadradoCorte(pp1, pp2 : in TCoordenadasPolares; angulo : in Unbounded_Float; distancia : in out Unbounded_Float);
+   procedure MinimaDistanciaCuadradoCorte(pp1, pp2 : TCoordenadasPolares; angulo : Unbounded_Float; distancia : in out Unbounded_Float);
 
 end geometria;

@@ -4,7 +4,6 @@ with Formal.Numerics; use Formal.Numerics;
 
 package nd
 is
-
    -- Information of the robot and laser for the ND.
    type TParametersND is record
 
@@ -59,7 +58,6 @@ is
       --float laser;
 
    end record;
-   pragma Convention (C, TParametersND);
 
    -- Information of linear v, and angular velocities w.
    type TVelocities is record
@@ -67,15 +65,13 @@ is
       w       : Float;   -- angular velocity
       v_theta : Float;   -- velocity angle (just if holonomous vehicle)
    end record;
-   pragma Convention (C, TVelocities);
 
    -- (information of the robot)
    type TInfoMovimiento is record
       SR1         : geometria.TSR;  -- Current vehicle location in GLOBAL
-                                    --coordinates
-      velocidades : TVelocities; -- Current vehicle velocities
+                                    -- coordinates
+      velocidades : TVelocities;    -- Current vehicle velocities
    end record;
-   pragma Convention (C, TInfoMovimiento);
 
    -- Maximum number of points of the environment
    -- This number depends on the maximum number of obstacle points that
@@ -299,8 +295,7 @@ is
    -- Input--
    --		parametros:: information of the robot and laser used by the ND
 
-   procedure InicializarND (parametros : in TParametersND);
-   pragma Export (C, InicializarND, "InicializarND");
+   procedure InicializarND (parametros : TParametersND);
 
    -- This runs the ND. The input is the current obstacle list and the goal
    --location
@@ -321,15 +316,25 @@ is
    --					 * NULL an emergency stop is required
    --					 * pointer to (0,0) goal reached.
 
+   type Option is (O_NONE, O_SOME);
+
+   type TVelocities_Option(Opt : Option := O_NONE) is
+      record
+         case Opt is
+            when O_NONE =>
+               null;
+            when O_SOME =>
+               value : TVelocities;
+         end case;
+      end record;
+
    function IterarND
-     (objetivo   : in geometria.TCoordenadas;
-      goal_tol   : in Float;
-      movimiento : access TInfoMovimiento;
-      mapa       : access TInfoEntorno)
+     (objetivo   : geometria.TCoordenadas;
+      goal_tol   : Float;
+      movimiento : TInfoMovimiento;
+      mapa       : TInfoEntorno)
    --;void *informacion
    -- if you do not want to see the internal information in nh2.h informacion
    --= NULL
-      return       access TVelocities;
-
-   pragma Export (C, IterarND, "IterarND");
+      return TVelocities_Option;
 end nd;
