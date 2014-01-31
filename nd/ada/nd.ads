@@ -207,7 +207,7 @@ is
       direccion_angulo : Float;
    end record;
 
-   type TRegion_Vector is array (SECTOR_ID) of aliased TRegion;
+   type TRegion_Vector is array (SECTOR_ID) of TRegion;
 
    type TVRegiones is record
       longitud : Integer;

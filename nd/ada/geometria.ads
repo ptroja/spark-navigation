@@ -43,9 +43,8 @@ package geometria is
    -- Cartesian coordinates.
    type TCoordenadas is
       record
-         x,y : Unbounded_Float; -- aliased
+         x,y : Unbounded_Float;
       end record;
-   pragma Convention (C_Pass_By_Copy, TCoordenadas);
 
    -- Coordenadas polares. Espacio real.
    type TCoordenadasPolares is
@@ -60,7 +59,6 @@ package geometria is
          posicion : TCoordenadas;
          orientacion : Unbounded_Float;
       end record;
-   pragma Convention (C, TSR);
 
    --
    -- Declaraci�n de tipos y macros relacionadas.

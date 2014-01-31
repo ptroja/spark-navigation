@@ -64,6 +64,7 @@ is
    function ObtenerSectorP(p : TCoordenadasPolares) return SECTOR_ID is
       FACTOR : constant := -Float(SECTORES)/(2.0*PI);
       SUMANDO : constant := (Float(SECTORES)+1.0)/2.0;
+      -- FIXME: Ada casting give different result from C, but we do not care.
    begin
       return Integer(FACTOR*p.a+SUMANDO) mod SECTORES;
    end;
@@ -289,9 +290,7 @@ is
       j : Integer;
    begin
 
-      for i in SECTOR_ID'Range loop
-         nd.d(i).r:=-1.0;
-      end loop;
+      nd.d := (others => (r => -1.0, a => 0.0));
 
       for i in 0 .. mapa.longitud-1 loop
          p:=mapa.punto(i);
@@ -1200,11 +1199,7 @@ is
 
    -- Cutting / GenerarMovimientoFicticio
 
-
-   procedure GenerarMovimientoFicticio(nd : TInfoND;
-                                       -- angulo : Float;
-                                       velocidades : out TVelocities)
-
+   function GenerarMovimientoFicticio(nd : TInfoND) return TVelocities
    is
 --      pragma Unreferenced(angulo);
 
@@ -1221,6 +1216,8 @@ is
          1.0);
 
       cvmax : constant Float := MAXIMO(0.2,MINIMO(ci,cd));
+
+      velocidades : TVelocities;
    begin
       velocidades.v:=robot.velocidad_lineal_maxima*cvmax*cos(nd.angulo); -- Calculada en SR2C.
       velocidades.w:=robot.velocidad_angular_maxima*cvmax*sin(nd.angulo); -- Calculada en SR2C.
@@ -1241,6 +1238,7 @@ is
       --
       --       #undef FMAX
       --     */
+      return velocidades;
    end;
 
    --
@@ -1254,15 +1252,15 @@ is
    begin
       ConstruirCoordenadasPxy(esquina,robot.Dimensiones.Front,robot.Dimensiones.Left);
 
-      if nd.obstaculo_derecha/=-1 then
-         derecha:=(abs(nd.d(nd.obstaculo_derecha).a)<=esquina.a) and then (nd.d(nd.obstaculo_derecha).r<=esquina.r+robot.enlarge);
+      if nd.obstaculo_derecha /= -1 then
+         derecha := abs(nd.d(nd.obstaculo_derecha).a)<=esquina.a and then nd.d(nd.obstaculo_derecha).r<=esquina.r+robot.enlarge;
       else
-         derecha:=false;
+         derecha := false;
       end if;
       if nd.obstaculo_izquierda/=-1 then
-         izquierda:=(abs(nd.d(nd.obstaculo_izquierda).a)<=esquina.a) and then (nd.d(nd.obstaculo_izquierda).r<=esquina.r+robot.enlarge);
+         izquierda := abs(nd.d(nd.obstaculo_izquierda).a)<=esquina.a and then nd.d(nd.obstaculo_izquierda).r<=esquina.r+robot.enlarge;
       else
-         izquierda:=false;
+         izquierda := false;
       end if;
 
       if derecha and then izquierda then
@@ -1415,7 +1413,6 @@ is
                      mapa : TInfoEntorno
                      --,void *informacion
                     ) return TVelocities_Option is
-      --# hide IterarND;
       nd : TInfoND;
       velocidades : TVelocities;
    begin
@@ -1521,9 +1518,8 @@ is
          --   printf("Movimiento No Holonomo\n");
          -- Calculo del movimiento Generador de movimientos
          --**/printf("<Vnd,And>=<%f,%f>\n",nd.velocidad,nd.angulo);
-         GenerarMovimientoFicticio(nd,
-                                   --nd.angulo,
-                                   velocidades);
+         velocidades := GenerarMovimientoFicticio(nd);
+         velocidades.v_theta:=0.0;
          --**/printf("<Vr,Wr>=<%f,%f>\n",velocidades.v,velocidades.w);
 
          -- Aplicar correcciones al movimiento calculado.
