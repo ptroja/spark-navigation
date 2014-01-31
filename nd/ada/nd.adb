@@ -1176,7 +1176,7 @@ is
    --
    -- IterarND / control_velocidad
 
-   procedure control_velocidad(nd : in out TInfoND) is
+   function control_velocidad(nd : TInfoND) return Float is
       ci,cd : Float;
    begin
       -- Velocidad lineal del robot.
@@ -1193,7 +1193,7 @@ is
          cd := 1.0;
       end if;
 
-      nd.velocidad:=robot.velocidad_lineal_maxima*MINIMO(ci,cd);
+      return robot.velocidad_lineal_maxima*MINIMO(ci,cd);
    end;
 
    ----------------------------------------------------------------------------
@@ -1202,26 +1202,26 @@ is
 
 
    procedure GenerarMovimientoFicticio(nd : TInfoND;
---                                       angulo : in Float;
+                                       -- angulo : Float;
                                        velocidades : out TVelocities)
 
    is
 --      pragma Unreferenced(angulo);
-      ci : Float := 1.0;
-      cd : Float := 1.0;
+
+      -- Coeficiente de distancia por la izquierda.
+      ci : constant Float :=
+        (if nd.obstaculo_izquierda/=-1 then
+         nd.dr(nd.obstaculo_izquierda)/robot.ds(nd.obstaculo_izquierda) else
+         1.0);
+
+      -- Coeficiente de distancia por la derecha.
+      cd : constant Float :=
+        (if nd.obstaculo_derecha/=-1 then
+         nd.dr(nd.obstaculo_derecha)/robot.ds(nd.obstaculo_derecha) else
+         1.0);
 
       cvmax : constant Float := MAXIMO(0.2,MINIMO(ci,cd));
    begin
-      -- Coeficiente de distancia por la izquierda.
-      if nd.obstaculo_izquierda/=-1 then
-         ci := nd.dr(nd.obstaculo_izquierda)/robot.ds(nd.obstaculo_izquierda);
-      end if;
-
-      -- Coeficiente de distancia por la derecha.
-      if nd.obstaculo_derecha/=-1 then
-         cd := nd.dr(nd.obstaculo_derecha)/robot.ds(nd.obstaculo_derecha);
-      end if;
-
       velocidades.v:=robot.velocidad_lineal_maxima*cvmax*cos(nd.angulo); -- Calculada en SR2C.
       velocidades.w:=robot.velocidad_angular_maxima*cvmax*sin(nd.angulo); -- Calculada en SR2C.
 
@@ -1492,7 +1492,7 @@ is
 
       -- C�lculo del movimiento del robot.
       control_angulo(nd); -- Obtenci�n de la direcci�n de movimiento.
-      control_velocidad(nd); -- Obtenci�n de la velocidad de movimiento.
+      nd.velocidad := control_velocidad(nd); -- Obtenci�n de la velocidad de movimiento.
       --  if (nd.velocidad<0.05F)
       --    nd.velocidad=0.05F;
       nd.velocidad:=robot.velocidad_lineal_maxima;
