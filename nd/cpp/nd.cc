@@ -69,7 +69,7 @@ static TVelocities velocidades; // Resultado de IterarND().
 float sector2angulo(int sector) {
   // Sector debe estar entre 0 y SECTORES-1.
 
-  #define FACTOR (-(2.0F*PI)/SECTORES)
+  #define FACTOR (-(2.0F*M_PI)/SECTORES)
   #define SUMANDO (-SECTORES/2)
 
   return FACTOR*(sector+SUMANDO);
@@ -81,7 +81,7 @@ float sector2angulo(int sector) {
 int angulo2sector(float angulo) {
   // Angulo debe estar normalizado.
   
-  #define FACTOR (-SECTORES/(2.0F*PI))
+  #define FACTOR (-SECTORES/(2.0F*M_PI))
   #define SUMANDO ((SECTORES+1.0F)/2.0F)
 
    return ((int)(FACTOR*angulo+SUMANDO))%SECTORES;
@@ -92,7 +92,7 @@ int angulo2sector(float angulo) {
 
 static int ObtenerSectorP(TCoordenadasPolares p) {
 
-  #define FACTOR (-SECTORES/(2.0F*PI))
+  #define FACTOR (-SECTORES/(2.0F*M_PI))
   #define SUMANDO ((SECTORES+1.0F)/2.0F)
 
   return ((int)(FACTOR*p.a+SUMANDO))%SECTORES;
@@ -190,7 +190,7 @@ static void InicializarDS(float dsmax,float dsmin) {
   limite3=ARCOTANGENTE(q3.x,q3.y);
   limite4=q4.a;
 
-  robot.ds[0]=-q1.x-robot.E[0]; // = q1.x/(float)cos(PI) - ...;
+  robot.ds[0]=-q1.x-robot.E[0]; // = q1.x/(float)cos(M_PI) - ...;
 
   m=CUADRADO(p1.x)+CUADRADO(p1.y)-CUADRADO(dsmin);
   n=CUADRADO(p2.x)+CUADRADO(p2.y)-CUADRADO(dsmax);
@@ -881,11 +881,11 @@ static float solLS1(TInfoND *nd) {
     angulo_parcial=sector2angulo(((region->principio+final)/2)%SECTORES);
 
   if (nd->obstaculo_izquierda!=-1) {
-    angulo_cota=AnguloNormalizado(nd->d[nd->obstaculo_izquierda].a+PI-angulo_parcial)+angulo_parcial;
+    angulo_cota=AnguloNormalizado(nd->d[nd->obstaculo_izquierda].a+M_PI-angulo_parcial)+angulo_parcial;
     dist_obs_dsegur=nd->dr[nd->obstaculo_izquierda]/robot.ds[nd->obstaculo_izquierda];
   } 
   else{
-    angulo_cota=AnguloNormalizado(nd->d[nd->obstaculo_derecha].a+PI-angulo_parcial)+angulo_parcial;
+    angulo_cota=AnguloNormalizado(nd->d[nd->obstaculo_derecha].a+M_PI-angulo_parcial)+angulo_parcial;
     dist_obs_dsegur=nd->dr[nd->obstaculo_derecha]/robot.ds[nd->obstaculo_derecha];
   }
 
@@ -913,11 +913,11 @@ static float solLSG(TInfoND *nd){
   angulo_parcial= nd->regiones.vector[nd->region].direccion_angulo;
   
   if (nd->obstaculo_izquierda!=-1) {
-    angulo_cota = AnguloNormalizado(nd->d[nd->obstaculo_izquierda].a+PI-angulo_parcial)+angulo_parcial;
+    angulo_cota = AnguloNormalizado(nd->d[nd->obstaculo_izquierda].a+M_PI-angulo_parcial)+angulo_parcial;
     dist_obs_dsegur = nd->dr[nd->obstaculo_izquierda]/robot.ds[nd->obstaculo_izquierda];
   }
   else{
-    angulo_cota = AnguloNormalizado(nd->d[nd->obstaculo_derecha].a+PI-angulo_parcial)+angulo_parcial;
+    angulo_cota = AnguloNormalizado(nd->d[nd->obstaculo_derecha].a+M_PI-angulo_parcial)+angulo_parcial;
     dist_obs_dsegur = nd->dr[nd->obstaculo_derecha]/robot.ds[nd->obstaculo_derecha];
   }
 
@@ -946,9 +946,9 @@ static float solLS2(TInfoND *nd) {
   float ang_par = nd->regiones.vector[nd->region].direccion_angulo;
 
 /*
-  ad = AnguloNormalizado(nd->d[nd->obstaculo_derecha].a+PI-ang_par)+ang_par;
+  ad = AnguloNormalizado(nd->d[nd->obstaculo_derecha].a+M_PI-ang_par)+ang_par;
 
-  ai = AnguloNormalizado(nd->d[nd->obstaculo_izquierda].a-PI-ang_par)+ang_par;
+  ai = AnguloNormalizado(nd->d[nd->obstaculo_izquierda].a-M_PI-ang_par)+ang_par;
 
   return AnguloNormalizado((ad+ai)/2.0F+(ci-cd)/(ci+cd)*(ad-ai)/2.0F);
 */
@@ -1008,7 +1008,7 @@ static void control_angulo(TInfoND *nd) {
     }
   }
 
-  AplicarCotas(&(nd->angulo),-PI/2.0F,PI/2.0F);
+  AplicarCotas(&(nd->angulo),-M_PI/2.0F,M_PI/2.0F);
 }
 
 // ----------------------------------------------------------------------------
@@ -1096,7 +1096,7 @@ static int ObtenerSituacionCutting(TInfoND *nd,float w) {
 
   i=0;
   while (i<SECTORES) {
-    if (((nd->d[i].a<-PI/2.0F) || (nd->d[i].a>PI/2.0F)) && (nd->d[i].r>=0.0F) && (nd->dr[i]<=robot.enlarge/2.0F)) {
+    if (((nd->d[i].a<-M_PI/2.0F) || (nd->d[i].a>M_PI/2.0F)) && (nd->d[i].r>=0.0F) && (nd->dr[i]<=robot.enlarge/2.0F)) {
 
       ConstruirCoordenadasCP(&p,nd->d[i]);
 

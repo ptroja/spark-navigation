@@ -153,7 +153,7 @@ float BisectrizAnguloOrientado(float limite1,float limite2) {
 
   float resultado=(limite1+limite2)/2.0F;
   
-  return (limite1<=limite2) ? resultado : AnguloNormalizado(resultado+PI);
+  return (limite1<=limite2) ? resultado : AnguloNormalizado(resultado+M_PI);
 }
 
 float BisectrizAnguloNoOrientado(float limite1,float limite2) {
@@ -161,7 +161,7 @@ float BisectrizAnguloNoOrientado(float limite1,float limite2) {
 
   float resultado=(limite1+limite2)/2.0F;
 
-  return ((float)fabs(limite1-limite2)<=PI) ? resultado : AnguloNormalizado(resultado+PI);
+  return ((float)fabs(limite1-limite2)<=M_PI) ? resultado : AnguloNormalizado(resultado+M_PI);
 }
 
 float AmplitudAnguloOrientado(float limite1,float limite2) {
@@ -169,7 +169,7 @@ float AmplitudAnguloOrientado(float limite1,float limite2) {
 
   float amplitud=limite2-limite1;
 
-  return (limite1<=limite2) ? amplitud : 2.0F*PI-amplitud;
+  return (limite1<=limite2) ? amplitud : 2.0F*M_PI-amplitud;
 }
 
 float AmplitudAnguloNoOrientado(float limite1,float limite2) {
@@ -177,7 +177,7 @@ float AmplitudAnguloNoOrientado(float limite1,float limite2) {
 
   float amplitud=(float)fabs(limite1-limite2);
 
-  return (amplitud<=PI) ? amplitud : 2.0F*PI-amplitud;
+  return (amplitud<=M_PI) ? amplitud : 2.0F*M_PI-amplitud;
 }
 
 /* ------------------------------------------------------------------------- */

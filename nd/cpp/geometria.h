@@ -33,17 +33,6 @@
 /* Declaraci�n de constantes y macros.                                       */
 /* ------------------------------------------------------------------------- */
 
-// Declaraci�n de la constante PI.
-
-#ifdef PI
-#undef PI
-#endif
-
-#define PI 3.1415926535F
-#ifndef M_PI
-#define M_PI PI
-#endif
-
 // Declaraci�n de operaciones b�sicas.
 
 #define CUADRADO(x) (float)((x)*(x))

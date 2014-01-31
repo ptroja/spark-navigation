@@ -186,6 +186,8 @@ driver
 #include <libplayercore/playercore.h>
 #include "nd.h"
 
+#include "clock.h"
+
 #ifndef SIGN
   #define SIGN(x) (((x) == 0) ? 0 : (((x) > 0) ? 1 : -1))
 #endif
@@ -298,6 +300,9 @@ class ND : public ThreadedDriver
     int * bad_sonars;
     int bad_sonar_count;
     int sonar_buffer;
+
+    // Performance data.
+    stat_t statistics;
 };
 
 // Initialization function
@@ -366,6 +371,7 @@ ND::ND( ConfigFile* cf, int section)
   }
 
   this->sonar = NULL;
+  this->bad_sonars = NULL;
   memset(&this->sonar_addr,0,sizeof(player_devaddr_t));
   cf->ReadDeviceAddr(&this->sonar_addr, section, "requires",
                      PLAYER_SONAR_CODE, -1, NULL);
@@ -397,13 +403,13 @@ ND::ND( ConfigFile* cf, int section)
 
 ND::~ND()
 {
-  delete [] bad_sonars;
+  if (bad_sonars) delete [] bad_sonars;
   return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Set up the device (called by server thread).
-int ND::MainSetup() 
+int ND::MainSetup()
 {
   // Initialise the underlying position device.
   if (this->SetupOdom() != 0)
@@ -412,10 +418,16 @@ int ND::MainSetup()
   this->active_goal = false;
 
   // Initialise the laser.
-  if (this->laser_addr.interf && this->SetupLaser() != 0)
+  if (this->laser_addr.interf && this->SetupLaser() != 0) {
     return -1;
-  if (this->sonar_addr.interf && this->SetupSonar() != 0)
+  } else {
+    this->num_laser_scans = 0;
+  }
+  if (this->sonar_addr.interf && this->SetupSonar() != 0) {
     return -1;
+  } else {
+    this->num_sonar_scans = 0;
+  }
 
   this->obstacles.longitud = 0;
   this->stall = false;
@@ -426,12 +438,14 @@ int ND::MainSetup()
 
   this->waiting = false;
 
+  statReset(&this->statistics);
+
   return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Shutdown the device (called by server thread).
-void ND::MainQuit() 
+void ND::MainQuit()
 {
   // Stop the laser
   if(this->laser)
@@ -478,7 +492,7 @@ int ND::SetupOdom()
   if(!(msg = this->odom->Request(this->InQueue,
                                  PLAYER_MSGTYPE_REQ,
                                  PLAYER_POSITION2D_REQ_GET_GEOM,
-                                 NULL, 0, NULL,false)) ||
+                                 NULL, 0, NULL, true)) ||
      (msg->GetHeader()->size != sizeof(player_position2d_geom_t)))
   {
     PLAYER_ERROR("failed to get geometry of underlying position device");
@@ -539,7 +553,7 @@ int ND::SetupLaser()
   if(!(msg = this->laser->Request(this->InQueue,
                                   PLAYER_MSGTYPE_REQ,
                                   PLAYER_LASER_REQ_GET_GEOM,
-                                  NULL, 0, NULL,false)))
+                                  NULL, 0, NULL, true)))
   {
     PLAYER_ERROR("failed to get laser geometry");
     return(-1);
@@ -941,7 +955,8 @@ int ND::ProcessMessage(QueuePointer &resp_queue,
                                    hdr->subtype,
                                    (void*)data,
                                    hdr->size,
-                                   &hdr->timestamp)))
+                                   &hdr->timestamp,
+                                   true)))
     {
       PLAYER_WARN1("failed to forward config request with subtype: %d\n",
                    hdr->subtype);
@@ -1075,6 +1090,10 @@ ND::Main()
       this->active_goal = false;
       this->PutPositionCmd(0.0,0.0);
       PLAYER_MSG0(1, "At goal");
+      // Print statistics.
+      statPrint(&this->statistics);
+      statReset(&this->statistics);
+      exit(0);
       continue;
     }
     else
@@ -1093,11 +1112,13 @@ ND::Main()
         // can attain the goal heading
         this->SetDirection(1);
 
+        statStart(&this->statistics);
         cmd_vel = IterarND(goal,
                            static_cast<float> (this->dist_eps),
                            &pose,
                            &this->obstacles,
                            NULL);
+        statStop(&this->statistics);
         if(!cmd_vel)
         {
           // Emergency stop
@@ -1191,11 +1212,13 @@ ND::Main()
         else
           this->SetDirection(1);
 
+        statStart(&this->statistics);
         cmd_vel = IterarND(goal,
                            static_cast<float> (this->dist_eps),
                            &pose,
                            &this->obstacles,
                            NULL);
+        statStop(&this->statistics);
         if(!cmd_vel)
         {
           // Emergency stop
@@ -1210,6 +1233,8 @@ ND::Main()
 
         vx = cmd_vel->v;
         va = cmd_vel->w;
+        //printf("(vx,va) = ( %f , %f )\n", vx, va);
+        //continue;
       }
 
       if(!vx && !va)
