@@ -30,19 +30,19 @@ package Algorithm is
    subtype Speed_Index is Integer range 0 .. 2000;
    subtype Max_Speed_Index is Speed_Index range 1 .. Speed_Index'Last;
 
-   function Integer_Eq(X,Y : Integer) return Boolean is (X = Y);
+   function Integer_Eq (X, Y : Integer) return Boolean is (X = Y);
 
-   function Float_Eq(X,Y : Float) return Boolean is (X = Y);
+   function Float_Eq (X, Y : Float) return Boolean is (X = Y);
 
-   package Float_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Hist_Index,
+   package Float_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Hist_Index,
                                                              Element_Type => Float,
                                                              "=" => Float_Eq);
 
-   package Integer_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Hist_Index,
+   package Integer_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Hist_Index,
                                                                Element_Type => Integer,
                                                                "=" => Integer_Eq);
 
-   package Speed_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Speed_Index,
+   package Speed_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Speed_Index,
                                                              Element_Type => Integer,
                                                              "=" => Integer_Eq);
 
@@ -51,15 +51,15 @@ package Algorithm is
          first, second : Integer;
       end record;
 
-   function Border_Pair_Eq(X,Y : Border_Pair) return Boolean is
+   function Border_Pair_Eq (X, Y : Border_Pair) return Boolean is
      (X.first = Y.first and then X.second = Y.second);
 
-   package Border_Pair_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Hist_Index,
+   package Border_Pair_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Hist_Index,
                                                                    Element_Type => Border_Pair,
                                                                    "=" => Border_Pair_Eq
                                                                   );
 
-   subtype Candidate_Index is Integer range 0 .. Hist_Index'Last*4;
+   subtype Candidate_Index is Integer range 0 .. Hist_Index'Last * 4;
 
    type Candidate is
       record
@@ -67,10 +67,10 @@ package Algorithm is
          Speed : Speed_Index;
       end record;
 
-   function Candidate_Eq(X,Y : Candidate) return Boolean is
+   function Candidate_Eq (X, Y : Candidate) return Boolean is
      (X.Angle = Y.Angle and then X.Speed = Y.Speed);
 
-   package Candidate_Vector is new Ada.Containers.Formal_Vectors(Index_Type   => Candidate_Index,
+   package Candidate_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Candidate_Index,
                                                                  Element_Type => Candidate,
                                                                  "=" => Candidate_Eq
                                                                 );
@@ -83,7 +83,7 @@ package Algorithm is
 
    FIXED_SECTOR_ANGLE : constant := 1;
 
-   subtype Sectors_Vector is Integer_Vector.Vector(360/FIXED_SECTOR_ANGLE);
+   subtype Sectors_Vector is Integer_Vector.Vector (360/FIXED_SECTOR_ANGLE);
 
    type Cell_Sectors is array (Integer range <>,   -- NUM_CELL_SECTOR_TABLES
                                Integer range <>,   -- WINDOW_DIAMETER
@@ -93,7 +93,7 @@ package Algorithm is
    type Cell_Array is array (Integer range <>,
                              Integer range <>) of Float;
 
-   type VFH(
+   type VFH (
             HIST_SIZE : Natural;                -- sectors (over 360deg)
             HIST_COUNT : Ada.Containers.Count_Type;
             HIST_LAST : Natural;
@@ -107,9 +107,9 @@ package Algorithm is
          -- This is public so that monitoring tools can get at it;
          -- it shouldn't be modified externally.
          -- Sweeps in an anti-clockwise direction.
-         Hist : History_Array(Natural range 0 .. HIST_LAST) := (others => 0.0);
+         Hist : History_Array (Natural range 0 .. HIST_LAST) := (others => 0.0);
 
-         WINDOW_DIAMETER : Positive := WINDOW_DIAMETER_LAST+1;
+         WINDOW_DIAMETER : Positive := WINDOW_DIAMETER_LAST + 1;
 
          ROBOT_RADIUS : Float;                              -- millimeters
          CENTER_X : Integer;                                -- cells
@@ -147,31 +147,31 @@ package Algorithm is
          Blocked_Circle_Radius : Float;
 
          -- FIXME: these are Float(WINDOW_DIAMETER,WINDOW_DIAMETER).
-         Cell_Direction : Cell_Array(Integer range 0 .. WINDOW_DIAMETER_LAST,
+         Cell_Direction : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
-         Cell_Base_Mag  : Cell_Array(Integer range 0 .. WINDOW_DIAMETER_LAST,
+         Cell_Base_Mag  : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
-         Cell_Mag       : Cell_Array(Integer range 0 .. WINDOW_DIAMETER_LAST,
+         Cell_Mag       : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
-         Cell_Dist      : Cell_Array(Integer range 0 .. WINDOW_DIAMETER_LAST,
+         Cell_Dist      : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
-         Cell_Enlarge   : Cell_Array(Integer range 0 .. WINDOW_DIAMETER_LAST,
+         Cell_Enlarge   : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
 
          -- Cell_Sector[x][y] is a vector of indices to sectors that are effected if cell (x,y) contains
          -- an obstacle.
          -- Cell enlargement is taken into account.
          -- Acess as: Cell_Sector[speed_index][x][y][sector_index]
-         Cell_Sector : Cell_Sectors(
+         Cell_Sector : Cell_Sectors (
                                     Integer range 0 .. CELL_SECTOR_TABLES_LAST,
                                     Integer range 0 .. WINDOW_DIAMETER_LAST,
                                     Integer range 0 .. WINDOW_DIAMETER_LAST
                                    );
 
-         Last_Binary_Hist : History_Array(Integer range 0 .. HIST_LAST) := (others => 1.0);
+         Last_Binary_Hist : History_Array (Integer range 0 .. HIST_LAST) := (others => 1.0);
 
          -- Minimum turning radius at different speeds, in millimeters
-         Min_Turning_Radius : Speed_Vector.Vector(MIN_TURNING_VECTOR_CAPACITY); -- MAX_SPEED+1 is size.
+         Min_Turning_Radius : Speed_Vector.Vector (MIN_TURNING_VECTOR_CAPACITY); -- MAX_SPEED+1 is size.
 
          -- Keep track of last update, so we can monitor acceleration
          last_update_time : Ada.Real_Time.Time := Ada.Real_Time.Clock;
@@ -179,7 +179,7 @@ package Algorithm is
          last_chosen_speed : Speed_Index := 0;
       end record;
 
-   procedure Init(This : in out VFH);
+   procedure Init (This : in out VFH);
 
    -- Choose a new speed and turnrate based on the given laser data and current speed.
    --
@@ -192,7 +192,7 @@ package Algorithm is
    type Laser_Range is array (Integer range 0 .. 360,
                               Integer range 0 .. 1) of Float;
 
-   procedure Update(This : in out VFH;
+   procedure Update (This : in out VFH;
                     laser_ranges : Laser_Range;
                     current_speed : Speed_Index;
                     goal_direction : Float;
@@ -205,24 +205,23 @@ package Algorithm is
             This.last_chosen_speed <= This.Current_Max_Speed;
 
    -- Get methods
-   function GetMinTurnrate(This : VFH) return Integer;
+   function GetMinTurnrate (This : VFH) return Integer;
 
    -- Max Turnrate depends on speed
-   function GetMaxTurnrate(This : VFH; speed : Integer ) return Natural;
-   function GetCurrentMaxSpeed(This : VFH) return Integer;
-
+   function GetMaxTurnrate (This : VFH; speed : Integer) return Natural;
+   function GetCurrentMaxSpeed (This : VFH) return Integer;
 
    -- Set methods
-   procedure SetRobotRadius( This : in out VFH; robot_radius : Float );
-   procedure SetMinTurnrate( This : in out VFH; min_turnrate : Integer);
+   procedure SetRobotRadius (This : in out VFH; robot_radius : Float);
+   procedure SetMinTurnrate (This : in out VFH; min_turnrate : Integer);
 
-   pragma Export(Cpp, Init, "Init");
-   pragma Export(CPP, Update, "Update_VFH");
-   pragma Export(CPP, GetMinTurnrate, "GetMinTurnrate");
-   pragma Export(CPP, GetMaxTurnrate, "GetMaxTurnrate");
-   pragma Export(CPP, GetCurrentMaxSpeed, "GetCurrentMaxSpeed");
-   pragma Export(CPP, SetRobotRadius, "SetRobotRadius");
-   pragma Export(CPP, SetMinTurnrate, "SetMinTurnrate");
+   pragma Export (Cpp, Init, "Init");
+   pragma Export (CPP, Update, "Update_VFH");
+   pragma Export (CPP, GetMinTurnrate, "GetMinTurnrate");
+   pragma Export (CPP, GetMaxTurnrate, "GetMaxTurnrate");
+   pragma Export (CPP, GetCurrentMaxSpeed, "GetCurrentMaxSpeed");
+   pragma Export (CPP, SetRobotRadius, "SetRobotRadius");
+   pragma Export (CPP, SetMinTurnrate, "SetMinTurnrate");
 
    -- The Histogram.
    -- This is public so that monitoring tools can get at it; it shouldn't
@@ -235,81 +234,81 @@ private
 
    -- Methods
 
-   function Delta_Angle(a1, a2 : Integer) return Float;
-   function Delta_Angle(a1, a2 : Float) return Float;
+   function Delta_Angle (a1, a2 : Integer) return Float;
+   function Delta_Angle (a1, a2 : Float) return Float;
 
-   function Cant_Turn_To_Goal(This : VFH) return Boolean;
+   function Cant_Turn_To_Goal (This : VFH) return Boolean;
 
    -- Returns false if something got inside the safety distance, else true.
-   procedure Calculate_Cells_Mag(This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
+   procedure Calculate_Cells_Mag (This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
    -- Returns false if something got inside the safety distance, else true.
 
-   procedure Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Natural; Ret : out Boolean)
+   procedure Build_Primary_Polar_Histogram (This : in out VFH; laser_ranges : Laser_Range; speed : Natural; Ret : out Boolean)
    with
      Post => This.Current_Max_Speed = This.Current_Max_Speed'Old;
 
-   procedure Build_Binary_Polar_Histogram(This : in out VFH; speed : Integer)
+   procedure Build_Binary_Polar_Histogram (This : in out VFH; speed : Integer)
    with
      Post => This.Current_Max_Speed = This.Current_Max_Speed'Old;
 
-   procedure Build_Masked_Polar_Histogram(This : in out VFH; speed : Speed_Index)
+   procedure Build_Masked_Polar_Histogram (This : in out VFH; speed : Speed_Index)
    with
-     Pre => speed <= Speed_Vector.Last_Index(This.Min_Turning_Radius); -- speed <= This.Current_Max_Speed
+     Pre => speed <= Speed_Vector.Last_Index (This.Min_Turning_Radius); -- speed <= This.Current_Max_Speed
 
-   procedure Select_Direction(This : in out VFH);
+   procedure Select_Direction (This : in out VFH);
 
-   procedure Set_Motion(This : VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer)
+   procedure Set_Motion (This : VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer)
    with
      Post => speed >= 0;
 
    -- AB: This doesn't seem to be implemented anywhere...
    -- int Read_Min_Turning_Radius_From_File(char *filename);
 
-   procedure Print_Cells_Dir(This : VFH);
-   procedure Print_Cells_Mag(This : VFH);
-   procedure Print_Cells_Dist(This : VFH);
-   procedure Print_Cells_Sector(This : VFH);
-   procedure Print_Cells_Enlargement_Angle(This : VFH);
-   procedure Print_Hist(This : VFH);
+   procedure Print_Cells_Dir (This : VFH);
+   procedure Print_Cells_Mag (This : VFH);
+   procedure Print_Cells_Dist (This : VFH);
+   procedure Print_Cells_Sector (This : VFH);
+   procedure Print_Cells_Enlargement_Angle (This : VFH);
+   procedure Print_Hist (This : VFH);
 
    -- Returns the speed index into Cell_Sector, for a given speed in mm/sec.
    -- This exists so that only a few (potentially large) Cell_Sector tables must be stored.
-   function Get_Speed_Index( This : VFH; speed : Natural) return Natural
+   function Get_Speed_Index (This : VFH; speed : Natural) return Natural
    with
-     Post => Get_Speed_Index'Result in This.Cell_Sector'Range(1);
+     Post => Get_Speed_Index'Result in This.Cell_Sector'Range (1);
 
    -- Returns the safety dist in mm for this speed.
-   function Get_Safety_Dist( This : VFH; speed : Integer ) return Integer;
+   function Get_Safety_Dist (This : VFH; speed : Integer) return Integer;
 
-   function Get_Binary_Hist_Low( This : VFH; speed : Integer ) return Float;
-   function Get_Binary_Hist_High( This : VFH; speed : Integer ) return Float;
+   function Get_Binary_Hist_Low (This : VFH; speed : Integer) return Float;
+   function Get_Binary_Hist_High (This : VFH; speed : Integer) return Float;
 
    function VFH_Predicate (This : VFH) return Boolean is
-     (This.HIST_SIZE = Integer(This.HIST_COUNT) and then
-      This.HIST_LAST = This.HIST_SIZE-1 and then
+     (This.HIST_SIZE = Integer (This.HIST_COUNT) and then
+      This.HIST_LAST = This.HIST_SIZE - 1 and then
       This.Hist'Last = This.Last_Binary_Hist'Last and then
       This.Hist'Last = This.HIST_LAST and then
 
-      Speed_Vector.Capacity(This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY and then
-      Integer(This.MIN_TURNING_VECTOR_CAPACITY) - 1 = This.MAX_SPEED and then
+      Speed_Vector.Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY and then
+      Integer (This.MIN_TURNING_VECTOR_CAPACITY) - 1 = This.MAX_SPEED and then
 
       This.WINDOW_DIAMETER - 1 = This.WINDOW_DIAMETER_LAST and then
 
-      This.Cell_Direction'Last(1) = THIS.WINDOW_DIAMETER_LAST and then
-      This.Cell_Direction'Last(1) = This.Cell_Base_Mag'Last(1) and then
-      This.Cell_Direction'Last(1) = This.Cell_Mag'Last(1) and then
-      This.Cell_Direction'Last(1) = This.Cell_Dist'Last(1) and then
-      This.Cell_Direction'Last(1) = This.Cell_Enlarge'Last(1) and then
+      This.Cell_Direction'Last (1) = This.WINDOW_DIAMETER_LAST and then
+      This.Cell_Direction'Last (1) = This.Cell_Base_Mag'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Mag'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Dist'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Enlarge'Last (1) and then
 
-      This.Cell_Direction'Last(2) = THIS.WINDOW_DIAMETER_LAST and then
-      This.Cell_Direction'Last(2) = This.Cell_Base_Mag'Last(2) and then
-      This.Cell_Direction'Last(2) = This.Cell_Mag'Last(2) and then
-      This.Cell_Direction'Last(2) = This.Cell_Dist'Last(2) and then
-      This.Cell_Direction'Last(2) = This.Cell_Enlarge'Last(2) and then
+      This.Cell_Direction'Last (2) = This.WINDOW_DIAMETER_LAST and then
+      This.Cell_Direction'Last (2) = This.Cell_Base_Mag'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Mag'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Dist'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Enlarge'Last (2) and then
 
-      This.CELL_SECTOR_TABLES_LAST = This.Cell_Sector'Last(1) and then
-      This.Cell_Direction'Last(1) = This.Cell_Sector'Last(2) and then
-      This.Cell_Direction'Last(2) = This.Cell_Sector'Last(3));
+      This.CELL_SECTOR_TABLES_LAST = This.Cell_Sector'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Sector'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Sector'Last (3));
    --with
      --Convention => Ghost;
 

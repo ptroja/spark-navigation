@@ -27,9 +27,9 @@ package Algorithm.Alloc is
       weight_desired_dir            : C.C_float;
       weight_current_dir            : C.C_float)
       return VFH_Ptr;
-   pragma Export(CPP, Create_VFH_Ptr);
+   pragma Export (CPP, Create_VFH_Ptr);
 
-   procedure Destroy_VFH_Ptr(This : in out VFH_Ptr);
-   pragma Export(CPP, Destroy_VFH_Ptr);
+   procedure Destroy_VFH_Ptr (This : in out VFH_Ptr);
+   pragma Export (CPP, Destroy_VFH_Ptr);
 
 end;
