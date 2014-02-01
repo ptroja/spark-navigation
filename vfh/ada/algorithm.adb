@@ -277,7 +277,7 @@ package body Algorithm is
       chosen_speed : out Integer;
       chosen_turnrate : out Integer)
    is
-      print : Boolean := false;
+      print : constant Boolean := false;
       current_pos_speed : constant Speed_Index :=
         (if current_speed < This.last_chosen_speed
          then This.last_chosen_speed
@@ -584,7 +584,7 @@ package body Algorithm is
       Ret : out Boolean)
    is
       -- index into the vector of Cell_Sector tables
-      speed_index : constant Integer := Get_Speed_Index (This, speed);
+      speed_idx : constant Integer := Get_Speed_Index (This, speed);
       Calculate_Cells_Mag_Ret : Boolean;
    begin
       Calculate_Cells_Mag (This, laser_ranges, speed, Calculate_Cells_Mag_Ret);
@@ -612,11 +612,11 @@ package body Algorithm is
                Cell_Max_x_y : constant Float := This.Cell_Mag (x, y);
             begin
                for i in Integer range
-                 First_Index (This.Cell_Sector (speed_index, x, y)) ..
-                 Last_Index (This.Cell_Sector (speed_index, x, y))
+                 First_Index (This.Cell_Sector (speed_idx, x, y)) ..
+                 Last_Index (This.Cell_Sector (speed_idx, x, y))
                loop
                   declare
-                     idx : constant Integer := Element (This.Cell_Sector (speed_index, x, y), i);
+                     idx : constant Integer := Element (This.Cell_Sector (speed_idx, x, y), i);
                   begin
                      pragma Loop_Invariant (This.Cell_Sector = This.Cell_Sector'Loop_Entry);
                      This.Hist (idx) := This.Hist (idx) + Cell_Max_x_y;

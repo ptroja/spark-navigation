@@ -34,7 +34,7 @@ package body Algorithm.Alloc is
       use Utils;
 
       pragma Assert (sector_angle = FIXED_SECTOR_ANGLE);
-      This : VFH_Ptr := new
+      This : constant VFH_Ptr := new
         Algorithm.VFH (
                       HIST_SIZE => rint (360.0/Float (sector_angle)),
                       HIST_COUNT => Ada.Containers.Count_Type (360/sector_angle),

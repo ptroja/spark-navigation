@@ -79,7 +79,7 @@ package Algorithm is
    type History_Array is array (Integer range <>) of Float;
 
    -- Make Ada.Containers.Count_Type operators visible.
-   use Ada.Containers;
+   use type Ada.Containers.Count_Type;
 
    FIXED_SECTOR_ANGLE : constant := 1;
 
