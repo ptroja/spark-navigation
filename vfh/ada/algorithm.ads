@@ -28,6 +28,7 @@ package Algorithm is
    subtype Hist_Index is Integer range 0 .. 360;
 
    subtype Speed_Index is Integer range 0 .. 2000;
+   subtype Max_Speed_Index is Speed_Index range 1 .. Speed_Index'Last;
 
    function Integer_Eq(X,Y : Integer) return Boolean is (X = Y);
 
@@ -63,7 +64,7 @@ package Algorithm is
    type Candidate is
       record
          Angle : Float;
-         Speed : Integer;
+         Speed : Speed_Index;
       end record;
 
    function Candidate_Eq(X,Y : Candidate) return Boolean is
@@ -82,10 +83,12 @@ package Algorithm is
 
    FIXED_SECTOR_ANGLE : constant := 1;
 
-   type Cell_Sectors is array (Integer range <>,                 -- NUM_CELL_SECTOR_TABLES
-                               Integer range <>,                 -- WINDOW_DIAMETER
-                               Integer range <>                  -- WINDOW_DIAMETER
-                              ) of Integer_Vector.Vector(360/FIXED_SECTOR_ANGLE); -- (360 / SECTOR_ANGLE)
+   subtype Sectors_Vector is Integer_Vector.Vector(360/FIXED_SECTOR_ANGLE);
+
+   type Cell_Sectors is array (Integer range <>,   -- NUM_CELL_SECTOR_TABLES
+                               Integer range <>,   -- WINDOW_DIAMETER
+                               Integer range <>    -- WINDOW_DIAMETER
+                              ) of Sectors_Vector; -- (360 / SECTOR_ANGLE)
 
    type Cell_Array is array (Integer range <>,
                              Integer range <>) of Float;
@@ -108,35 +111,36 @@ package Algorithm is
 
          WINDOW_DIAMETER : Positive := WINDOW_DIAMETER_LAST+1;
 
-         ROBOT_RADIUS : Float;               -- millimeters
-         CENTER_X : Integer;                 -- cells
-         CENTER_Y : Integer;                 -- cells
+         ROBOT_RADIUS : Float;                              -- millimeters
+         CENTER_X : Integer;                                -- cells
+         CENTER_Y : Integer;                                -- cells
 
-         CELL_WIDTH : Float;                 -- millimeters
+         CELL_WIDTH : Float;                                -- millimeters
 
-         MAX_SPEED : Integer := 0;           -- mm/sec
+         MAX_SPEED : Max_Speed_Index := 1;                      -- mm/sec
 
-         SECTOR_ANGLE : Positive;             -- degrees
-         SAFETY_DIST_0MS : Float;            -- millimeters
-         SAFETY_DIST_1MS : Float;            -- millimeters
-         Current_Max_Speed : Positive;        -- mm/sec
-         MAX_SPEED_NARROW_OPENING : Integer; -- mm/sec
-         MAX_SPEED_WIDE_OPENING : Integer;   -- mm/sec
-         MAX_ACCELERATION : Integer;         -- mm/sec/sec
-         MIN_TURNRATE : Integer;             -- deg/sec -- not actually used internally
+         SECTOR_ANGLE : Positive;                           -- degrees
+         SAFETY_DIST_0MS : Float;                           -- millimeters
+         SAFETY_DIST_1MS : Float;                           -- millimeters
+         Current_Max_Speed : Max_Speed_Index;               -- mm/sec
+         MAX_SPEED_NARROW_OPENING : Speed_Index;            -- mm/sec
+         MAX_SPEED_WIDE_OPENING : Speed_Index;              -- mm/sec
+         MAX_ACCELERATION : Integer;                        -- mm/sec/sec
+         MIN_TURNRATE : Integer;                            -- deg/sec -- not actually used internally
 
          -- Scale turnrate linearly between these two
-         MAX_TURNRATE_0MS : Integer;         -- deg/sec
-         MAX_TURNRATE_1MS : Integer;         -- deg/sec
+         MAX_TURNRATE_0MS : Integer;                        -- deg/sec
+         MAX_TURNRATE_1MS : Integer;                        -- deg/sec
          MIN_TURN_RADIUS_SAFETY_FACTOR : Float;
-         Binary_Hist_Low_0ms, Binary_Hist_High_0ms : Float;
-         Binary_Hist_Low_1ms, Binary_Hist_High_1ms : Float;
+         BINARY_HIST_LOW_0MS, BINARY_HIST_HIGH_0MS : Float;
+         BINARY_HIST_LOW_1MS, BINARY_HIST_HIGH_1MS : Float;
          U1, U2 : Float;
+
          Desired_Angle : Float := 90.0;
          Dist_To_Goal : Float;
          Goal_Distance_Tolerance : Float;
          Picked_Angle, Last_Picked_Angle : Float := 90.0;
-         Max_Speed_For_Picked_Angle : Integer;
+         Max_Speed_For_Picked_Angle : Speed_Index;
 
          -- Radius of dis-allowed circles, either side of the robot, which
          -- we can't enter due to our minimum turning radius.
@@ -172,7 +176,7 @@ package Algorithm is
          -- Keep track of last update, so we can monitor acceleration
          last_update_time : Ada.Real_Time.Time := Ada.Real_Time.Clock;
 
-         last_chosen_speed : Integer := 0;
+         last_chosen_speed : Speed_Index := 0;
       end record;
 
    procedure Init(This : in out VFH);
@@ -190,12 +194,15 @@ package Algorithm is
 
    procedure Update(This : in out VFH;
                     laser_ranges : Laser_Range;
-                    current_speed : Integer;
+                    current_speed : Speed_Index;
                     goal_direction : Float;
                     goal_distance : Float;
                     goal_distance_tolerance : Float;
                     chosen_speed : out Integer;
-                    chosen_turnrate : out Integer);
+                    chosen_turnrate : out Integer)
+   with
+     Pre => current_speed <= This.Current_Max_Speed and then
+            This.last_chosen_speed <= This.Current_Max_Speed;
 
    -- Get methods
    function GetMinTurnrate(This : VFH) return Integer;
@@ -236,13 +243,24 @@ private
    -- Returns false if something got inside the safety distance, else true.
    procedure Calculate_Cells_Mag(This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
    -- Returns false if something got inside the safety distance, else true.
-   procedure Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Natural; Ret : out Boolean);
-   procedure Build_Binary_Polar_Histogram(This : in out VFH; speed : Integer);
+
+   procedure Build_Primary_Polar_Histogram(This : in out VFH; laser_ranges : Laser_Range; speed : Natural; Ret : out Boolean)
+   with
+     Post => This.Current_Max_Speed = This.Current_Max_Speed'Old;
+
+   procedure Build_Binary_Polar_Histogram(This : in out VFH; speed : Integer)
+   with
+     Post => This.Current_Max_Speed = This.Current_Max_Speed'Old;
+
    procedure Build_Masked_Polar_Histogram(This : in out VFH; speed : Speed_Index)
    with
      Pre => speed <= Speed_Vector.Last_Index(This.Min_Turning_Radius); -- speed <= This.Current_Max_Speed
+
    procedure Select_Direction(This : in out VFH);
-   procedure Set_Motion(This : VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer);
+
+   procedure Set_Motion(This : VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer)
+   with
+     Post => speed >= 0;
 
    -- AB: This doesn't seem to be implemented anywhere...
    -- int Read_Min_Turning_Radius_From_File(char *filename);
@@ -272,7 +290,8 @@ private
       This.Hist'Last = This.Last_Binary_Hist'Last and then
       This.Hist'Last = This.HIST_LAST and then
 
-      Integer(This.MIN_TURNING_VECTOR_CAPACITY) - 1= This.MAX_SPEED and then
+      Speed_Vector.Capacity(This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY and then
+      Integer(This.MIN_TURNING_VECTOR_CAPACITY) - 1 = This.MAX_SPEED and then
 
       This.WINDOW_DIAMETER - 1 = This.WINDOW_DIAMETER_LAST and then
 

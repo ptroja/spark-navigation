@@ -1,4 +1,3 @@
-
 with Formal.Numerics.Elementary_Functions;
 with Ada.Text_IO;
 with Ada.Float_Text_IO;
@@ -84,13 +83,21 @@ package body Algorithm is
       end;
 
       procedure SetCurrentMaxSpeed
+        (Max_Speed : Positive);
+
+      procedure SetCurrentMaxSpeed
         (Max_Speed : Positive)
       is
          use Ada.Containers;
       begin
+         pragma Assert(VFH_Predicate(This));
          This.Current_Max_Speed := Integer'Min( Max_Speed, This.MAX_SPEED );
+
+         -- This should always succeed.
          Reserve_Capacity(This.Min_Turning_Radius,
                           Ada.Containers.Count_Type(This.Current_Max_Speed)+1);
+         -- Instead of C++'s resize and set, in Ada we clear and append.
+         Clear(This.Min_Turning_Radius);
 
          -- small chunks of forward movements and turns-in-place used to
          -- estimate turning radius, coz I'm too lazy to screw around with limits -> 0.
@@ -102,19 +109,22 @@ package body Algorithm is
          -- WARNING: This assumes that the max_turnrate that has been set for VFH is
          --          accurate.
          --
+         pragma Assert(Capacity(This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY);
          for x in Integer range 0 .. This.Current_Max_Speed loop
+            pragma Loop_Invariant(Length(This.Min_Turning_Radius) = Ada.Containers.Count_Type(x) and then
+                                  Capacity(This.Min_Turning_Radius) = Capacity(This.Min_Turning_Radius)'Loop_Entry);
             declare
                dx : constant Float := Float(x) / 1.0e6; -- dx in m/millisec
                dtheta : constant Float := ((M_PI/180.0)*Float(GetMaxTurnrate(This,x)))/1000.0; -- dTheta in radians/millisec
+               val : constant Integer := Integer( ((dx / tan( dtheta ))*1000.0) * This.MIN_TURN_RADIUS_SAFETY_FACTOR ); -- in mm
             begin
-               Replace_Element(This.Min_Turning_Radius, x,
-                            Integer( ((dx / tan( dtheta ))*1000.0) * This.MIN_TURN_RADIUS_SAFETY_FACTOR )  -- in mm
-                           );
+               pragma Assert_and_cut(True);
+               Append(This.Min_Turning_Radius, val);
             end;
          end loop;
       end SetCurrentMaxSpeed;
    begin
-      pragma Assume(VFH_Predicate(This));
+      pragma Assert(VFH_Predicate(This));
 
       SetCurrentMaxSpeed( This.MAX_SPEED );
 
@@ -132,8 +142,6 @@ package body Algorithm is
 
             -- For the case where we have a speed-dependent safety_dist, calculate all tables
             for cell_sector_tablenum in This.Cell_Sector'Range(1) loop
-
-               Clear(This.Cell_Sector(cell_sector_tablenum,x,y)); -- FIXME: this seems unnecessary.
 
                declare
                   max_speed_this_table : constant Integer :=
@@ -165,13 +173,18 @@ package body Algorithm is
                      This.Cell_Enlarge(x,y) := 0.0;
                      Cell_Enlarge_OK := True;
                   end if;
+                  pragma Assert_and_Cut(True);
+                  Clear(This.Cell_Sector(cell_sector_tablenum,x,y)); -- FIXME: this seems unnecessary.
 
                   if Cell_Enlarge_OK then
                      declare
                         plus_dir : constant Float := This.Cell_Direction(x,y) + This.Cell_Enlarge(x,y);
                         neg_dir  : constant Float := This.Cell_Direction(x,y) - This.Cell_Enlarge(x,y);
                      begin
+                        pragma Assert(Capacity(This.Cell_Sector(cell_sector_tablenum,x,y)) = 360);
                         for i in Integer range 0 .. (360 / This.SECTOR_ANGLE)-1 loop
+                           pragma Loop_Invariant(Length(This.Cell_Sector(cell_sector_tablenum,x,y)) <= Ada.Containers.Count_Type(i) and then
+                                                 Capacity(This.Cell_Sector(cell_sector_tablenum,x,y)) = 360);
                            -- Set plus_sector and neg_sector to the angles to the two adjacent sectors
                            declare
                               function Append_Or_Not return Boolean is
@@ -258,7 +271,7 @@ package body Algorithm is
    procedure Update
      (This : in out VFH;
       laser_ranges : Laser_Range;
-      current_speed : Integer;
+      current_speed : Speed_Index;
       goal_direction : Float;
       goal_distance : Float;
       goal_distance_tolerance : Float;
@@ -266,7 +279,10 @@ package body Algorithm is
       chosen_turnrate : out Integer)
    is
       print : Boolean := false;
-      current_pos_speed : Natural;
+      current_pos_speed : constant Speed_Index :=
+        (if current_speed < This.last_chosen_speed
+         then This.last_chosen_speed
+         else current_speed);
 
       Now : constant Ada.Real_Time.Time := Ada.Real_Time.Clock;
       diff : Ada.Real_Time.Time_Span;
@@ -287,19 +303,10 @@ package body Algorithm is
       -- the set point (last_chosen_speed) and the current actual speed.
       -- This ensures conservative behaviour if the set point somehow ramps up beyond
       -- the actual speed.
-      -- Ensure that this speed is positive.
+      -- Ensure that this speed is non-negative.
       --
-      if current_speed < 0
-      then
-         current_pos_speed := 0;
-      else
-         current_pos_speed := current_speed;
-      end if;
+      pragma Assert_and_cut(current_pos_speed <= This.Current_Max_Speed);
 
-      if current_pos_speed < This.last_chosen_speed
-      then
-         current_pos_speed := This.last_chosen_speed;
-      end if;
       -- printf("Update_VFH: current_pos_speed = %d\n",current_pos_speed);
 
       -- Work out how much time has elapsed since the last update,
@@ -309,7 +316,8 @@ package body Algorithm is
       diffSeconds := Float(Ada.Real_Time.To_Duration(diff));
 
       This.last_update_time := Now;
-      Build_Primary_Polar_Histogram(This,laser_ranges,current_pos_speed, Build_Primary_Polar_Histogram_Ret);
+
+      Build_Primary_Polar_Histogram(This, laser_ranges, current_pos_speed, Build_Primary_Polar_Histogram_Ret);
       if not Build_Primary_Polar_Histogram_Ret
       then
          -- Something's inside our safety distance: brake hard and
@@ -323,12 +331,15 @@ package body Algorithm is
          end if;
 
          Build_Binary_Polar_Histogram(This, current_pos_speed);
+
          if print then
             Ada.Text_IO.Put_Line("Binary Histogram");
             Print_Hist(This);
          end if;
 
+         pragma Assert(Last_index(This.Min_Turning_Radius) = This.Current_Max_Speed);
          Build_Masked_Polar_Histogram(This, current_pos_speed);
+
          if print then
             Ada.Text_IO.Put_Line("Masked Histogram");
             Print_Hist(This);
@@ -602,9 +613,9 @@ package body Algorithm is
       pragma Assert_and_cut(VFH_Predicate(This));
       -- Only have to go through the cells in front.
       for y in Integer range 0 .. Up_To_Half(This.Cell_Sector'Length(3),Inclusive) loop
-         --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+         pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
          for x in This.Cell_Sector'Range(2) loop
-            --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+            pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
             declare
                Cell_Max_x_y : constant Float := This.Cell_Mag(x,y);
             begin
@@ -615,7 +626,7 @@ package body Algorithm is
                   declare
                      idx : constant Integer := Element(This.Cell_Sector(speed_index,x,y),i);
                   begin
-                     --pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+                     pragma Loop_Invariant(This.Cell_Sector = This.Cell_Sector'Loop_Entry);
                      This.Hist(idx) := This.Hist(idx) + Cell_Max_x_y;
                   end;
                end loop;
@@ -634,7 +645,7 @@ package body Algorithm is
      (This : in out VFH;
       speed : Integer)
    is
-   begin pragma Assume(VFH_Predicate(This));
+   begin pragma Assert(VFH_Predicate(This));
       for x in This.Hist'Range loop
          if This.Hist(x) > Get_Binary_Hist_High(This,speed) then
             This.Hist(x) := 1.0;
@@ -671,7 +682,7 @@ package body Algorithm is
 
       angle : Float;
    begin
-      pragma Assume(VFH_Predicate(This));
+      pragma Assert(VFH_Predicate(This));
       This.Blocked_Circle_Radius := Float(Element(This.Min_Turning_Radius,speed)) + This.ROBOT_RADIUS + Float(Get_Safety_Dist(This,speed));
       --
       -- This loop fixes phi_left and phi_right so that they go through the inside-most
@@ -748,7 +759,7 @@ package body Algorithm is
       border : Border_Pair_Vector.Vector(This.HIST_COUNT+1);
       new_border : Border_Pair;
    begin
-      pragma Assume(VFH_Predicate(This));
+      pragma Assert(VFH_Predicate(This));
 
       --
       -- set start to sector of first obstacle
@@ -826,7 +837,7 @@ package body Algorithm is
             declare
                min_weight : Float := Float'Last; -- 10000000;
             begin
-               pragma Assume(VFH_Predicate(This));
+               pragma Assert(VFH_Predicate(This));
                for i in Integer range First_Index(Candidates) .. Last_Index(Candidates) loop
                   --printf("CANDIDATE: %f\n", Candidate_Angle[i]);
                   pragma Loop_Invariant(Candidates = Candidates'Loop_Entry);
@@ -1050,7 +1061,7 @@ package body Algorithm is
       Put_Line("Histogram:");
       Put_Line("****************");
 
-      pragma Assume(VFH_Predicate(This));
+      pragma Assert(VFH_Predicate(This));
       for x in 0 .. This.HIST_SIZE/2 loop
          --printf("%d:\t%1.1f\n", (x * SECTOR_ANGLE), Hist[x]);
          Put(Integer'Image(x * This.SECTOR_ANGLE));
