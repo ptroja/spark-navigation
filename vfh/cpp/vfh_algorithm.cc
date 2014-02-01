@@ -125,7 +125,7 @@ void
 VFH_Algorithm::SetCurrentMaxSpeed( int max_speed )
 {
     this->Current_Max_Speed = MIN( max_speed, this->MAX_SPEED );
-    this->Min_Turning_Radius.resize( Current_Max_Speed+1 );
+    this->Min_Turning_Radius.reserve( Current_Max_Speed+1 );
 
     // small chunks of forward movements and turns-in-place used to
     // estimate turning radius, coz I'm too lazy to screw around with limits -> 0.

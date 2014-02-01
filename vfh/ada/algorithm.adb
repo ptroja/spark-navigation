@@ -1,16 +1,16 @@
-with Ada.Numerics;
-with Ada.Numerics.Elementary_Functions;
+
+with Formal.Numerics.Elementary_Functions;
 with Ada.Text_IO;
 with Ada.Float_Text_IO;
 with Utils;
 
 use Ada.Text_IO;
-use Ada.Numerics.Elementary_Functions;
+use Formal.Numerics.Elementary_Functions;
 use Utils;
 
 package body Algorithm is
 
-   M_PI : constant := Ada.Numerics.Pi;
+   M_PI : constant := Formal.Numerics.Pi;
 
    use Integer_Vector;
    use Speed_Vector;
@@ -43,7 +43,7 @@ package body Algorithm is
    ----------
 
    procedure Init (This : in out VFH) is
-      pragma SPARK_Mode(Off);
+      pragma SPARK_Mode(On);
 
       function Cell_Direction(X, Y : Integer) return Float is
          val : Float;
@@ -89,8 +89,8 @@ package body Algorithm is
          use Ada.Containers;
       begin
          This.Current_Max_Speed := Integer'Min( Max_Speed, This.MAX_SPEED );
-         Set_Length(This.Min_Turning_Radius,
-                    Ada.Containers.Count_Type(This.Current_Max_Speed)+1);
+         Reserve_Capacity(This.Min_Turning_Radius,
+                          Ada.Containers.Count_Type(This.Current_Max_Speed)+1);
 
          -- small chunks of forward movements and turns-in-place used to
          -- estimate turning radius, coz I'm too lazy to screw around with limits -> 0.
@@ -174,64 +174,68 @@ package body Algorithm is
                         for i in Integer range 0 .. (360 / This.SECTOR_ANGLE)-1 loop
                            -- Set plus_sector and neg_sector to the angles to the two adjacent sectors
                            declare
-                              plus_sector : constant Float := Float(i + 1) * Float(This.SECTOR_ANGLE);
-                              neg_sector : constant Float := Float(i) * Float(This.SECTOR_ANGLE);
-                              neg_sector_to_neg_dir, neg_sector_to_plus_dir : Float;
-                              plus_sector_to_neg_dir, plus_sector_to_plus_dir : Float;
-                           begin
-
-                              if neg_sector - neg_dir > 180.0 then
-                                 neg_sector_to_neg_dir := neg_dir - (neg_sector - 360.0);
-                              else
-                                 if neg_dir - neg_sector > 180.0 then
-                                    neg_sector_to_neg_dir := neg_sector - (neg_dir + 360.0);
-                                 else
-                                    neg_sector_to_neg_dir := neg_dir - neg_sector;
-                                 end if;
-                              end if;
-
-                              if plus_sector - neg_dir > 180.0 then
-                                 plus_sector_to_neg_dir := neg_dir - (plus_sector - 360.0);
-                              else
-                                 if neg_dir - plus_sector > 180.0 then
-                                    plus_sector_to_neg_dir := plus_sector - (neg_dir + 360.0);
-                                 else
-                                    plus_sector_to_neg_dir := neg_dir - plus_sector;
-                                 end if;
-                              end if;
-
-                              if plus_sector - plus_dir > 180.0 then
-                                 plus_sector_to_plus_dir := plus_dir - (plus_sector - 360.0);
-                              else
-                                 if plus_dir - plus_sector > 180.0 then
-                                    plus_sector_to_plus_dir := plus_sector - (plus_dir + 360.0);
-                                 else
-                                    plus_sector_to_plus_dir := plus_dir - plus_sector;
-                                 end if;
-                              end if;
-
-                              if neg_sector - plus_dir > 180.0 then
-                                 neg_sector_to_plus_dir := plus_dir - (neg_sector - 360.0);
-                              else
-                                 if plus_dir - neg_sector > 180.0 then
-                                    neg_sector_to_plus_dir := neg_sector - (plus_dir + 360.0);
-                                 else
-                                    neg_sector_to_plus_dir := plus_dir - neg_sector;
-                                 end if;
-                              end if;
-
-                              declare
-                                 neg_dir_bw : constant Boolean := neg_sector_to_neg_dir >= 0.0 and then plus_sector_to_neg_dir <= 0.0;
-                                 dir_around_sector : constant Boolean := neg_sector_to_neg_dir <= 0.0 and then neg_sector_to_plus_dir >= 0.0;
-                                 plus_dir_bw : constant Boolean :=
-                                   (neg_sector_to_plus_dir >= 0.0 and then plus_sector_to_plus_dir <= 0.0)
-                                   or else
-                                     (plus_sector_to_neg_dir <= 0.0 and then plus_sector_to_plus_dir >= 0.0);
+                              function Append_Or_Not return Boolean is
+                                 plus_sector : constant Float := Float(i + 1) * Float(This.SECTOR_ANGLE);
+                                 neg_sector : constant Float := Float(i) * Float(This.SECTOR_ANGLE);
+                                 neg_sector_to_neg_dir, neg_sector_to_plus_dir : Float;
+                                 plus_sector_to_neg_dir, plus_sector_to_plus_dir : Float;
                               begin
-                                 if plus_dir_bw or else neg_dir_bw or else dir_around_sector then
-                                    Append(This.Cell_Sector(cell_sector_tablenum,x,y),i);
+                                 if neg_sector - neg_dir > 180.0 then
+                                    neg_sector_to_neg_dir := neg_dir - (neg_sector - 360.0);
+                                 else
+                                    if neg_dir - neg_sector > 180.0 then
+                                       neg_sector_to_neg_dir := neg_sector - (neg_dir + 360.0);
+                                    else
+                                       neg_sector_to_neg_dir := neg_dir - neg_sector;
+                                    end if;
                                  end if;
+
+                                 if plus_sector - neg_dir > 180.0 then
+                                    plus_sector_to_neg_dir := neg_dir - (plus_sector - 360.0);
+                                 else
+                                    if neg_dir - plus_sector > 180.0 then
+                                       plus_sector_to_neg_dir := plus_sector - (neg_dir + 360.0);
+                                    else
+                                       plus_sector_to_neg_dir := neg_dir - plus_sector;
+                                    end if;
+                                 end if;
+
+                                 if plus_sector - plus_dir > 180.0 then
+                                    plus_sector_to_plus_dir := plus_dir - (plus_sector - 360.0);
+                                 else
+                                    if plus_dir - plus_sector > 180.0 then
+                                       plus_sector_to_plus_dir := plus_sector - (plus_dir + 360.0);
+                                    else
+                                       plus_sector_to_plus_dir := plus_dir - plus_sector;
+                                    end if;
+                                 end if;
+
+                                 if neg_sector - plus_dir > 180.0 then
+                                    neg_sector_to_plus_dir := plus_dir - (neg_sector - 360.0);
+                                 else
+                                    if plus_dir - neg_sector > 180.0 then
+                                       neg_sector_to_plus_dir := neg_sector - (plus_dir + 360.0);
+                                    else
+                                       neg_sector_to_plus_dir := plus_dir - neg_sector;
+                                    end if;
+                                 end if;
+
+                                 declare
+                                    neg_dir_bw : constant Boolean := neg_sector_to_neg_dir >= 0.0 and then plus_sector_to_neg_dir <= 0.0;
+                                    dir_around_sector : constant Boolean := neg_sector_to_neg_dir <= 0.0 and then neg_sector_to_plus_dir >= 0.0;
+                                    plus_dir_bw : constant Boolean :=
+                                      (neg_sector_to_plus_dir >= 0.0 and then plus_sector_to_plus_dir <= 0.0)
+                                      or else
+                                        (plus_sector_to_neg_dir <= 0.0 and then plus_sector_to_plus_dir >= 0.0);
+                                 begin
+                                    return plus_dir_bw or else neg_dir_bw or else dir_around_sector;
+                                 end;
                               end;
+
+                           begin
+                              if Append_Or_Not then
+                                 Append(This.Cell_Sector(cell_sector_tablenum,x,y),i);
+                              end if;
                            end;
                         end loop;
                      end;
@@ -896,7 +900,7 @@ package body Algorithm is
    ----------------
 
    procedure Set_Motion
-     (This : in VFH;
+     (This : VFH;
       speed : in out Integer;
       turnrate : out Integer;
       actual_speed : Integer)

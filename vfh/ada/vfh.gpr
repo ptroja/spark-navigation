@@ -12,8 +12,9 @@ library project Vfh is
    for Source_Files use ("algorithm.adb", "algorithm.ads", "algorithm-alloc.adb", "algorithm-alloc.ads", "utils.adb", "utils.ads");
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnat12", "-gnatp", "-gnatVn", "-gnatn", "-msse2", "-mfpmath=sse", "-O3", "-g");
+      for Default_Switches ("ada") use ("-gnat12", "-gnatp", "-gnatVn", "-gnatn", "-msse2", "-mfpmath=sse", "-O3", "-g", "-gnatyAbBdIx");
       for Local_Configuration_Pragmas use "gnat.adc";
    end Compiler;
 
 end Vfh;
+
