@@ -117,7 +117,7 @@ package body Algorithm is
          end loop;
       end SetCurrentMaxSpeed;
    begin
-      pragma Assert (VFH_Predicate (This));
+      pragma Assume (VFH_Predicate (This));
 
       SetCurrentMaxSpeed;
 
@@ -139,7 +139,7 @@ package body Algorithm is
                declare
                   max_speed_this_table : constant Integer :=
                     Integer ((Float (cell_sector_tablenum + 1) / Float (This.Cell_Sector'Length (1))) *
-                               Float (This.MAX_SPEED));
+                              Float (This.MAX_SPEED));
 
                   Cell_Enlarge_OK : Boolean;
                begin
@@ -181,9 +181,9 @@ package body Algorithm is
                            declare
                               -- FIXME: I should be given with Global aspect and not a variable,
                               -- but GNATProve does not allow to use loop variables in this aspect.
-                              function Append_Or_Not(I : Integer) return Boolean is
-                                 plus_sector : constant Float := Float (i + 1) * Float (This.SECTOR_ANGLE);
-                                 neg_sector : constant Float := Float (i) * Float (This.SECTOR_ANGLE);
+                              function Append_Or_Not (I : Integer) return Boolean is
+                                 plus_sector : constant Float := Float (I + 1) * Float (This.SECTOR_ANGLE);
+                                 neg_sector : constant Float := Float (I) * Float (This.SECTOR_ANGLE);
                                  neg_sector_to_neg_dir, neg_sector_to_plus_dir : Float;
                                  plus_sector_to_neg_dir, plus_sector_to_plus_dir : Float;
                               begin
@@ -240,7 +240,7 @@ package body Algorithm is
                               end;
 
                            begin
-                              if Append_Or_Not(I) then
+                              if Append_Or_Not (i) then
                                  Append (This.Cell_Sector (cell_sector_tablenum, x, y), i);
                               end if;
                            end;
@@ -653,7 +653,7 @@ package body Algorithm is
      (This : in out VFH;
       speed : Integer)
    is
-   begin pragma Assert (VFH_Predicate (This));
+   begin pragma Assume (VFH_Predicate (This));
       for x in This.Hist'Range loop
          if This.Hist (x) > Get_Binary_Hist_High (This, speed) then
             This.Hist (x) := 1.0;
@@ -690,7 +690,7 @@ package body Algorithm is
 
       angle : Float;
    begin
-      pragma Assert (VFH_Predicate (This));
+      pragma Assume (VFH_Predicate (This));
       This.Blocked_Circle_Radius := Float (Element (This.Min_Turning_Radius, speed)) + This.ROBOT_RADIUS + Float (Get_Safety_Dist (This, speed));
       --
       -- This loop fixes phi_left and phi_right so that they go through the inside-most
@@ -718,7 +718,7 @@ package body Algorithm is
                end if;
 
             elsif Delta_Angle (This.Cell_Direction (x, y), angle_ahead) <= 0.0 and then
-              Delta_Angle (This.Cell_Direction (x, y), phi_left) > 0.0
+                  Delta_Angle (This.Cell_Direction (x, y), phi_left) > 0.0
             then
                -- The cell is between phi_left and angle_ahead
 
@@ -736,12 +736,12 @@ package body Algorithm is
       for x in This.Hist'Range loop
          angle := Float (x * This.SECTOR_ANGLE);
          if This.Hist (x) = 0.0 and then (
-                                          (Delta_Angle (angle, phi_right) <= 0.0 and then
-                                           Delta_Angle (angle, angle_ahead) >= 0.0)
-                                          or else
-                                            (Delta_Angle (angle, phi_left) >= 0.0 and then
-                                             Delta_Angle (angle, angle_ahead) <= 0.0)
-                                         )
+                                         (Delta_Angle (angle, phi_right) <= 0.0 and then
+                                          Delta_Angle (angle, angle_ahead) >= 0.0)
+                                         or else
+                                           (Delta_Angle (angle, phi_left) >= 0.0 and then
+                                            Delta_Angle (angle, angle_ahead) <= 0.0)
+                                        )
          then
             null; -- This.Hist(x) := 0.0;
          else
@@ -765,7 +765,7 @@ package body Algorithm is
       border : Border_Pair_Vector.Vector (This.HIST_COUNT + 1);
       new_border : Border_Pair;
    begin
-      pragma Assert (VFH_Predicate (This));
+      pragma Assume (VFH_Predicate (This));
 
       --
       -- set start to sector of first obstacle
@@ -840,7 +840,7 @@ package body Algorithm is
             declare
                min_weight : Float := Float'Last; -- 10000000;
             begin
-               pragma Assert (VFH_Predicate (This));
+               pragma Assume (VFH_Predicate (This));
                for i in Integer range First_Index (Candidates) .. Last_Index (Candidates) loop
                   --printf("CANDIDATE: %f\n", Candidate_Angle[i]);
                   pragma Loop_Invariant (Candidates = Candidates'Loop_Entry);
@@ -1060,7 +1060,7 @@ package body Algorithm is
       Put_Line ("Histogram:");
       Put_Line ("****************");
 
-      pragma Assert (VFH_Predicate (This));
+      pragma Assume (VFH_Predicate (This));
       for x in 0 .. This.HIST_SIZE / 2 loop
          --printf("%d:\t%1.1f\n", (x * SECTOR_ANGLE), Hist[x]);
          Put (Integer'Image (x * This.SECTOR_ANGLE));
@@ -1078,16 +1078,16 @@ package body Algorithm is
 
    function Get_Speed_Index (This : VFH; speed : Natural) return Natural is
       val : Natural := Integer (Float'Floor (
-                                (Float (speed) / Float (This.Current_Max_Speed))*Float (This.Cell_Sector'Length (1))));
+                               (Float (speed) / Float (This.Current_Max_Speed))*Float (This.Cell_Sector'Length (1))));
    begin
       pragma Assert (VFH_Predicate (This));
       if val > This.Cell_Sector'Last (1) then
          val := This.Cell_Sector'Last (1);
       end if;
 
-      -- printf("Speed_Index at %dmm/s: %d\n",speed,val);
+    -- printf("Speed_Index at %dmm/s: %d\n",speed,val);
 
-      return val;
+    return val;
    end Get_Speed_Index;
 
    ---------------------

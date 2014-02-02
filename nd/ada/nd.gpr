@@ -13,7 +13,6 @@ library project Nd is
 
    package Compiler is
       for Default_Switches ("ada") use ("-msse2", "-mfpmath=sse", "-gnat12", "-g", "-O3");
-      for Local_Configuration_Pragmas use "performance.adc";
    end Compiler;
 
    package Builder is
@@ -21,7 +20,7 @@ library project Nd is
    end Builder;
 
    package Check is
-      for Default_Switches ("ada") use ("-rules", "-from=/home/ptroja/briswork/navigation/nd/ada/gnatcheck.rul");
+      for Default_Switches ("ada") use ("-rules", "-from=../../common/ada/gnatcheck.rul");
    end Check;
 
 end Nd;
