@@ -60,7 +60,6 @@ package body Algorithm.Alloc is
 --                Cell_Sector => (others => (others => (others => Integer_Vector.Empty_Vector))),
 --             );
 
-      use Float_Vector;
    begin
       This.all.CENTER_X := Integer (window_diameter / 2);
       This.all.CENTER_Y := Integer (window_diameter / 2);  -- CENTER_X

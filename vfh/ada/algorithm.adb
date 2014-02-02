@@ -13,7 +13,6 @@ package body Algorithm is
 
    use Integer_Vector;
    use Speed_Vector;
-   use Float_Vector;
 
    procedure Tab is
    begin
@@ -95,7 +94,7 @@ package body Algorithm is
 
          -- This should always succeed.
          Reserve_Capacity (This.Min_Turning_Radius,
-                          Ada.Containers.Count_Type (This.Current_Max_Speed) + 1);
+                           Ada.Containers.Count_Type (This.Current_Max_Speed) + 1);
          -- Instead of C++'s resize and set, in Ada we clear and append.
          Clear (This.Min_Turning_Radius);
 
@@ -112,7 +111,7 @@ package body Algorithm is
          pragma Assert (Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY);
          for x in Integer range 0 .. This.Current_Max_Speed loop
             pragma Loop_Invariant (Length (This.Min_Turning_Radius) = Ada.Containers.Count_Type (x) and then
-                                  Capacity (This.Min_Turning_Radius) = Capacity (This.Min_Turning_Radius)'Loop_Entry);
+                                   Capacity (This.Min_Turning_Radius) = Capacity (This.Min_Turning_Radius)'Loop_Entry);
             declare
                dx : constant Float := Float (x) / 1.0e6; -- dx in m/millisec
                dtheta : constant Float := ((M_PI / 180.0)*Float (GetMaxTurnrate (This, x)))/1000.0; -- dTheta in radians/millisec
@@ -146,7 +145,7 @@ package body Algorithm is
                declare
                   max_speed_this_table : constant Integer :=
                     Integer ((Float (cell_sector_tablenum + 1) / Float (This.Cell_Sector'Length (1))) *
-                              Float (This.MAX_SPEED));
+                               Float (This.MAX_SPEED));
 
                   Cell_Enlarge_OK : Boolean;
                begin
@@ -183,7 +182,7 @@ package body Algorithm is
                         pragma Assert (Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
                         for i in Integer range 0 .. (360 / This.SECTOR_ANGLE)-1 loop
                            pragma Loop_Invariant (Length (This.Cell_Sector (cell_sector_tablenum, x, y)) <= Ada.Containers.Count_Type (i) and then
-                                                 Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
+                                                  Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
                            -- Set plus_sector and neg_sector to the angles to the two adjacent sectors
                            declare
                               function Append_Or_Not return Boolean is
@@ -603,28 +602,49 @@ package body Algorithm is
       --  Print_Cells_Sector(This);
       --  Print_Cells_Enlargement_Angle(This);
       pragma Assert_And_Cut (VFH_Predicate (This));
-      -- Only have to go through the cells in front.
-      for y in Integer range 0 .. Up_To_Half (This.Cell_Sector'Length (3), Inclusive) loop
-         pragma Loop_Invariant (This.Cell_Sector = This.Cell_Sector'Loop_Entry);
-         for x in This.Cell_Sector'Range (2) loop
-            pragma Loop_Invariant (This.Cell_Sector = This.Cell_Sector'Loop_Entry);
-            declare
-               Cell_Max_x_y : constant Float := This.Cell_Mag (x, y);
-            begin
-               for i in Integer range
-                 First_Index (This.Cell_Sector (speed_idx, x, y)) ..
-                 Last_Index (This.Cell_Sector (speed_idx, x, y))
-               loop
+
+      -- Use a local procedure with parameters mode to avoid loop invariants,
+      -- which allocates huge local copies of This.Cell_Sector:
+      -- pragma Loop_Invariant (This.Cell_Sector = This.Cell_Sector'Loop_Entry);
+      declare
+         subtype Hist_t is History_Array (Natural range 0 .. This.HIST_LAST);
+         subtype Cell_Sector_t is Cell_Sectors (
+                                                Integer range 0 .. This.CELL_SECTOR_TABLES_LAST,
+                                                Integer range 0 .. This.WINDOW_DIAMETER_LAST,
+                                                Integer range 0 .. This.WINDOW_DIAMETER_LAST
+                                               );
+         subtype Cell_Mag_t is Cell_Array (Integer range 0 .. This.WINDOW_DIAMETER_LAST,
+                                           Integer range 0 .. This.WINDOW_DIAMETER_LAST);
+
+         procedure Update_Hist (Hist : in out Hist_t;
+                                Cell_Mag : Cell_Mag_t;
+                                Cell_Sector : Cell_Sector_t) is
+         begin
+            -- Only have to go through the cells in front.
+            for y in Integer range 0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop
+               for x in Cell_Sector'Range (2) loop
                   declare
-                     idx : constant Integer := Element (This.Cell_Sector (speed_idx, x, y), i);
+                     Cell_Max_x_y : constant Float := Cell_Mag (x, y);
                   begin
-                     pragma Loop_Invariant (This.Cell_Sector = This.Cell_Sector'Loop_Entry);
-                     This.Hist (idx) := This.Hist (idx) + Cell_Max_x_y;
+                     for i in Integer range
+                       First_Index (Cell_Sector (speed_idx, x, y)) ..
+                       Last_Index (Cell_Sector (speed_idx, x, y))
+                     loop
+                        declare
+                           idx : constant Integer := Element (Cell_Sector (speed_idx, x, y), i);
+                        begin
+                           Hist (idx) := Hist (idx) + Cell_Max_x_y;
+                        end;
+                     end loop;
                   end;
                end loop;
-            end;
-         end loop;
-      end loop;
+            end loop;
+         end;
+      begin
+         Update_Hist (Hist        => This.Hist,
+                      Cell_Mag    => This.Cell_Mag,
+                      Cell_Sector => This.Cell_Sector);
+      end;
 
       Ret := true;
    end Build_Primary_Polar_Histogram;
@@ -702,7 +722,7 @@ package body Algorithm is
                end if;
 
             elsif Delta_Angle (This.Cell_Direction (x, y), angle_ahead) <= 0.0 and then
-                  Delta_Angle (This.Cell_Direction (x, y), phi_left) > 0.0
+              Delta_Angle (This.Cell_Direction (x, y), phi_left) > 0.0
             then
                -- The cell is between phi_left and angle_ahead
 
@@ -720,12 +740,12 @@ package body Algorithm is
       for x in This.Hist'Range loop
          angle := Float (x * This.SECTOR_ANGLE);
          if This.Hist (x) = 0.0 and then (
-                                         (Delta_Angle (angle, phi_right) <= 0.0 and then
-                                          Delta_Angle (angle, angle_ahead) >= 0.0)
-                                         or else
-                                           (Delta_Angle (angle, phi_left) >= 0.0 and then
-                                            Delta_Angle (angle, angle_ahead) <= 0.0)
-                                        )
+                                          (Delta_Angle (angle, phi_right) <= 0.0 and then
+                                           Delta_Angle (angle, angle_ahead) >= 0.0)
+                                          or else
+                                            (Delta_Angle (angle, phi_left) >= 0.0 and then
+                                             Delta_Angle (angle, angle_ahead) <= 0.0)
+                                         )
          then
             null; -- This.Hist(x) := 0.0;
          else
@@ -828,7 +848,7 @@ package body Algorithm is
                for i in Integer range First_Index (Candidates) .. Last_Index (Candidates) loop
                   --printf("CANDIDATE: %f\n", Candidate_Angle[i]);
                   pragma Loop_Invariant (Candidates = Candidates'Loop_Entry);
-                   declare
+                  declare
                      weight : constant Float :=
                        This.U1 * abs (Delta_Angle (This.Desired_Angle, Element (Candidates, i).Angle)) +
                        This.U2 * abs (Delta_Angle (This.Last_Picked_Angle, Element (Candidates, i).Angle));
@@ -946,9 +966,9 @@ package body Algorithm is
          for x in This.Cell_Direction'Range (1) loop
             --Put(Float'Image(This.Cell_Direction(x,y)));
             Ada.Float_Text_IO.Put (Item => This.Cell_Direction (x, y),
-                                  Fore => 3,
-                                  Aft  => 1,
-                                  Exp  => 0);
+                                   Fore => 3,
+                                   Aft  => 1,
+                                   Exp  => 0);
             Tab;
          end loop;
          New_Line;
@@ -1001,20 +1021,20 @@ package body Algorithm is
       Put_Line ("Cell Sectors for table 0:");
       Put_Line ("***************************");
 
---        for y in This.Cell_Sector'Range(3) loop
---           for x in This.Cell_Sector'Range(2) loop
---              for i in Integer range 0 .. 1 loop -- i<Cell_Sector[0][x][y].size();i++
---                 if i < This.Cell_Sector[0][x][y].size() - 1 then
---                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
---                    Put(",");
---                 else
---                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
---                    Tab;
---                 end if;
---              end loop;
---           end loop;
---           New_Line;
---        end loop;
+      --        for y in This.Cell_Sector'Range(3) loop
+      --           for x in This.Cell_Sector'Range(2) loop
+      --              for i in Integer range 0 .. 1 loop -- i<Cell_Sector[0][x][y].size();i++
+      --                 if i < This.Cell_Sector[0][x][y].size() - 1 then
+      --                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
+      --                    Put(",");
+      --                 else
+      --                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
+      --                    Tab;
+      --                 end if;
+      --              end loop;
+      --           end loop;
+      --           New_Line;
+      --        end loop;
    end Print_Cells_Sector;
 
    -----------------------------------
@@ -1062,16 +1082,16 @@ package body Algorithm is
 
    function Get_Speed_Index (This : VFH; speed : Natural) return Natural is
       val : Natural := Integer (Float'Floor (
-                               (Float (speed) / Float (This.Current_Max_Speed))*Float (This.Cell_Sector'Length (1))));
+                                (Float (speed) / Float (This.Current_Max_Speed))*Float (This.Cell_Sector'Length (1))));
    begin
       pragma Assert (VFH_Predicate (This));
       if val > This.Cell_Sector'Last (1) then
          val := This.Cell_Sector'Last (1);
       end if;
 
-    -- printf("Speed_Index at %dmm/s: %d\n",speed,val);
+      -- printf("Speed_Index at %dmm/s: %d\n",speed,val);
 
-    return val;
+      return val;
    end Get_Speed_Index;
 
    ---------------------
@@ -1082,7 +1102,7 @@ package body Algorithm is
 
    function Get_Safety_Dist (This : VFH; speed : Integer) return Integer is
       val : Integer := Integer (
-                               This.SAFETY_DIST_0MS + Float (speed)*(This.SAFETY_DIST_1MS - This.SAFETY_DIST_0MS)/1000.0);
+                                This.SAFETY_DIST_0MS + Float (speed)*(This.SAFETY_DIST_1MS - This.SAFETY_DIST_0MS)/1000.0);
    begin
 
       if val < 0 then

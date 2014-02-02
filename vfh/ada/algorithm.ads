@@ -32,19 +32,15 @@ package Algorithm is
 
    function Integer_Eq (X, Y : Integer) return Boolean is (X = Y);
 
-   function Float_Eq (X, Y : Float) return Boolean is (X = Y);
+   package Integer_Vector is
+     new Ada.Containers.Formal_Vectors (Index_Type   => Hist_Index,
+                                        Element_Type => Integer,
+                                        "=" => Integer_Eq);
 
-   package Float_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Hist_Index,
-                                                             Element_Type => Float,
-                                                             "=" => Float_Eq);
-
-   package Integer_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Hist_Index,
-                                                               Element_Type => Integer,
-                                                               "=" => Integer_Eq);
-
-   package Speed_Vector is new Ada.Containers.Formal_Vectors (Index_Type   => Speed_Index,
-                                                             Element_Type => Integer,
-                                                             "=" => Integer_Eq);
+   package Speed_Vector is
+     new Ada.Containers.Formal_Vectors (Index_Type   => Speed_Index,
+                                        Element_Type => Integer,
+                                        "=" => Integer_Eq);
 
    type Border_Pair is
       record
