@@ -1,0 +1,9 @@
+*.*~
+*.ali
+*.npp
+*.o
+*.s
+auto.cgpr
+gnatprove/
+build/
+typescript*
