@@ -40,10 +40,10 @@ package Spaces.Poses is
    type Pose is private;
 
    --  \brief  double constructor.
-   function Create(X, Y : Float; Theta : Angle) return Pose;
+   function Create (X, Y : Float; Theta : Angle) return Pose;
 
    --  \brief  Position,Angle constructor.
-   function Create(pos : Position; ori : Angle) return Pose;
+   function Create (pos : Position; ori : Angle) return Pose;
 
    --  \brief  binary arithmetic operator +.
    function "+" (This, Other : Pose) return Pose;
@@ -59,24 +59,24 @@ package Spaces.Poses is
    function "=" (This, Other : Pose) return Boolean;
 
    --  \brief Position.
-   function pos(This : Pose) return Position;
+   function pos (This : Pose) return Position;
 
    --  \brief Orientation.
-   function ori(This : Pose) return Angle;
+   function ori (This : Pose) return Angle;
 
    --  \brief Set x.
-   procedure setX(This : in out Pose; X : Float);
+   procedure setX (This : in out Pose; X : Float);
 
    --  \brief Set x.
-   procedure setY(This : in out Pose; Y : Float);
+   procedure setY (This : in out Pose; Y : Float);
 
    --  \brief Set orientation.
-   procedure setOri(This : in out Pose; ori : Angle);
+   procedure setOri (This : in out Pose; ori : Angle);
 
    --  \brief Print.
    --  TODO: add precision parameter
    --  TODO: rewrite to 'Image attribute
-   function print(This : Pose) return String;
+   function print (This : Pose) return String;
 
 private
 

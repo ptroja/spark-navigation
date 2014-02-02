@@ -1,8 +1,3 @@
-with Formal.Numerics;
-with Formal.Numerics.Elementary_Functions;
-
-use Formal.Numerics;
-
 package body Spaces.Angles is
 
    function Create return Angle is
@@ -12,29 +7,29 @@ package body Spaces.Angles is
 
    function Create (t : Float) return Angle is
    begin
-      return (Theta => norm2Pi(t));
+      return (Theta => norm2Pi (t));
    end Create;
 
    function "+" (This, Other : Angle) return Angle is
    begin
-      return (Theta => norm2Pi(This.Theta + Other.Theta));
+      return (Theta => norm2Pi (This.Theta + Other.Theta));
    end "+";
 
    function "-" (This, Other : Angle) return Angle is
       myTheta : Float;
    begin
-      if (This.Theta >= Other.Theta) then
+      if This.Theta >= Other.Theta then
          myTheta := This.Theta;
       else
          myTheta := This.Theta + 2.0*Pi;
       end if;
 
-      return (Theta => norm2pi(myTheta - Other.Theta));
+      return (Theta => norm2Pi (myTheta - Other.Theta));
    end "-";
 
    function "*" (This : Angle; d : Float) return Angle is
    begin
-      return (Theta => norm2Pi(This.Theta * d));
+      return (Theta => norm2Pi (This.Theta * d));
    end "*";
 
    function dCast (This : Angle) return Float is
@@ -44,17 +39,17 @@ package body Spaces.Angles is
 
    function dCastPi (This : Angle) return Float is
    begin
-      return normPi(This.Theta);
+      return normPi (This.Theta);
    end dCastPi;
 
    function dCastDeg (This : Angle) return Float is
    begin
-      return (This.Theta*180.0/Pi);
+      return (This.Theta * 180.0 / Pi);
    end dCastDeg;
 
-   function alDiff(This, Other : Angle) return Float is
+   function alDiff (This, Other : Angle) return Float is
    begin
-      return normPi(Other.Theta - This.Theta);
+      return normPi (Other.Theta - This.Theta);
    end alDiff;
 
    function ccwDiff (This, Other : Angle) return Float is
@@ -63,10 +58,10 @@ package body Spaces.Angles is
       if This.Theta <= Other.Theta then
          otherTheta := Other.Theta;
       else
-         otherTheta := Other.Theta+2.0*Pi;
+         otherTheta := Other.Theta + 2.0*Pi;
       end if;
 
-      return otherTheta - This.theta;
+      return otherTheta - This.Theta;
    end ccwDiff;
 
    function cwDiff (This, Other : Angle) return Float is
@@ -75,7 +70,7 @@ package body Spaces.Angles is
       if This.Theta >= Other.Theta then
          myTheta := This.Theta;
       else
-         myTheta := This.Theta+2.0*Pi;
+         myTheta := This.Theta + 2.0*Pi;
       end if;
 
       return Other.Theta - myTheta;
@@ -83,13 +78,13 @@ package body Spaces.Angles is
 
    function almostEqual (This, Other : Angle; toll : Float) return Boolean is
    begin
-      return abs(alDiff(This, Other)) < toll;
+      return abs (alDiff (This, Other)) < toll;
    end almostEqual;
 
    function ccwMean (This, Other : Angle) return Angle is
    begin
       if Other.Theta = This.Theta then
-         return Create(This.Theta + Pi);
+         return Create (This.Theta + Pi);
       end if;
 
       declare
@@ -98,10 +93,10 @@ package body Spaces.Angles is
          if This.Theta <= Other.Theta then
             otherTheta := Other.Theta;
          else
-            otherTheta := Other.Theta+2.0*Pi;
+            otherTheta := Other.Theta + 2.0*Pi;
          end if;
 
-         return Create((otherTheta + This.theta)/2.0);
+         return Create ((otherTheta + This.Theta)/2.0);
       end;
    end ccwMean;
 
@@ -114,12 +109,12 @@ package body Spaces.Angles is
          myTheta := This.Theta + 2.0*Pi;
       end if;
 
-      return Create((other.theta + myTheta)/2.0);
+      return Create ((Other.Theta + myTheta)/2.0);
    end cwMean;
 
    function Print (This : Angle) return String is
    begin
-      return Float'Image(This.Theta);
+      return Float'Image (This.Theta);
    end Print;
 
    M_PI : constant := Pi;
@@ -131,10 +126,12 @@ package body Spaces.Angles is
    is
       a : Float := x;
    begin
-      if a >= M_2Pi or else a < 0.0 then
-         a := Float'Remainder(a, M_2Pi);        --  in [-2*M_PI,2*M_PI]
-         if a<0.0 then a := a + M_2Pi; end if;  --  in [0,2*M_PI]
-         if a>M_2Pi then a:=a-M_2PI; end if;
+      if a >= M_2PI or else a < 0.0 then
+         a := Float'Remainder (a, M_2PI);        --  in [-2*M_PI,2*M_PI]
+         if a < 0.0 then
+            a := a + M_2PI; end if;  --  in [0,2*M_PI]
+         if a > M_2PI then
+            a := a - M_2PI; end if;
       end if;
 
       return a;
@@ -147,9 +144,11 @@ package body Spaces.Angles is
       a : Float := x;
    begin
       if a > M_PI or else a <= -M_PI then
-         a:=Float'Remainder(a,M_2PI);         --  in [-2*M_PI,2*M_PI]
-         if a<=-M_PI then a:=a+M_2PI; end if;
-         if a>M_PI then a:=a-M_2PI; end if;
+         a := Float'Remainder (a, M_2PI);         --  in [-2*M_PI,2*M_PI]
+         if a <= -M_PI then
+            a := a + M_2PI; end if;
+         if a > M_PI then
+            a := a - M_2PI; end if;
       end if;
 
       return a;

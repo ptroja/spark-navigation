@@ -1,8 +1,8 @@
 package Debug_IO is
 
-   procedure Put(X : String);
+   procedure Put (X : String);
 
-   procedure Put_Line(X : String);
+   procedure Put_Line (X : String);
 
    procedure New_Line;
 

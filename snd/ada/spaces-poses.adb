@@ -1,4 +1,3 @@
-with Spaces.Positions;
 
 with Formal.Numerics.Elementary_Functions;
 use Formal.Numerics.Elementary_Functions;
@@ -11,7 +10,7 @@ package body Spaces.Poses is
 
    function Create (X, Y : Float; Theta : Angle) return Pose is
    begin
-      return (Pos => Create(X,Y), ori => Theta);
+      return (pos => Create (X, Y), ori => Theta);
    end Create;
 
    ------------
@@ -20,7 +19,7 @@ package body Spaces.Poses is
 
    function Create (pos : Position; ori : Angle) return Pose is
    begin
-      return (Pos => pos, ori => ori);
+      return (pos => pos, ori => ori);
    end Create;
 
    ---------
@@ -29,7 +28,7 @@ package body Spaces.Poses is
 
    function "+" (This, Other : Pose) return Pose is
    begin
-      return (pos => This.pos+Other.pos, ori => This.ori+Other.ori);
+      return (pos => This.pos + Other.pos, ori => This.ori + Other.ori);
    end "+";
 
    ---------
@@ -38,7 +37,7 @@ package body Spaces.Poses is
 
    function "-" (This, Other : Pose) return Pose is
    begin
-      return (pos => This.pos-Other.pos, ori => This.ori-Other.ori);
+      return (pos => This.pos - Other.pos, ori => This.ori - Other.ori);
    end "-";
 
    ---------
@@ -46,10 +45,10 @@ package body Spaces.Poses is
    ---------
 
    function "*" (This : Pose; P : Position) return Position is
-    x : constant Float := Spaces.Positions.X(P) * cos(dCast(This.ori)) - Spaces.Positions.Y(P)*sin(dCast(This.ori)) + Spaces.Positions.X(This.pos);
-    y : constant Float := Spaces.Positions.X(P) * sin(dCast(This.ori)) + Spaces.Positions.Y(P)*cos(dCast(This.ori)) + Spaces.Positions.Y(This.pos);
+    x : constant Float := Spaces.Positions.X (P) *  Cos (dCast (This.ori)) - Spaces.Positions.Y (P)* Sin (dCast (This.ori)) + Spaces.Positions.X (This.pos);
+    y : constant Float := Spaces.Positions.X (P) *  Sin (dCast (This.ori)) + Spaces.Positions.Y (P)* Cos (dCast (This.ori)) + Spaces.Positions.Y (This.pos);
    begin
-      return Create(X,Y);
+      return Create (x, y);
    end "*";
 
    ---------
@@ -85,7 +84,7 @@ package body Spaces.Poses is
 
    procedure setX (This : in out Pose; X : Float) is
    begin
-      setX(This.pos, X);
+      setX (This.pos, X);
    end setX;
 
    ----------
@@ -94,7 +93,7 @@ package body Spaces.Poses is
 
    procedure setY (This : in out Pose; Y : Float) is
    begin
-      setY(This.pos, Y);
+      setY (This.pos, Y);
    end setY;
 
    ------------
@@ -106,14 +105,13 @@ package body Spaces.Poses is
       This.ori := ori;
    end setOri;
 
-
    -----------
    -- print --
    -----------
 
    function print (This : Pose) return String is
    begin
-      return "(" & Print(This.pos) & ", " & Print(This.ori) & ")";
+      return "(" &  print (This.pos) & ", " & Print (This.ori) & ")";
    end print;
 
 end Spaces.Poses;

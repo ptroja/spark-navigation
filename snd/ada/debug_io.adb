@@ -8,7 +8,7 @@ package body Debug_IO is
 
    procedure New_Line is
    begin
-      Ada.Text_IO.New_Line(Spacing => 1);
-   end;
+      Ada.Text_IO.New_Line (Spacing => 1);
+   end New_Line;
 
 end Debug_IO;

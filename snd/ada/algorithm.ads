@@ -1,7 +1,6 @@
 with Robot_Iface;
 with Spaces.Angles;
 with Spaces.Positions;
-with Spaces.Poses;
 
 with Gaps;
 with Valleys;
@@ -19,7 +18,6 @@ package Algorithm is
 
    use Spaces.Angles;
    use Spaces.Positions;
-   use Spaces.Poses;
    use Gaps;
 
    type Option is (O_NONE, O_SOME);
@@ -43,7 +41,7 @@ package Algorithm is
                                     Gaps.Gap,
                                     Gaps.Equal);
 
-   subtype List is Gap_Vectors.Vector(Max_Gaps);
+   subtype List is Gap_Vectors.Vector (Max_Gaps);
 
    type Laser_Scan_Data is
       record
@@ -61,7 +59,7 @@ package Algorithm is
       obsAvoidDelta : Float;
       driveAngle : Angle;
    end record;
-   pragma Convention(CPP, Controller);
+   pragma Convention (CPP, Controller);
 
    function isFilterClear
      (scans         : Laser_Scans;
@@ -84,7 +82,7 @@ package Algorithm is
 
    procedure removeDuplicateGaps (This : in out Controller)
    with
-     Post => This.robot.robot_Radius = This.robot.robot_Radius'Old;
+     Post => This.robot.robot_radius = This.robot.robot_radius'Old;
 
    function findBestValley
      (This       : Controller;

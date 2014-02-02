@@ -5,22 +5,22 @@ package body Spaces.Positions is
 
    function Create return Position is
    begin
-      return (X => 0.0, Y => 0.0);
+      return (x => 0.0, y => 0.0);
    end Create;
 
    function Create (x_in, y_in : Float) return Position is
    begin
-      return (X => x_in, Y => y_in);
+      return (x => x_in, y => y_in);
    end Create;
 
    function Create (theta : Angle) return Position is
    begin
-      return (X => cos(dCast(Theta)), Y => sin(dCast(Theta)));
+      return (x =>  Cos (dCast (theta)), y =>  Sin (dCast (theta)));
    end Create;
 
    function Create (d : Float; theta : Angle) return Position is
    begin
-      return (X => d*cos(dCast(Theta)), Y => d*sin(dCast(Theta)));
+      return (x => d * Cos (dCast (theta)), y => d * Sin (dCast (theta)));
    end Create;
 
    procedure setX (This : in out Position; x : Float) is
@@ -39,7 +39,7 @@ package body Spaces.Positions is
 
    function "+" (This : Position; other : Float) return Position is
    begin
-      return Create(norm(This) + other, bearing(This));
+      return Create (norm (This) + other, bearing (This));
    end "+";
 
    ---------
@@ -48,7 +48,7 @@ package body Spaces.Positions is
 
    function "-" (This : Position; other : Float) return Position is
    begin
-      return Create(norm(This) - other, bearing(This));
+      return Create (norm (This) - other, bearing (This));
    end "-";
 
    ---------
@@ -57,7 +57,7 @@ package body Spaces.Positions is
 
    function "+" (This : Position; other : Angle) return Position is
    begin
-      return Create(norm(This), bearing(This)+other);
+      return Create (norm (This), bearing (This) + other);
    end "+";
 
    ---------
@@ -66,16 +66,16 @@ package body Spaces.Positions is
 
    function "-" (This : Position; other : Angle) return Position is
    begin
-      return Create(norm(This), bearing(This)-other);
+      return Create (norm (This), bearing (This) - other);
    end "-";
 
    ---------
    -- "+" --
    ---------
 
-   function "+" (This : Position; Other : Position) return Position is
+   function "+" (This : Position; other : Position) return Position is
    begin
-      return (x => This.x + Other.x, y => This.y + Other.y);
+      return (x => This.x + other.x, y => This.y + other.y);
    end "+";
 
    ---------
@@ -84,7 +84,7 @@ package body Spaces.Positions is
 
    function "-" (This : Position; other : Position) return Position is
    begin
-      return (x => This.x - Other.x, y => This.y - Other.y);
+      return (x => This.x - other.x, y => This.y - other.y);
    end "-";
 
    ---------
@@ -93,7 +93,7 @@ package body Spaces.Positions is
 
    function "*" (This : Position; scalar : Float) return Position is
    begin
-      return (x => This.x*scalar, y => This.y*scalar);
+      return (x => This.x * scalar, y => This.y * scalar);
    end "*";
 
    ---------
@@ -102,7 +102,7 @@ package body Spaces.Positions is
 
    function "/" (This : Position; scalar : Float) return Position is
    begin
-      return (x => This.x/scalar, y => This.y/scalar);
+      return (x => This.x / scalar, y => This.y / scalar);
    end "/";
 
    ---------
@@ -120,7 +120,7 @@ package body Spaces.Positions is
 
    function minimum (This, P : Position) return Position is
    begin
-      return (X => Float'Min(This.x, P.X), Y => Float'Min(This.y, P.Y));
+      return (x => Float'Min (This.x, P.x), y => Float'Min (This.y, P.y));
    end minimum;
 
    -------------
@@ -129,7 +129,7 @@ package body Spaces.Positions is
 
    function maximum (This, P : Position) return Position is
    begin
-      return (X => Float'Max(This.x, P.X), Y => Float'Max(This.y, P.Y));
+      return (x => Float'Max (This.x, P.x), y => Float'Max (This.y, P.y));
    end maximum;
 
    -------
@@ -158,13 +158,13 @@ package body Spaces.Positions is
      (This : Position)
       return Float
    is
-      function Hypot(X,Y : Float) return Float
+      function Hypot (X, Y : Float) return Float
       with
         Post => Hypot'Result >= 0.0 and then
         (if Hypot'Result > 0.0 then (X /= 0.0 or else Y /= 0.0));
-      pragma Import(C, Hypot, "hypotf");
+      pragma Import (C, Hypot, "hypotf");
    begin
-      return Hypot(This.X, This.Y);
+      return Hypot (This.x, This.y);
    end norm;
 
    ----------------
@@ -173,7 +173,7 @@ package body Spaces.Positions is
 
    function squareNorm (This : Position) return Float is
    begin
-      return This.X*This.X+This.Y*This.Y;
+      return This. x * This. x + This.y*This.y;
    end squareNorm;
 
    ----------
@@ -182,7 +182,7 @@ package body Spaces.Positions is
 
    function dist (This, Other : Position) return Float is
    begin
-      return norm(This - Other);
+      return norm (This - Other);
    end dist;
 
    -------------
@@ -191,7 +191,7 @@ package body Spaces.Positions is
 
    function bearing (This : Position) return Angle is
    begin
-      return Create(Arctan(This.y, This.x));
+      return Create (Arctan (This.y, This.x));
    end bearing;
 
    ------------
@@ -200,7 +200,7 @@ package body Spaces.Positions is
 
    function scalar (This, P : Position) return Float is
    begin
-      return This.x*P.x + This.y*P.y;
+      return This.x * P.x + This.y*P.y;
    end scalar;
 
    -----------
@@ -209,7 +209,7 @@ package body Spaces.Positions is
 
    function print (This : Position) return String is
    begin
-      return "(" & Float'Image(This.x) & ", " & Float'Image(This.x) & ")";
+      return "(" & Float'Image (This.x) & ", " & Float'Image (This.x) & ")";
    end print;
 
 end Spaces.Positions;

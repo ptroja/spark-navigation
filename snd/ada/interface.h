@@ -3,8 +3,8 @@
 
 extern "C" {
 
-void ndinit(void);
-void ndfinal(void);
+void sndinit(void);
+void sndfinal(void);
 
 struct proxy_c {
   double robot_radius;

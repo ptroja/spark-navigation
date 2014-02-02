@@ -10,6 +10,6 @@ package Valleys is
       risingGap, otherGap : Gap;
    end record;
 
-   function Create(rG, oG : Gap) return Valley;
+   function Create (rG, oG : Gap) return Valley;
 
 end Valleys;

@@ -400,7 +400,7 @@ int SmoothND::Setup()
 	// configure a serial port.
 
 	// Initialize Ada subsystem
-	ndinit();
+	sndinit();
 
 	PLAYER_MSG0(1,"DRIVER READY");
 
@@ -420,7 +420,7 @@ int SmoothND::Shutdown()
 	this->StopThread();
 
 	// Finalize Ada subsystem
-	ndfinal();
+	sndfinal();
 
 	// Unsubscribe from the ranger
 	this->ranger_dev->Unsubscribe(this->InQueue);

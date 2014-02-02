@@ -17,8 +17,8 @@ package Gaps is
 
    function Create return Gap;
 
-   function Create(ang : Angle; d : Float; iD : iDir_t) return Gap;
+   function Create (ang : Angle; d : Float; iD : iDir_t) return Gap;
 
-   function Equal(Left, Right : Gap) return Boolean;
+   function Equal (Left, Right : Gap) return Boolean;
 
 end Gaps;

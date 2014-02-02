@@ -51,6 +51,6 @@ package Robot_Iface is
 --     function PeekInputData(This : Proxy) return Boolean;
 
    procedure SetSpeed (This : in out Proxy; modulus, angle : Float);
-   procedure GoalReached(This : in out Proxy);
+   procedure GoalReached (This : in out Proxy);
 
 end Robot_Iface;
