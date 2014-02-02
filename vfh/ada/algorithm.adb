@@ -81,16 +81,10 @@ package body Algorithm is
          return val;
       end;
 
-      procedure SetCurrentMaxSpeed
-        (Max_Speed : Positive);
-
-      procedure SetCurrentMaxSpeed
-        (Max_Speed : Positive)
-      is
-         use Ada.Containers;
+      procedure SetCurrentMaxSpeed is
       begin
          pragma Assert (VFH_Predicate (This));
-         This.Current_Max_Speed := Integer'Min (Max_Speed, This.MAX_SPEED);
+         This.Current_Max_Speed := This.MAX_SPEED;
 
          -- This should always succeed.
          Reserve_Capacity (This.Min_Turning_Radius,
@@ -125,7 +119,7 @@ package body Algorithm is
    begin
       pragma Assert (VFH_Predicate (This));
 
-      SetCurrentMaxSpeed (This.MAX_SPEED);
+      SetCurrentMaxSpeed;
 
       -- For the following calcs:
       --   - (x,y) = (0,0)   is to the front-left of the robot
@@ -185,7 +179,9 @@ package body Algorithm is
                                                   Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
                            -- Set plus_sector and neg_sector to the angles to the two adjacent sectors
                            declare
-                              function Append_Or_Not return Boolean is
+                              -- FIXME: I should be given with Global aspect and not a variable,
+                              -- but GNATProve does not allow to use loop variables in this aspect.
+                              function Append_Or_Not(I : Integer) return Boolean is
                                  plus_sector : constant Float := Float (i + 1) * Float (This.SECTOR_ANGLE);
                                  neg_sector : constant Float := Float (i) * Float (This.SECTOR_ANGLE);
                                  neg_sector_to_neg_dir, neg_sector_to_plus_dir : Float;
@@ -244,7 +240,7 @@ package body Algorithm is
                               end;
 
                            begin
-                              if Append_Or_Not then
+                              if Append_Or_Not(I) then
                                  Append (This.Cell_Sector (cell_sector_tablenum, x, y), i);
                               end if;
                            end;
@@ -405,7 +401,7 @@ package body Algorithm is
         This.MAX_TURNRATE_0MS -
           Integer (Float (speed * (This.MAX_TURNRATE_0MS - This.MAX_TURNRATE_1MS)) / 1000.0);
    begin
-      if  val < 0 then
+      if val < 0 then
          val := 0;
       end if;
 
