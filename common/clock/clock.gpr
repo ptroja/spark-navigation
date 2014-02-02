@@ -3,8 +3,8 @@ project Clock is
    for Languages use ("C");
    for Library_Name use "clock";
    for Library_Kind use "dynamic";
-   for Library_Dir use "ada";
-   for Object_Dir use "ada/obj";
+   for Library_Dir use "lib";
+   for Object_Dir use "lib/obj";
    for Source_Dirs use (".");
    for Source_Files use ("clock.h", "clock.c");
 

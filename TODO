@@ -28,3 +28,5 @@ GNATProve:
   of subprograms nested in a loop
 
 - 'Remainder attribute: full formalization
+
+- loop invariants in nested loops (see common/ada/rec.adb)

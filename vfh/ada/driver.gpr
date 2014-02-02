@@ -1,4 +1,4 @@
-with "../../common/c/clock.gpr";
+with "../../common/clock/clock.gpr";
 with "vfh.gpr";
 
 project Driver is

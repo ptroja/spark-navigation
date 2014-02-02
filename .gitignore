@@ -3,7 +3,10 @@
 *.npp
 *.o
 *.s
+*.d
+*.metrix
 auto.cgpr
 gnatprove/
 build/
 typescript*
+tags
