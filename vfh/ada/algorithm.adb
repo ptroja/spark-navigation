@@ -599,8 +599,8 @@ package body Algorithm is
       --  Print_Cells_Enlargement_Angle(This);
       pragma Assert_And_Cut (VFH_Predicate (This));
 
-      -- Use a local procedure with parameters mode to avoid loop invariants,
-      -- which allocates huge local copies of This.Cell_Sector:
+      -- FIXME: Use a local procedure with parameters mode to avoid loop
+      -- invariants, which allocate huge local copies of This.Cell_Sector:
       -- pragma Loop_Invariant (This.Cell_Sector = This.Cell_Sector'Loop_Entry);
       declare
          subtype Hist_t is History_Array (Natural range 0 .. This.HIST_LAST);
