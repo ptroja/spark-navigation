@@ -347,6 +347,15 @@ is
       i,j : SECTOR_ID;
       distancia_i,distancia_j : Float;
       no_obstaculo_i,no_obstaculo_j : Boolean;
+
+      function Inv_Dec(I : SECTOR_ID) return Positive is
+        ((if i <= principio then i+SECTORES else i)-principio);
+      -- with Convention => Ghost;
+
+      function Inv_Inc(I : SECTOR_ID) return Positive is
+        (SECTORES+principio-(if i >= principio then i else i+SECTORES));
+      -- with Convention => Ghost;
+
    begin
 
       -- Se busca desde "principio" en la direcci�n indicada por "izquierda".
@@ -355,8 +364,8 @@ is
       no_obstaculo_j:=(distancia_j<0.0);
 
       loop
-         -- FIXME: j rolls up or down over SECTOR_ID'Range.
-         pragma Loop_Variant(Decreases => (if izquierda then j else -j));
+         pragma Loop_Variant(Decreases => (if izquierda then Inv_Dec(j) else Inv_Inc(j)));
+         pragma Loop_Invariant(True);
          i:=j;
          distancia_i:=distancia_j;
          no_obstaculo_i:=no_obstaculo_j;
@@ -375,12 +384,19 @@ is
                return;
             end if;
 
-            if abs(distancia_i-distancia_j)>=robot.discontinuidad then
-               discontinuidad:=i;
-               ascendente:=(distancia_i>distancia_j);
-               return;
-            end if;
-
+            -- FIXME: 'abs' makes loop_invariant unprovable.
+            declare
+               function dij return Float is
+               begin
+                  return abs(distancia_i-distancia_j);
+               end;
+            begin
+               if dij>=robot.discontinuidad then
+                  discontinuidad:=i;
+                  ascendente:=(distancia_i>distancia_j);
+                  return;
+               end if;
+            end;
          end if;
 
          exit when j = principio;
