@@ -12,7 +12,7 @@ library project Nd is
    for Source_Files use ("geometria.adb", "geometria.ads", "iface.adb", "iface.ads", "nd.adb", "nd.ads");
 
    package Compiler is
-      for Default_Switches ("ada") use ("-msse2", "-mfpmath=sse", "-gnat12", "-g", "-O3");
+      for Default_Switches ("ada") use ("-msse2", "-mfpmath=sse", "-gnat12", "-g", "-O3", "-gnatyaAbBcCdefhiIkprStux", "-gnatf");
    end Compiler;
 
    package Builder is

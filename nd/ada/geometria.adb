@@ -1,11 +1,11 @@
 package body geometria is
 
-   function Atan2(x, y : Unbounded_Float) return Unbounded_Float
+   function Atan2 (x, y : Unbounded_Float) return Unbounded_Float
    with
-     Pre => X /= 0.0 or else Y /= 0.0,
+     Pre => x /= 0.0 or else y /= 0.0,
      Post => Atan2'Result in -Pi .. Pi;
 
-   function Atan2(x, y : Unbounded_Float) return Unbounded_Float renames Arctan;
+   function Atan2 (x, y : Unbounded_Float) return Unbounded_Float renames Arctan;
 
    -- Note: We must swap the arguments.
 --     function ARCOTANGENTE(x,y : Unbounded_Float) return Unbounded_Float
@@ -27,12 +27,12 @@ package body geometria is
    begin
       p.x := Dx * coseno + Dy * seno;
       p.y := -Dx * seno + Dy * coseno;
-   end;
-   pragma Inline(TransformacionDirecta);
+   end TransformacionDirecta;
+   pragma Inline (TransformacionDirecta);
 
-   procedure TRANSFORMACION01(SR1 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
-   procedure TRANSFORMACION12(SR2 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
-   procedure TRANSFORMACION23(SR3 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
+   procedure TRANSFORMACION01 (SR1 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
+   procedure TRANSFORMACION12 (SR2 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
+   procedure TRANSFORMACION23 (SR3 : TSR; p : in out TCoordenadas) renames TransformacionDirecta;
 
    ------------------
    -- AplicarCotas --
@@ -45,7 +45,7 @@ package body geometria is
       elsif n > s then
          n := s;
       end if;
-   end;
+   end AplicarCotas;
 
    -------------------------
    -- DISTANCIA_CUADRADO2 --
@@ -53,8 +53,8 @@ package body geometria is
 
    function DISTANCIA_CUADRADO2 (p, q : TCoordenadas) return Unbounded_Float is
    begin
-      return hypot(p.x - q.x, p.y - q.y);
-   end;
+      return  Hypot (p.x - q.x, p.y - q.y);
+   end DISTANCIA_CUADRADO2;
 
    ----------------------------
    -- ConstruirCoordenadasCP --
@@ -67,7 +67,7 @@ package body geometria is
    begin
       p.x := q.r * Cos (q.a);
       p.y := q.r * Sin (q.a);
-   end;
+   end ConstruirCoordenadasCP;
 
    -----------------------------
    -- ConstruirCoordenadasCxy --
@@ -80,7 +80,7 @@ package body geometria is
    begin
       p.x := x;
       p.y := y;
-   end;
+   end ConstruirCoordenadasCxy;
 
    -----------------------------
    -- ConstruirCoordenadasCra --
@@ -94,7 +94,7 @@ package body geometria is
    begin
       p.x := r * Cos (a);
       p.y := r * Sin (a);
-   end;
+   end ConstruirCoordenadasCra;
 
    ----------------------------
    -- ConstruirCoordenadasPC --
@@ -107,7 +107,7 @@ package body geometria is
    begin
       p.r := Hypot (q.x, q.y);
       p.a := Atan2 (q.y, q.x);
-   end;
+   end ConstruirCoordenadasPC;
 
    -----------------------------
    -- ConstruirCoordenadasPxy --
@@ -120,7 +120,7 @@ package body geometria is
    begin
       p.r := Hypot (x, y);
       p.a := Atan2 (y => x, x => y);
-   end;
+   end ConstruirCoordenadasPxy;
 
    -----------------------------
    -- ConstruirCoordenadasPra --
@@ -134,7 +134,7 @@ package body geometria is
    begin
       p.r := r;
       p.a := a;
-   end;
+   end ConstruirCoordenadasPra;
 
    -----------------------------
    -- ConstruirCoordenadasPcC --
@@ -147,7 +147,7 @@ package body geometria is
    begin
       p.r := q.x * q.x + q.y * q.y; -- yes, square (?!).
       p.a := Atan2 (q.y, q.x);
-   end;
+   end ConstruirCoordenadasPcC;
 
    -------------------------
    -- SumarCoordenadasCxy --
@@ -157,7 +157,7 @@ package body geometria is
    begin
       p.x := p.x + x;
       p.y := p.y + y;
-   end;
+   end SumarCoordenadasCxy;
 
    --------------------------
    -- SumarCoordenadasCxyC --
@@ -171,7 +171,7 @@ package body geometria is
    begin
       q.x := p.x + x;
       q.y := p.y + y;
-   end;
+   end SumarCoordenadasCxyC;
 
    -------------------------
    -- SumarCoordenadasCra --
@@ -184,7 +184,7 @@ package body geometria is
    begin
       p.x := p.x + r * Cos (a);
       p.y := p.y + r * Sin (a);
-   end;
+   end SumarCoordenadasCra;
 
    --------------------------
    -- SumarCoordenadasCraC --
@@ -199,7 +199,7 @@ package body geometria is
    begin
       q.x := p.x + r * Cos (a);
       q.y := p.y + r * Sin (a);
-   end;
+   end SumarCoordenadasCraC;
 
    ----------------------
    -- TRANSFORMACION02 --
@@ -209,7 +209,7 @@ package body geometria is
    begin
       TRANSFORMACION01 (SR1, p);
       TRANSFORMACION12 (SR2, p);
-   end;
+   end TRANSFORMACION02;
 
    ---------------------------
    -- TransformacionInversa --
@@ -223,7 +223,7 @@ package body geometria is
    begin
       p.y := SR.posicion.y + p.x * seno + p.y * coseno;
       p.x := x;
-   end;
+   end TransformacionInversa;
 
    -----------------------
    -- AnguloNormalizado --
@@ -233,9 +233,9 @@ package body geometria is
    begin
       -- Debe pertenecer a (-PI,PI].
       -- Todos los �ngulos que proceden de un "atan2" pertenecen a ese
-      --intervalo.
+      -- intervalo.
       return Atan2 (Sin (angulo), Cos (angulo));
-   end;
+   end AnguloNormalizado;
 
    ----------------------------------------------
    -- AnguloPerteneceIntervaloOrientadoCerrado --
@@ -248,7 +248,7 @@ package body geometria is
    begin
       -- Intervalo orientado.
       -- Esta funci�n devuelve 1 si el �ngulo est� entre los l�mites;
-      --0 en caso contrario.
+      -- 0 en caso contrario.
       -- Todos los par�metros deben pertenecer al intervalo (-PI,PI].
       -- Si limite1==limite2, entonces el intervalo es de longitud 0.
 
@@ -257,7 +257,7 @@ package body geometria is
       else
          return angulo >= limite1 or else angulo <= limite2;
       end if;
-   end;
+   end AnguloPerteneceIntervaloOrientadoCerrado;
 
    ------------------------------
    -- BisectrizAnguloOrientado --
@@ -275,9 +275,9 @@ package body geometria is
       if limite1 <= limite2 then
          return resultado;
       else
-         return AnguloNormalizado(resultado + Pi);
+         return AnguloNormalizado (resultado + Pi);
       end if;
-   end;
+   end BisectrizAnguloOrientado;
 
    --------------------------------
    -- BisectrizAnguloNoOrientado --
@@ -291,14 +291,14 @@ package body geometria is
    begin
       -- Devuelve la bisectriz del menor �ngulo formado por "limite1" y
       --"limite2", ya sea en el sentido de las agujas del reloj o en el
-      --opuesto.
+      -- opuesto.
 
       if abs (limite1 - limite2) <= Pi then
          return resultado;
       else
          return AnguloNormalizado (resultado + Pi);
       end if;
-   end;
+   end BisectrizAnguloNoOrientado;
 
    -----------------------------
    -- AmplitudAnguloOrientado --
@@ -311,14 +311,14 @@ package body geometria is
       amplitud : constant Unbounded_Float := limite2 - limite1;
    begin
       -- Devuelve la amplitud del �ngulo de "limite1" a "limite2" en sentido
-      --contrario a las agujas del reloj.
+      -- contrario a las agujas del reloj.
 
       if limite1 <= limite2 then
          return amplitud;
       else
          return 2.0 * Pi - amplitud;
       end if;
-   end;
+   end AmplitudAnguloOrientado;
 
    -------------------------------
    -- AmplitudAnguloNoOrientado --
@@ -332,14 +332,14 @@ package body geometria is
    begin
       -- Devuelve la amplitud del menor �ngulo formado por "limite1" y
       --"limite2", ya sea en el sentido de las agujas del reloj o en el
-      --opuesto.
+      -- opuesto.
 
       if amplitud <= Pi then
          return amplitud;
       else
          return 2.0 * Pi - amplitud;
       end if;
-   end;
+   end AmplitudAnguloNoOrientado;
 
    ----------------------------------
    -- MinimaDistanciaCuadradoCorte --
@@ -356,7 +356,7 @@ package body geometria is
       x       : Unbounded_Float;
    begin
       -- Mediante su aplicaci�n reiterada obtenemos el m�s pr�ximo de
-      --entre los puntos de corte de un
+      -- entre los puntos de corte de un
       -- grupo de segmentos con una direcci�n determinada.
       -- "p1" y "p2" son los extremos de un segmento.
       -- "angulo" es la direcci�n de corte (desde el origen).
@@ -369,9 +369,9 @@ package body geometria is
       ConstruirCoordenadasCP (p2, pp2temp);
 
       if p1.y * p2.y > 0.0 or else (p1.y = p2.y and then p1.y /= 0.0)  -- No hay
-                                                                       --punto
-                                                                       --de
-                                                                       --corte.
+                                                                       -- punto
+                                                                       -- de
+                                                                       -- corte.
       then
          return;
       end if;
@@ -397,6 +397,6 @@ package body geometria is
       if x >= 0.0 and then x < distancia then
          distancia := x;
       end if;
-   end;
+   end MinimaDistanciaCuadradoCorte;
 
 end geometria;

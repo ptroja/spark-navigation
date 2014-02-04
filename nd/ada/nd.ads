@@ -9,8 +9,10 @@ is
 
       -- GEOMETRY
       -- The vehicle is considered to be symetric at both sides of the X axis.
-      -- The flag is 1 if the robot is resctangular, 0 if it is circular
+      -- The flag is 1 if the robot is rectangular, 0 if it is circular
       geometryRect : Boolean; -- FIXME: enum
+
+      -- FIXME: RECTANGULAR/CIRCULAR should be a discriminated record.
 
       -- --- RECTANGULAR ---
       -- distance (m) from the wheels to the:
@@ -24,7 +26,7 @@ is
       R : Positive_Float; -- FIXME: 0..Inf[m]
 
       -- MOTION
-      -- The falg is 1 if the robot is holonomous, or 0 is diff-drive or syncro
+      -- The flag is 1 if the robot is holonomous, or 0 is diff-drive or syncro
       holonomic : Boolean; -- FIXME: enum
 
       -- Maximum linear and angular velocities
@@ -37,11 +39,11 @@ is
 
       -- -- SECURITY DISTANCE ---
       -- Distance to consider an obstacle dangerous (i.e. to start the
-      --avoidance maneouvre)
+      --   avoidance maneouvre)
       -- dsmax: Distance from the frontal robot bounds.
       -- dsmin: Distance from the back robot bounds.
       -- enlarge: Inner value. The suggestion is 20% of the dsmin (i.e.
-      --0.2*dsmin)
+      --   0.2*dsmin)
       dsmax, dsmin : Positive_Float;
       enlarge : NonNegative_Float;
 
@@ -55,7 +57,7 @@ is
 
       -- LASER
       -- Distance from the wheels axis to the laser, X axis.
-      --float laser;
+      -- float laser;
 
    end record;
 
@@ -80,7 +82,7 @@ is
    -- #define MAX_POINTS_SCENARIO 1440
    MAX_POINTS_SCENARIO : constant := 1440;
 
-   subtype POINT_ID is Natural range 0 .. MAX_POINTS_SCENARIO-1;
+   subtype POINT_ID is Natural range 0 .. MAX_POINTS_SCENARIO - 1;
 
    type Obstacle_Points is
      array (POINT_ID) of geometria.TCoordenadas;
@@ -118,7 +120,7 @@ is
    -- Dimensiones del robot.
    --   Consideramos el robot definido por un rect�ngulo. Numeramos sus
    --   dimensiones, medidas a partir de su centro en las direcciones
-   --principales,
+   -- principales,
    --   siguiendo la misma convenci�n que para los sectores:
    --     Dimension[0]: distance from the center to the rear of the robot..
    --     Dimension[1]: distance from the center to the left of the robot.
@@ -159,9 +161,9 @@ is
       holonomo : Boolean;
 
       E  : Sector_Ranges;  -- Distancia desde el origen de SR2 al per�metro
-                           --del robot.
+                           -- del robot.
       ds : Sector_Ranges;  -- Distancia de seguridad: desde el per�metro del
-                           --robot al per�metro de seguridad.
+                           -- robot al per�metro de seguridad.
 
       velocidad_lineal_maxima  : NonNegative_Float;
       velocidad_angular_maxima : NonNegative_Float;
@@ -174,8 +176,8 @@ is
       T : NonNegative_Float; -- Periodo.
 
       H : TMatriz2x2; -- Generador de movimientos: "Inercia" del robot.
-      G : TMatriz2x2;   -- Generador de movimientos: "Fuerza" aplicada sobre
-                        --el robot.
+      G : TMatriz2x2; -- Generador de movimientos: "Fuerza" aplicada sobre
+                      -- el robot.
 
    end record;
 
@@ -236,46 +238,47 @@ is
       objetivo : TObjetivo;
 
       SR1         : geometria.TSR;                    -- Estado actual del
-                                                      --robot: posici�n y
-                                                      --orientaci�n.
+                                                      -- robot: posici�n y
+                                                      -- orientaci�n.
       velocidades : TVelocities; -- Estado actual del robot: velocidades
-                                 --lineal y angular.
+                                 -- lineal y angular.
 
-      --TCoordenadasPolares d[SECTORES]; -- Distancia desde el centro del
-      --robot al obst�culo m�s pr�ximo en cada sector (con �ngulos).
+      -- Distancia desde el centro del robot al obst�culo m�s pr�ximo en cada
+      -- sector (con �ngulos).
       d : d_t;
-      --float dr[SECTORES]; -- Distancia desde el per�metro del robot al
-      --obst�culo m�s pr�ximo en cada sector.
+
+      -- Distancia desde el per�metro del robot al obst�culo m�s pr�ximo en
+      -- cada sector.
       dr : dr_t;
 
       regiones : TVRegiones;  -- S�lo como informaci�n de cara al
-                              --exterior: Lista de todas las regiones
-                              --encontradas en el proceso de selecci�n.
-      region   : SECTOR_ID_Optional;-- Como almacenamos m�s de una regi�n
-                                    --debemos indicar cu�l es la escogida.
+                              -- exterior: Lista de todas las regiones
+                              -- encontradas en el proceso de selecci�n.
+      region   : SECTOR_ID_Optional; -- Como almacenamos m�s de una regi�n
+                                     -- debemos indicar cu�l es la escogida.
 
       -- Should be -1 \/ SECTOR_ID;
       obstaculo_izquierda, obstaculo_derecha : SECTOR_ID_Optional;
 
       angulosin : Float;      -- S�lo como informaci�n de cara al
-                              --exterior: �ngulo antes de tener en cuenta
-                              --los obst�culos m�s pr�ximos.
+                              -- exterior: �ngulo antes de tener en cuenta
+                              -- los obst�culos m�s pr�ximos.
       angulocon : Float;      -- S�lo como informaci�n de cara al
-                              --exterior: �ngulo despu�s de tener en
-                              --cuenta los obst�culos m�s pr�ximos.
+                              -- exterior: �ngulo despu�s de tener en
+                              -- cuenta los obst�culos m�s pr�ximos.
       situacion : Situation_TYPE;   -- S�lo como informaci�n de cara al
-                                    --exterior: Situaci�n en la que se
-                                    --encuentra el robot.
+                                    -- exterior: Situaci�n en la que se
+                                    -- encuentra el robot.
       cutting   : CUTTING_TYPE;     -- S�lo como informaci�n de cara al
-                                    --exterior: Cutting aplicado al movimiento
-                                    --del robot.
+                                    -- exterior: Cutting aplicado al movimiento
+                                    -- del robot.
 
       angulo    : Float;      -- Salida del algoritmo de navegaci�n y
-                              --entrada al generador de movimientos:
-                              --direcci�n de movimiento deseada.
-      velocidad : Float;   -- Salida del algoritmo de navegaci�n y entrada
-                           --al generador de movimientos: velocidad lineal
-                           --deseada.
+                              -- entrada al generador de movimientos:
+                              -- direcci�n de movimiento deseada.
+      velocidad : Float;      -- Salida del algoritmo de navegaci�n y entrada
+                              -- al generador de movimientos: velocidad lineal
+                              -- deseada.
 
    end record;
 
@@ -283,7 +286,7 @@ is
    -- VARIABLES.
    -- -------------------------------------------------------------------------
 
-   --robot : TInfoRobot;
+   -- robot : TInfoRobot;
 
    -- end nd2;
 
@@ -293,32 +296,32 @@ is
 
    -- Itialization of the ND.
    -- Input--
-   --		parametros:: information of the robot and laser used by the ND
+   --           parametros:: information of the robot and laser used by the ND
 
    procedure InicializarND (parametros : TParametersND);
 
    -- This runs the ND. The input is the current obstacle list and the goal
-   --location
-   -- and the output the motion command.
-   -- Input--
-   --		objetivo::  current objective in GLOBAL coordinates. Notice that this
-   --					location can change each time you call ND.
-   --		movimiento:: this is the current velocity of the robot.
-   --		mapa::  this is a list of the obstacle points in global coordinates.
-   --				You can use the current sensor reading or implement a kind of memory
-   --				to remember last scans. Whatever, ND wants a list of points in GLOBAL
-   --coordinates.
-   --		information:: variable for debug.
+   -- location and the output the motion command.
    --
-   -- Ouput--
-   --		movimiento:: this is the output of the ND.
-   --					 * Linear and angular velocities (and direction if holonomic).
-   --					 * NULL an emergency stop is required
-   --					 * pointer to (0,0) goal reached.
+   -- Input:
+   --  objetivo::    current objective in GLOBAL coordinates. Notice that this
+   --                location can change each time you call ND.
+   --  movimiento::  this is the current velocity of the robot.
+   --  mapa::        this is a list of the obstacle points in global coordinates.
+   --                You can use the current sensor reading or implement a kind of memory
+   --                to remember last scans. Whatever, ND wants a list of points in GLOBAL
+   --                coordinates.
+   --  information:: variable for debug.
+   --
+   -- Ouput:
+   --  movimiento:: this is the output of the ND.
+   --               * Linear and angular velocities (and direction if holonomic).
+   --               * NULL an emergency stop is required
+   --               * pointer to (0,0) goal reached.
 
    type Option is (O_NONE, O_SOME);
 
-   type TVelocities_Option(Opt : Option := O_NONE) is
+   type TVelocities_Option (Opt : Option := O_NONE) is
       record
          case Opt is
             when O_NONE =>
