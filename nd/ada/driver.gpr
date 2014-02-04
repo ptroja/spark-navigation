@@ -1,5 +1,5 @@
 with "../../common/clock/clock.gpr";
-with "nd.gpr";
+with "algorithm.gpr";
 
 project Driver is
 
