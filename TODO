@@ -30,3 +30,7 @@ GNATProve:
 - 'Remainder attribute: full formalization
 
 - loop invariants in nested loops (see common/ada/rec.adb)
+
+GNATcheck (style):
+- binary operators should be surrounded by spaces with '-gnatyt option', but
+  'a := Sqrt (c * c - b*b)' expression is accepted
