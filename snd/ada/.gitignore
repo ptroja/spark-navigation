@@ -4,5 +4,3 @@
 *.s
 auto.cgpr
 gnatprove/
-lib/
-driver/

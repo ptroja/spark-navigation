@@ -6,8 +6,8 @@ library project Snd is
    for Library_Name use "snd";
    for Library_Interface use ("algorithm");
    for Library_Kind use "dynamic";
-   for Library_Dir use "lib";
-   for Object_Dir use "lib/obj";
+   for Library_Dir use "algorithm";
+   for Object_Dir use "algorithm/obj";
    for Source_Dirs use (".");
    for Source_Files use ("algorithm.adb", "algorithm.ads", "debug_io.adb", "debug_io.ads", "gaps.adb", "gaps.ads", "interface_h.ads", "robot_iface.adb", "robot_iface.ads", "spaces.ads", "spaces-angles.adb", 
       "spaces-angles.ads", "spaces-poses.adb", "spaces-poses.ads", "spaces-positions.adb", "spaces-positions.ads", "valleys.adb", "valleys.ads");
