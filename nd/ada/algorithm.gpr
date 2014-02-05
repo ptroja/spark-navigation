@@ -1,0 +1,27 @@
+with "../../../ada/formal_numerics/formal_numerics.gpr";
+
+library project algorithm is
+
+   for Languages use ("Ada");
+   for Library_Name use "nd";
+   for Library_Interface use ("nd");
+   for Library_Kind use "dynamic";
+   for Library_Dir use "algorithm";
+   for Object_Dir use "algorithm/obj";
+   for Source_Dirs use (".");
+   for Source_Files use ("geometria.adb", "geometria.ads", "iface.adb", "iface.ads", "nd.adb", "nd.ads");
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-msse2", "-mfpmath=sse", "-gnat12", "-g", "-O3", "-gnatyaAbBcCdefhiIkprStux", "-gnatf");
+   end Compiler;
+
+   package Builder is
+      for Default_Switches ("ada") use ("-s");
+   end Builder;
+
+   package Check is
+      for Default_Switches ("ada") use ("-rules", "-from=../../common/ada/gnatcheck.rul");
+   end Check;
+
+end algorithm;
+

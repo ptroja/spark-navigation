@@ -1,0 +1,28 @@
+Stage simulation files to test the SND driver.
+
+To launch a test simulation, launch player using the snd_test.cfg file.
+
+player snd_test.cfg
+
+Then also launch playerv to visualize and send commands to the simulated robot.
+
+playerv
+
+In playerv, subscribe to the snd driver information, set snd to position mode, and then tell snd that you will give it commands.  Once you have said you will command the robot using the snd driver, a red cross-hairs will appear.  You may also want to subscribe to the laser data so you can see what the robot sees, and also set playerv to the snd position frame and deselect egocentric so that the world does not rotate around the robot.  This makes placing new goal locations easier.
+
+To issue position commands to the robot, simply drag the red cross-hairs to a new position and the robot will navigate to that position.  Remember that SND is only a local navigation planner, in complex maps with many loops or deadends, the further away you place the desired position the more likely the local planner will have trouble finding a good path.
+
+From the snd_test.cfg config file you can control which test maps is used:
+
+- tightpath2.world:  this world file loads the tight, curving path map used in the SND conference paper.
+- building.world:  this world file loads a map with many different kinds of rooms and hallways.
+
+The maps themselves are located in the bitmaps subfolder.  Also included are files defining two pairs of simulated robots and laser rangefinders.
+
+- circlebot.inc:  this is a circular differential drive robot where the laser is in the middle of the robot.  This setup exactly matches the theoretical basis for SND.
+- perfectlaser.inc:  this defines a 360 degree f.o.v. laser which otherwise matches the properties of a Hokuyo URG.
+
+- erratic.inc:  this defines a model of an "Erratic" robot from Videre designs.
+- urglaser.inc:  this models a Hokuyo URG laser rangefinder with a 240 deg f.o.v.
+
+

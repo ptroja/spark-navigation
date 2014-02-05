@@ -1,0 +1,7 @@
+Implementation of NDD algorithm:
+
+c		-- GenoM's original C code
+ada		-- GenoM's code translated to Ada (incomplete)
+
+ndplugin_c	-- Player's original C code
+ndplayer	-- Player's code translated to Ada (fairly complete)
