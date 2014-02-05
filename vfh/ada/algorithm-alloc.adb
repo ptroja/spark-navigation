@@ -3,8 +3,6 @@ with Interfaces.C; use Interfaces.C;
 with Ada.Containers;
 with Utils;
 
---with Ada.Text_IO;
-
 package body Algorithm.Alloc is
 
    use Ada.Containers;
@@ -33,7 +31,7 @@ package body Algorithm.Alloc is
    is
       use Utils;
 
-      pragma Assert (sector_angle = FIXED_SECTOR_ANGLE);
+      pragma Assert (sector_angle = MINIMAL_SECTOR_ANGLE);
       This : constant VFH_Ptr := new
         Algorithm.VFH (
                       HIST_SIZE => rint (360.0/Float (sector_angle)),
@@ -94,4 +92,4 @@ package body Algorithm.Alloc is
       Deallocate (This);
    end Destroy_VFH_Ptr;
 
-end;
+end Algorithm.Alloc;

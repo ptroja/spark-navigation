@@ -34,7 +34,7 @@ package body Algorithm is
          when Exclusive =>
             return (Size - 1)/2;
       end case;
-   end;
+   end Up_To_Half;
 
    ----------
    -- Init --
@@ -42,10 +42,10 @@ package body Algorithm is
 
    procedure Init (This : in out VFH) is
       pragma Spark_Mode (On);
-
+      function Cell_Direction (X, Y : Integer) return Float with Pre => X in This.Cell_Mag'Range (1) and then Y in This.Cell_Mag'Range (2);
       function Cell_Direction (X, Y : Integer) return Float is
          val : Float;
-      begin
+      begin pragma Assume (VFH_Predicate (This));
          if X < This.CENTER_X then
             if Y < This.CENTER_Y then
                val := Arctan (Float (This.CENTER_Y - Y) / Float (This.CENTER_X - X));
@@ -79,7 +79,7 @@ package body Algorithm is
             end if;
          end if;
          return val;
-      end;
+      end Cell_Direction;
 
       procedure SetCurrentMaxSpeed is
       begin
@@ -124,7 +124,7 @@ package body Algorithm is
       -- For the following calcs:
       --   - (x,y) = (0,0)   is to the front-left of the robot
       --   - (x,y) = (max,0) is to the front-right of the robot
-      --
+
       for x in This.Cell_Mag'Range (1) loop
          for y in This.Cell_Mag'Range (2) loop
             This.Cell_Mag (x, y) := 0.0;
@@ -139,7 +139,7 @@ package body Algorithm is
                declare
                   max_speed_this_table : constant Integer :=
                     Integer ((Float (cell_sector_tablenum + 1) / Float (This.Cell_Sector'Length (1))) *
-                              Float (This.MAX_SPEED));
+                               Float (This.MAX_SPEED));
 
                   Cell_Enlarge_OK : Boolean;
                begin
@@ -165,7 +165,7 @@ package body Algorithm is
                      This.Cell_Enlarge (x, y) := 0.0;
                      Cell_Enlarge_OK := True;
                   end if;
-                  pragma Assert_And_Cut (True);
+                  -- pragma Assert_And_Cut (True);
                   Clear (This.Cell_Sector (cell_sector_tablenum, x, y)); -- FIXME: this seems unnecessary.
 
                   if Cell_Enlarge_OK then
@@ -237,7 +237,7 @@ package body Algorithm is
                                  begin
                                     return plus_dir_bw or else neg_dir_bw or else dir_around_sector;
                                  end;
-                              end;
+                              end Append_Or_Not;
 
                            begin
                               if Append_Or_Not (i) then
@@ -528,19 +528,19 @@ package body Algorithm is
 
       r : constant Float := This.ROBOT_RADIUS + Float (Get_Safety_Dist (This, speed));
    begin
-      --Put_Line("Laser Ranges");
-      --Put_Line("************");
-      --for x in range laser_ranges'Range(1) loop
-      --Put_Line(Integer'Image(x) & ": " & Float'Image(laser_ranges(x,0)));
-      --end loop;
-      pragma Assert (VFH_Predicate (This));
+      -- Put_Line("Laser Ranges");
+      -- Put_Line("************");
+      -- for x in range laser_ranges'Range(1) loop
+      -- Put_Line(Integer'Image(x) & ": " & Float'Image(laser_ranges(x,0)));
+      -- end loop;
+      pragma Assume (VFH_Predicate (This));
       -- Only deal with the cells in front of the robot, since we can't sense behind.
       for x in Integer range 0 .. This.WINDOW_DIAMETER - 1 loop pragma Loop_Invariant (VFH_Predicate (This));
          for y in Integer range
            0 .. Up_To_Half (This.Cell_Direction'Length (2), Exclusive) loop pragma Loop_Invariant (VFH_Predicate (This));
-            --Put(Integer'Image(x) & " x " & Integer'Image(y) & ": ");
-            --Put(Float'Image(This.Cell_Dist(x,y)) & ", " & Float'Image(This.Cell_Direction(x,y)));
-            --New_Line;
+            -- Put(Integer'Image(x) & " x " & Integer'Image(y) & ": ");
+            -- Put(Float'Image(This.Cell_Dist(x,y)) & ", " & Float'Image(This.Cell_Direction(x,y)));
+            -- New_Line;
             if This.Cell_Direction (x, y) >= 0.0 and then
               This.Cell_Dist (x, y) + This.CELL_WIDTH / 2.0 >
               laser_ranges (rint (This.Cell_Direction (x, y) * 2.0), 0)
@@ -616,9 +616,9 @@ package body Algorithm is
                                 Cell_Mag : Cell_Mag_t;
                                 Cell_Sector : Cell_Sector_t) is
          begin
-            -- Only have to go through the cells in front.
-            for y in Integer range 0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop
-               for x in Cell_Sector'Range (2) loop
+            pragma Assume (VFH_Predicate (This)); -- Only have to go through the cells in front.
+            for y in Integer range 0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop pragma Loop_Invariant (VFH_Predicate (This));
+               for x in Cell_Sector'Range (2) loop pragma Loop_Invariant (VFH_Predicate (This));
                   declare
                      Cell_Max_x_y : constant Float := Cell_Mag (x, y);
                   begin
@@ -635,7 +635,7 @@ package body Algorithm is
                   end;
                end loop;
             end loop;
-         end;
+         end Update_Hist;
       begin
          Update_Hist (Hist        => This.Hist,
                       Cell_Mag    => This.Cell_Mag,
@@ -793,8 +793,8 @@ package body Algorithm is
       -- Find the left and right borders of each opening
       pragma Assert (Is_Empty (border)); pragma Assert (Capacity (border) = This.HIST_COUNT + 1);
       pragma Assert_And_Cut (VFH_Predicate (This) and then Is_Empty (border) and then start >= 0 and then Capacity (border) = This.HIST_COUNT + 1);
-      --Put("Start: ");
-      --Put_Line(Integer'Image(start));
+      -- Put("Start: ");
+      -- Put_Line(Integer'Image(start));
       left := True;
       for i in Integer range start .. start + This.HIST_SIZE loop
          pragma Loop_Invariant (Length (border) <= Ada.Containers.Count_Type (i - start) and then Capacity (border) = This.HIST_COUNT + 1);
@@ -842,7 +842,7 @@ package body Algorithm is
             begin
                pragma Assume (VFH_Predicate (This));
                for i in Integer range First_Index (Candidates) .. Last_Index (Candidates) loop
-                  --printf("CANDIDATE: %f\n", Candidate_Angle[i]);
+                  -- printf("CANDIDATE: %f\n", Candidate_Angle[i]);
                   pragma Loop_Invariant (Candidates = Candidates'Loop_Entry);
                   declare
                      weight : constant Float :=
@@ -865,7 +865,7 @@ package body Algorithm is
          pragma Assert (Capacity (Candidates) = CANDIDATE_CAPACITY);
          for i in First_Index (border) .. Last_Index (border) loop
             pragma Loop_Invariant (Capacity (Candidates) = CANDIDATE_CAPACITY and then Length (Candidates) <= Ada.Containers.Count_Type (i) * 4);
-            --printf("BORDER: %f %f\n", border[i].first, border[i].second);
+            -- printf("BORDER: %f %f\n", border[i].first, border[i].second);
             angle := Delta_Angle (Element (border, i).first, Element (border, i).second);
 
             if abs (angle) < 10.0 then
@@ -923,13 +923,13 @@ package body Algorithm is
          turnrate := GetMaxTurnrate (This, actual_speed);
          speed := 0;
       else
-         --printf("Picked %f\n", Picked_Angle);
+         -- printf("Picked %f\n", Picked_Angle);
          if This.Picked_Angle > 270.0 and then This.Picked_Angle < 360.0 then
             turnrate := -GetMaxTurnrate (This, actual_speed);
          elsif This.Picked_Angle < 270.0 and then This.Picked_Angle > 180.0 then
             turnrate := GetMaxTurnrate (This, actual_speed);
          else
-            --turnrate := (int)rint(((float)(Picked_Angle - 90) / 75.0) * GetMaxTurnrate( actual_speed ));
+            -- turnrate := (int)rint(((float)(Picked_Angle - 90) / 75.0) * GetMaxTurnrate( actual_speed ));
             turnrate := rint (((This.Picked_Angle - 90.0) / 75.0) * Float (GetMaxTurnrate (This, actual_speed)));
 
             if turnrate > GetMaxTurnrate (This, actual_speed) then
@@ -960,7 +960,7 @@ package body Algorithm is
       Put_Line ("****************");
       for y in This.Cell_Direction'Range (2) loop
          for x in This.Cell_Direction'Range (1) loop
-            --Put(Float'Image(This.Cell_Direction(x,y)));
+            -- Put(Float'Image(This.Cell_Direction(x,y)));
             Ada.Float_Text_IO.Put (Item => This.Cell_Direction (x, y),
                                    Fore => 3,
                                    Aft  => 1,
@@ -1062,7 +1062,7 @@ package body Algorithm is
 
       pragma Assume (VFH_Predicate (This));
       for x in 0 .. This.HIST_SIZE / 2 loop
-         --printf("%d:\t%1.1f\n", (x * SECTOR_ANGLE), Hist[x]);
+         -- printf("%d:\t%1.1f\n", (x * SECTOR_ANGLE), Hist[x]);
          Put (Integer'Image (x * This.SECTOR_ANGLE));
          Tab;
          Put (Float'Image (This.Hist (x)));

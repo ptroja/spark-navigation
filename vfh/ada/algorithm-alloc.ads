@@ -32,4 +32,4 @@ package Algorithm.Alloc is
    procedure Destroy_VFH_Ptr (This : in out VFH_Ptr);
    pragma Export (CPP, Destroy_VFH_Ptr);
 
-end;
+end Algorithm.Alloc;

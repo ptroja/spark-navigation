@@ -21,6 +21,8 @@
 with Ada.Real_Time;
 with Ada.Containers.Formal_Vectors;
 
+with Formal.Numerics;
+
 package Algorithm is
 
    -- Data
@@ -77,9 +79,11 @@ package Algorithm is
    -- Make Ada.Containers.Count_Type operators visible.
    use type Ada.Containers.Count_Type;
 
-   FIXED_SECTOR_ANGLE : constant := 1;
+   subtype Degree is Positive range 1 .. 360;
 
-   subtype Sectors_Vector is Integer_Vector.Vector (360/FIXED_SECTOR_ANGLE);
+   MINIMAL_SECTOR_ANGLE : constant := 1;
+
+   subtype Sectors_Vector is Integer_Vector.Vector (360/MINIMAL_SECTOR_ANGLE);
 
    type Cell_Sectors is array (Integer range <>,   -- NUM_CELL_SECTOR_TABLES
                                Integer range <>,   -- WINDOW_DIAMETER
@@ -111,11 +115,11 @@ package Algorithm is
          CENTER_X : Integer;                                -- cells
          CENTER_Y : Integer;                                -- cells
 
-         CELL_WIDTH : Float;                                -- millimeters
+         CELL_WIDTH : Formal.Numerics.Positive_Float;       -- millimeters
 
-         MAX_SPEED : Max_Speed_Index := 1;                      -- mm/sec
+         MAX_SPEED : Max_Speed_Index := 1;                  -- mm/sec
 
-         SECTOR_ANGLE : Positive;                           -- degrees
+         SECTOR_ANGLE : Degree;                             -- degrees
          SAFETY_DIST_0MS : Float;                           -- millimeters
          SAFETY_DIST_1MS : Float;                           -- millimeters
          Current_Max_Speed : Max_Speed_Index;               -- mm/sec
@@ -224,7 +228,7 @@ package Algorithm is
    -- be modified externally.
    -- Sweeps in an anti-clockwise direction.
    -- float *Hist;
-   --function Get_Histogram (This : VFH) return array (<>) of Float;
+   -- function Get_Histogram (This : VFH) return array (<>) of Float;
 
 private
 
@@ -288,6 +292,9 @@ private
       Speed_Vector.Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY and then
       Integer (This.MIN_TURNING_VECTOR_CAPACITY) - 1 = This.MAX_SPEED and then
 
+      This.CENTER_X = This.WINDOW_DIAMETER / 2 and then
+      This.CENTER_Y = This.WINDOW_DIAMETER / 2 and then
+
       This.WINDOW_DIAMETER - 1 = This.WINDOW_DIAMETER_LAST and then
 
       This.Cell_Direction'Last (1) = This.WINDOW_DIAMETER_LAST and then
@@ -305,7 +312,7 @@ private
       This.CELL_SECTOR_TABLES_LAST = This.Cell_Sector'Last (1) and then
       This.Cell_Direction'Last (1) = This.Cell_Sector'Last (2) and then
       This.Cell_Direction'Last (2) = This.Cell_Sector'Last (3));
-   --with
-     --Convention => Ghost;
+   -- with
+     -- Convention => Ghost;
 
 end Algorithm;
