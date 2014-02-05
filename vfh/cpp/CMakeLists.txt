@@ -5,5 +5,5 @@ PROJECT (vfh_driver)
 SET (CMAKE_MODULE_PATH "/opt/player/share/cmake/Modules")
 INCLUDE (UsePlayerPlugin)
 
-include_directories(../../common/c)
-PLAYER_ADD_PLUGIN_DRIVER (vfh SOURCES vfh.cc vfh_algorithm.cc ../../common/c/clock.c)
+include_directories(../../common/clock)
+PLAYER_ADD_PLUGIN_DRIVER (vfh SOURCES vfh.cc vfh_algorithm.cc ../../common/clock/clock.c)

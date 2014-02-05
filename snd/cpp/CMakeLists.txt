@@ -5,5 +5,5 @@ PROJECT (snd_driver)
 SET (CMAKE_MODULE_PATH "/opt/player/share/cmake/Modules")
 INCLUDE (UsePlayerPlugin)
 
-include_directories(../../common/c)
-PLAYER_ADD_PLUGIN_DRIVER (snd SOURCES snd_driver.cc snd_algo.cc spaces.cc ../../common/c/clock.c)
+include_directories(../../common/clock)
+PLAYER_ADD_PLUGIN_DRIVER (snd SOURCES snd_driver.cc snd_algo.cc spaces.cc ../../common/clock/clock.c)

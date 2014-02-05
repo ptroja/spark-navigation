@@ -5,5 +5,5 @@ PROJECT (nd_driver)
 SET (CMAKE_MODULE_PATH "/opt/player/share/cmake/Modules")
 INCLUDE (UsePlayerPlugin)
 
-include_directories(../../common/c)
-PLAYER_ADD_PLUGIN_DRIVER (nd SOURCES geometria.cc nd.cc nd_plugin.cc ../../common/c/clock.c)
+include_directories(../../common/clock)
+PLAYER_ADD_PLUGIN_DRIVER (nd SOURCES geometria.cc nd.cc nd_plugin.cc ../../common/clock/clock.c)
