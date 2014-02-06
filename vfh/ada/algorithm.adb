@@ -41,7 +41,7 @@ package body Algorithm is
    ----------
 
    procedure Init (This : in out VFH) is
-      pragma Spark_Mode (On);
+      pragma Spark_Mode (Off);
       function Cell_Direction (X, Y : Integer) return Float with Pre => X in This.Cell_Mag'Range (1) and then Y in This.Cell_Mag'Range (2);
       function Cell_Direction (X, Y : Integer) return Float is
          val : Float;
@@ -535,7 +535,7 @@ package body Algorithm is
       -- end loop;
       pragma Assume (VFH_Predicate (This));
       -- Only deal with the cells in front of the robot, since we can't sense behind.
-      for x in Integer range 0 .. This.WINDOW_DIAMETER - 1 loop pragma Loop_Invariant (VFH_Predicate (This));
+      for x in This.Cell_Direction'Range (1) loop pragma Loop_Invariant (VFH_Predicate (This));
          for y in Integer range
            0 .. Up_To_Half (This.Cell_Direction'Length (2), Exclusive) loop pragma Loop_Invariant (VFH_Predicate (This));
             -- Put(Integer'Image(x) & " x " & Integer'Image(y) & ": ");
@@ -605,20 +605,20 @@ package body Algorithm is
       declare
          subtype Hist_t is History_Array (Natural range 0 .. This.HIST_LAST);
          subtype Cell_Sector_t is Cell_Sectors (
-                                                Integer range 0 .. This.CELL_SECTOR_TABLES_LAST,
-                                                Integer range 0 .. This.WINDOW_DIAMETER_LAST,
-                                                Integer range 0 .. This.WINDOW_DIAMETER_LAST
+                                                This.Cell_Sector'Range (1),
+                                                This.Cell_Sector'Range (2),
+                                                This.Cell_Sector'Range (3)
                                                );
-         subtype Cell_Mag_t is Cell_Array (Integer range 0 .. This.WINDOW_DIAMETER_LAST,
-                                           Integer range 0 .. This.WINDOW_DIAMETER_LAST);
+         subtype Cell_Mag_t is Cell_Array (This.Cell_Mag'Range (1),
+                                           This.Cell_Mag'Range (2));
 
          procedure Update_Hist (Hist : in out Hist_t;
                                 Cell_Mag : Cell_Mag_t;
                                 Cell_Sector : Cell_Sector_t) is
          begin
-            pragma Assume (VFH_Predicate (This)); -- Only have to go through the cells in front.
-            for y in Integer range 0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop pragma Loop_Invariant (VFH_Predicate (This));
-               for x in Cell_Sector'Range (2) loop pragma Loop_Invariant (VFH_Predicate (This));
+            --pragma Assume (VFH_Predicate (This)); -- Only have to go through the cells in front.
+            for y in Integer range 0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop --pragma Loop_Invariant (VFH_Predicate (This));
+               for x in Cell_Sector'Range (2) loop --pragma Loop_Invariant (VFH_Predicate (This));
                   declare
                      Cell_Max_x_y : constant Float := Cell_Mag (x, y);
                   begin
@@ -718,7 +718,7 @@ package body Algorithm is
                end if;
 
             elsif Delta_Angle (This.Cell_Direction (x, y), angle_ahead) <= 0.0 and then
-                  Delta_Angle (This.Cell_Direction (x, y), phi_left) > 0.0
+              Delta_Angle (This.Cell_Direction (x, y), phi_left) > 0.0
             then
                -- The cell is between phi_left and angle_ahead
 
@@ -736,12 +736,12 @@ package body Algorithm is
       for x in This.Hist'Range loop
          angle := Float (x * This.SECTOR_ANGLE);
          if This.Hist (x) = 0.0 and then (
-                                         (Delta_Angle (angle, phi_right) <= 0.0 and then
-                                          Delta_Angle (angle, angle_ahead) >= 0.0)
-                                         or else
-                                           (Delta_Angle (angle, phi_left) >= 0.0 and then
-                                            Delta_Angle (angle, angle_ahead) <= 0.0)
-                                        )
+                                          (Delta_Angle (angle, phi_right) <= 0.0 and then
+                                           Delta_Angle (angle, angle_ahead) >= 0.0)
+                                          or else
+                                            (Delta_Angle (angle, phi_left) >= 0.0 and then
+                                             Delta_Angle (angle, angle_ahead) <= 0.0)
+                                         )
          then
             null; -- This.Hist(x) := 0.0;
          else
@@ -960,7 +960,6 @@ package body Algorithm is
       Put_Line ("****************");
       for y in This.Cell_Direction'Range (2) loop
          for x in This.Cell_Direction'Range (1) loop
-            -- Put(Float'Image(This.Cell_Direction(x,y)));
             Ada.Float_Text_IO.Put (Item => This.Cell_Direction (x, y),
                                    Fore => 3,
                                    Aft  => 1,
@@ -1078,16 +1077,16 @@ package body Algorithm is
 
    function Get_Speed_Index (This : VFH; speed : Natural) return Natural is
       val : Natural := Integer (Float'Floor (
-                               (Float (speed) / Float (This.Current_Max_Speed))*Float (This.Cell_Sector'Length (1))));
+                                (Float (speed) / Float (This.Current_Max_Speed))*Float (This.Cell_Sector'Length (1))));
    begin
       pragma Assert (VFH_Predicate (This));
       if val > This.Cell_Sector'Last (1) then
          val := This.Cell_Sector'Last (1);
       end if;
 
-    -- printf("Speed_Index at %dmm/s: %d\n",speed,val);
+      -- printf("Speed_Index at %dmm/s: %d\n",speed,val);
 
-    return val;
+      return val;
    end Get_Speed_Index;
 
    ---------------------
@@ -1097,8 +1096,9 @@ package body Algorithm is
    -- Doesn't need optimization: only gets called on init plus once per update.
 
    function Get_Safety_Dist (This : VFH; speed : Integer) return Integer is
-      val : Integer := Integer (
-                                This.SAFETY_DIST_0MS + Float (speed)*(This.SAFETY_DIST_1MS - This.SAFETY_DIST_0MS)/1000.0);
+      val : Integer :=
+        Integer (This.SAFETY_DIST_0MS +
+                   Float (speed)*(This.SAFETY_DIST_1MS - This.SAFETY_DIST_0MS)/1000.0);
    begin
 
       if val < 0 then
