@@ -113,9 +113,9 @@ package Algorithm is
          -- Sweeps in an anti-clockwise direction.
          Hist : History_Array (Natural range 0 .. HIST_LAST) := (others => 0.0);
 
-         ROBOT_RADIUS : Float;                              -- millimeters
-         CENTER_X : Integer;                                -- cells
-         CENTER_Y : Integer;                                -- cells
+         ROBOT_RADIUS : Formal.Numerics.NonNegative_Float;  -- millimeters
+         CENTER_X : Natural;                                -- cells
+         CENTER_Y : Natural;                                -- cells
 
          CELL_WIDTH : Formal.Numerics.Positive_Float;       -- millimeters
 
@@ -156,7 +156,7 @@ package Algorithm is
          Cell_Mag       : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
                                       Integer range 0 .. WINDOW_DIAMETER_LAST);
          Cell_Dist      : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
-                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
+                                      Integer range 0 .. WINDOW_DIAMETER_LAST); -- non-negative float.
          Cell_Enlarge   : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
                                       Integer range 0 .. WINDOW_DIAMETER_LAST);
 
@@ -214,7 +214,7 @@ package Algorithm is
    function GetCurrentMaxSpeed (This : VFH) return Integer;
 
    -- Set methods
-   procedure SetRobotRadius (This : in out VFH; robot_radius : Float);
+   procedure SetRobotRadius (This : in out VFH; robot_radius : Formal.Numerics.NonNegative_Float);
    procedure SetMinTurnrate (This : in out VFH; min_turnrate : Integer);
 
    pragma Export (Cpp, Init, "Init");
@@ -261,7 +261,8 @@ private
 
    procedure Set_Motion (This : VFH; speed : in out Integer; turnrate : out Integer; actual_speed : Integer)
    with
-     Post => speed >= 0;
+     Pre => speed <= Speed_Index'Last,
+     Post => speed in Speed_Index'Range;
 
    -- AB: This doesn't seem to be implemented anywhere...
    -- int Read_Min_Turning_Radius_From_File(char *filename);

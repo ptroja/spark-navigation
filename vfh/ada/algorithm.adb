@@ -4,6 +4,7 @@ with Ada.Float_Text_IO;
 with Utils;
 
 use Ada.Text_IO;
+use Formal.Numerics;
 use Formal.Numerics.Elementary_Functions;
 use Utils;
 
@@ -366,7 +367,7 @@ package body Algorithm is
 
       -- Accelerate (if we're not already at Max_Speed_For_Picked_Angle).
       chosen_speed := Integer'Min (This.last_chosen_speed + speed_incr, This.Max_Speed_For_Picked_Angle);
-
+      pragma Assert(chosen_speed <= Speed_Index'Last);
       -- printf("Max Speed for picked angle: %d\n",Max_Speed_For_Picked_Angle);
 
       -- Set the chosen_turnrate, and possibly modify the chosen_speed
@@ -421,7 +422,7 @@ package body Algorithm is
    -- SetRobotRadius --
    --------------------
 
-   procedure SetRobotRadius (This : in out VFH; robot_radius : Float) is
+   procedure SetRobotRadius (This : in out VFH; robot_radius : NonNegative_Float) is
    begin
       This.ROBOT_RADIUS := robot_radius;
    end SetRobotRadius;
@@ -487,7 +488,7 @@ package body Algorithm is
       -- This is the distance between the centre of the goal and
       -- the centre of the blocked circle
       declare
-         dist_between_centres : Float;
+         dist_between_centres : NonNegative_Float;
       begin
 
          --     printf("Cant_Turn_To_Goal: Dist_To_Goal = %f\n",Dist_To_Goal);

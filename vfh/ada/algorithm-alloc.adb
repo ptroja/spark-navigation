@@ -44,7 +44,7 @@ package body Algorithm.Alloc is
                          then 0
                          -- AB: Made this number up...
                          else 19),
-                      WINDOW_DIAMETER_LAST => Integer (window_diameter - 1)
+                      WINDOW_DIAMETER_LAST => Natural (window_diameter - 1)
                      );
 --                -- These will be set later.
 --                ROBOT_RADIUS => 0.0,
@@ -59,8 +59,8 @@ package body Algorithm.Alloc is
 --             );
 
    begin
-      This.all.CENTER_X := Integer (window_diameter / 2);
-      This.all.CENTER_Y := Integer (window_diameter / 2);  -- CENTER_X
+      This.all.CENTER_X := Natural (window_diameter / 2);
+      This.all.CENTER_Y := Natural (window_diameter / 2);  -- CENTER_X
       This.all.CELL_WIDTH := Float (cell_size);
       This.all.SECTOR_ANGLE := Integer (sector_angle);
       This.all.SAFETY_DIST_0MS := Float (safety_dist_0ms);
