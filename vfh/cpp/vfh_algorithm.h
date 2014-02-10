@@ -50,7 +50,8 @@ public:
 
     ~VFH_Algorithm();
 
-    void Init();
+    // FIXME: timestamp wil delayed by the lenghty initialization.
+    void Init(double timestamp);
     
     // Choose a new speed and turnrate based on the given laser data and current speed.
     //
@@ -65,7 +66,8 @@ public:
                     float goal_distance,
                     float goal_distance_tolerance,
                     int &chosen_speed, 
-                    int &chosen_turnrate );
+                    int &chosen_turnrate,
+                    double timestamp );
 
     // Get methods
     int   GetMinTurnrate() const { return MIN_TURNRATE; }
@@ -182,7 +184,7 @@ private:
     std::vector<int> Min_Turning_Radius;
 
     // Keep track of last update, so we can monitor acceleration
-    struct timeval last_update_time;
+    double last_update_time;
 
     int last_chosen_speed;
 };

@@ -367,10 +367,12 @@ class VFH_Class : public ThreadedDriver
   /* the following vars used to be local to the Main() method. I moved
      them here when implementing the synchronous mode - rtv */
 
-  struct timeval startescape, curr;
+  // Timestamp of the last data; when in non-realtime simulation mode,
+  // this can be different from the wall clock.
+  // FIXME: this should be a discrete timestamp data, not floating-point.
+  double curr, startescape;
   bool escaping;
-  double timediff; int
-  escape_turnrate_deg;
+  int escape_turnrate_deg;
 
   // bookkeeping to implement hysteresis when rotating at the goal
   int rotatedir;
@@ -439,7 +441,10 @@ int VFH_Class::Setup()
   // Allocate and intialize (need to be done after SetupOdom,
   // which configures robot radius based on geometry of the
   // underlying position2d device).
-  vfh_Algorithm->Init();
+  struct timeval now;
+  GlobalTime->GetTime(&now);
+  double timestamp = now.tv_sec + (now.tv_usec / 1e6);
+  vfh_Algorithm->Init(timestamp);
 
   // Start the driver thread.
   if( ! synchronous_mode )
@@ -959,6 +964,9 @@ int VFH_Class::ProcessMessage(QueuePointer & resp_queue,
                               player_msghdr * hdr,
                               void * data)
 {
+  // Record the timestamp of the latest data.
+  this->curr = hdr->timestamp;
+
   if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_DATA,
                            PLAYER_POSITION2D_DATA_STATE, this->odom_addr))
   {
@@ -991,7 +999,7 @@ int VFH_Class::ProcessMessage(QueuePointer & resp_queue,
   else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_DATA,
                                 PLAYER_RANGER_DATA_INTNS, this->ranger_addr))
   {
-    // Ignore intensity scan.
+    // Ignore intensity scans.
     return 0;
   }
   else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_CMD,
@@ -1106,9 +1114,7 @@ void VFH_Class::DoOneUpdate()
   // so for long enough.
   if(escaping)
   {
-    GlobalTime->GetTime(&curr);
-    timediff = (curr.tv_sec + curr.tv_usec/1e6) -
-            (startescape.tv_sec + startescape.tv_usec/1e6);
+    double timediff = curr - startescape;
     if(timediff > this->escape_time)
     {
       // if we're still stalled, try escaping the other direction
@@ -1125,7 +1131,7 @@ void VFH_Class::DoOneUpdate()
   {
     if(!escaping)
     {
-      GlobalTime->GetTime(&startescape);
+      startescape = curr;
       escaping = true;
     }
 
@@ -1182,7 +1188,8 @@ void VFH_Class::DoOneUpdate()
                                dist,
                                static_cast<float> (this->dist_eps * 1000),
                                this->speed,
-                               this->turnrate );
+                               this->turnrate,
+                               this->curr );
     statStop(&this->statistics);
 
     // HACK: if we're within twice the distance threshold,

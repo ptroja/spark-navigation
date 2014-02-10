@@ -25,8 +25,6 @@
 #include <cmath>
 #include <iostream>
 
-#include <libplayercore/playercore.h>
-
 #if defined (WIN32)
   #define hypot _hypot
 #endif
@@ -192,7 +190,7 @@ VFH_Algorithm::Get_Binary_Hist_High( int speed ) const
 }
 
 
-void VFH_Algorithm::Init()
+void VFH_Algorithm::Init(double timestamp)
 {
   VFH_Allocate();
 
@@ -355,7 +353,7 @@ void VFH_Algorithm::Init()
     }
   }
 
-  GlobalTime->GetTime( &last_update_time );
+  last_update_time = timestamp;
 
   // Print_Cells_Sector();
 }
@@ -390,7 +388,8 @@ void VFH_Algorithm::Update_VFH(double laser_ranges[361][2],
                                float goal_distance,
                                float goal_distance_tolerance,
                                int &chosen_speed,
-                               int &chosen_turnrate )
+                               int &chosen_turnrate,
+                               double timestamp )
 {
   bool print = false;
 
@@ -424,16 +423,9 @@ void VFH_Algorithm::Update_VFH(double laser_ranges[361][2],
 
   // Work out how much time has elapsed since the last update,
   // so we know how much to increase speed by, given MAX_ACCELERATION.
-  timeval now;
-  timeval diff;
-  double  diffSeconds;
-  GlobalTime->GetTime( &now );
+  const double diffSeconds = timestamp - last_update_time;
 
-  TIMESUB( &now, &last_update_time, &diff );
-  diffSeconds = diff.tv_sec + ( (double)diff.tv_usec / 1000000 );
-
-  last_update_time.tv_sec = now.tv_sec;
-  last_update_time.tv_usec = now.tv_usec;
+  last_update_time = timestamp;
 
   if ( Build_Primary_Polar_Histogram(laser_ranges,current_pos_speed) == 0)
   {
