@@ -1,8 +1,8 @@
 spark-navigation
 ================
 
-This repository contains robot navigation algorithms implemented in
-Ada/SPARK:
+This repository contains implementations of robot navigation
+algorithms in Ada/SPARK:
 
 * Vector Field Histogram Plus (VFH+)
 * Nearness Diagram Navigation (ND)
@@ -19,7 +19,7 @@ Player repository. Implementation of SND is based on the code from the
 author's [website][SND], as the code is Player repository seems
 outdated.
 
-For each algrithm there are `cpp` and `ada` folders with the original
+For each algorithm there are `cpp` and `ada` folders with the original
 code in C/C++, but including my fixes, and the corresponding code in
 Ada/SPARK, respectively.
 
