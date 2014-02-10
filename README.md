@@ -26,7 +26,7 @@ Ada/SPARK, respectively.
 Only the Ada/SPARK implementation of SND has been fully verified for
 run-time safety (with the assumption that floating-point operations
 are exact and do not overflow). The other implementations suffer from
-poor programming style, which prevented us from proving its run-time
+poor programming style, which prevented us from proving their run-time
 safety, and/or code features, such as *type invariants*, that are not
 yet supported by SPARK.
 
