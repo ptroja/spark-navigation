@@ -1,5 +1,7 @@
 Implementation of NDD algorithm:
 
+test
+
 c		-- GenoM's original C code
 ada		-- GenoM's code translated to Ada (incomplete)
 
