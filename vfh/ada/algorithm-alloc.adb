@@ -34,29 +34,29 @@ package body Algorithm.Alloc is
       pragma Assert (sector_angle = MINIMAL_SECTOR_ANGLE);
       This : constant VFH_Ptr := new
         Algorithm.VFH (
-                      HIST_SIZE => rint (360.0/Float (sector_angle)),
-                      HIST_COUNT => Ada.Containers.Count_Type (360/sector_angle),
-                      HIST_LAST => rint (360.0/Float (sector_angle)) - 1,
-                      MIN_TURNING_VECTOR_CAPACITY => Ada.Containers.Count_Type (max_speed) + 1,
-                      CELL_SECTOR_TABLES_LAST =>
-                        (if safety_dist_0ms = safety_dist_1ms
-                         -- For the simple case of a fixed safety_dist, keep things simple.
-                         then 0
-                         -- AB: Made this number up...
-                         else 19),
-                      WINDOW_DIAMETER_LAST => Natural (window_diameter - 1)
-                     );
---                -- These will be set later.
---                ROBOT_RADIUS => 0.0,
---                Dist_To_Goal => 0.0,
---                Goal_Distance_Tolerance => 0.0,
---                Max_Speed_For_Picked_Angle => 0,
---                Blocked_Circle_Radius => 0.0,
---                --Candidate_Angle => Candidate_Angle_Vec,
---                --Candidate_Speed => Integer_Vector.Vector(Ada.Containers.Count_Type(360/sector_angle)),
---                Min_Turning_Radius => Integer_Vector.Vector(MIN_TURNING_VECTOR_SIZE),
---                Cell_Sector => (others => (others => (others => Integer_Vector.Empty_Vector))),
---             );
+                       HIST_SIZE => rint (360.0/Float (sector_angle)),
+                       HIST_COUNT => Ada.Containers.Count_Type (360/sector_angle),
+                       HIST_LAST => rint (360.0/Float (sector_angle)) - 1,
+                       MIN_TURNING_VECTOR_CAPACITY => Ada.Containers.Count_Type (max_speed) + 1,
+                       CELL_SECTOR_TABLES_LAST =>
+                         (if safety_dist_0ms = safety_dist_1ms
+                          -- For the simple case of a fixed safety_dist, keep things simple.
+                          then 0
+                          -- AB: Made this number up...
+                          else 19),
+                       WINDOW_DIAMETER_LAST => Natural (window_diameter - 1)
+                      );
+      --                -- These will be set later.
+      --                ROBOT_RADIUS => 0.0,
+      --                Dist_To_Goal => 0.0,
+      --                Goal_Distance_Tolerance => 0.0,
+      --                Max_Speed_For_Picked_Angle => 0,
+      --                Blocked_Circle_Radius => 0.0,
+      --                --Candidate_Angle => Candidate_Angle_Vec,
+      --                --Candidate_Speed => Integer_Vector.Vector(Ada.Containers.Count_Type(360/sector_angle)),
+      --                Min_Turning_Radius => Integer_Vector.Vector(MIN_TURNING_VECTOR_SIZE),
+      --                Cell_Sector => (others => (others => (others => Integer_Vector.Empty_Vector))),
+      --             );
 
    begin
       This.all.CENTER_X := Natural (window_diameter / 2);
@@ -85,9 +85,10 @@ package body Algorithm.Alloc is
    end Create_VFH_Ptr;
 
    procedure Destroy_VFH_Ptr (This : in out VFH_Ptr) is
-      procedure Deallocate is new Ada.Unchecked_Deallocation (
-         Object => Algorithm.VFH,
-         Name   => VFH_Ptr);
+      procedure Deallocate is
+        new Ada.Unchecked_Deallocation (
+                                        Object => Algorithm.VFH,
+                                        Name   => VFH_Ptr);
    begin
       Deallocate (This);
    end Destroy_VFH_Ptr;
