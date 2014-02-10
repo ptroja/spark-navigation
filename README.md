@@ -8,7 +8,7 @@ algorithms in Ada/SPARK:
 * Nearness Diagram Navigation (ND)
 * Smooth Nearness Diagram Navigation (SND)
 
-The code is already integrated with the Player/Stage robot programming
+The code is already integrated with the [Player/Stage](http://playerstage.sourceforge.net/) robot programming
 environment and the integration with ROS is planned.
 
 For details of the algorithms, configuration parameters and
