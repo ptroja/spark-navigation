@@ -367,7 +367,7 @@ package body Algorithm is
 
       -- Accelerate (if we're not already at Max_Speed_For_Picked_Angle).
       chosen_speed := Integer'Min (This.last_chosen_speed + speed_incr, This.Max_Speed_For_Picked_Angle);
-      pragma Assert(chosen_speed <= Speed_Index'Last);
+      pragma Assert (chosen_speed <= Speed_Index'Last);
       -- printf("Max Speed for picked angle: %d\n",Max_Speed_For_Picked_Angle);
 
       -- Set the chosen_turnrate, and possibly modify the chosen_speed
@@ -604,22 +604,25 @@ package body Algorithm is
       -- invariants, which allocate huge local copies of This.Cell_Sector:
       -- pragma Loop_Invariant (This.Cell_Sector = This.Cell_Sector'Loop_Entry);
       declare
-         subtype Hist_t is History_Array (Natural range 0 .. This.HIST_LAST);
-         subtype Cell_Sector_t is Cell_Sectors (
-                                                This.Cell_Sector'Range (1),
-                                                This.Cell_Sector'Range (2),
-                                                This.Cell_Sector'Range (3)
-                                               );
-         subtype Cell_Mag_t is Cell_Array (This.Cell_Mag'Range (1),
-                                           This.Cell_Mag'Range (2));
 
-         procedure Update_Hist (Hist : in out Hist_t;
-                                Cell_Mag : Cell_Mag_t;
-                                Cell_Sector : Cell_Sector_t) is
+         function Cell_Predicate (Cell_Mag : Cell_Array;
+                                  Cell_Sector : Cell_Sectors) return Boolean
+         is
+           (speed_idx in Cell_Sector'Range(1) and then
+            Cell_Mag'First (1) = Cell_Sector'First (2) and then
+            Cell_Mag'First (2) = Cell_Sector'First (3) and then
+            Cell_Mag'Last (1) = Cell_Sector'Last (2) and then
+            Cell_Mag'Last (2) = Cell_Sector'Last (3));
+
+         procedure Update_Hist (Hist : in out History_Array;
+                                Cell_Mag : Cell_Array;
+                                Cell_Sector : Cell_Sectors) is
          begin
-            --pragma Assume (VFH_Predicate (This)); -- Only have to go through the cells in front.
-            for y in Integer range 0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop --pragma Loop_Invariant (VFH_Predicate (This));
-               for x in Cell_Sector'Range (2) loop --pragma Loop_Invariant (VFH_Predicate (This));
+            pragma Assume (Cell_Predicate (Cell_Mag, Cell_Sector)); -- Only have to go through the cells in front.
+            for y in Integer range Cell_Sector'Range(3) loop --0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop
+               pragma Loop_Invariant (Cell_Predicate (Cell_Mag, Cell_Sector));
+               for x in Cell_Sector'Range (2) loop
+                  pragma Loop_Invariant (Cell_Predicate (Cell_Mag, Cell_Sector));
                   declare
                      Cell_Max_x_y : constant Float := Cell_Mag (x, y);
                   begin
@@ -654,8 +657,10 @@ package body Algorithm is
      (This : in out VFH;
       speed : Integer)
    is
-   begin pragma Assume (VFH_Predicate (This));
+   begin
+      pragma Assume (VFH_Predicate (This));
       for x in This.Hist'Range loop
+         pragma Loop_Invariant (This.Current_Max_Speed = This.Current_Max_Speed'Loop_Entry);
          if This.Hist (x) > Get_Binary_Hist_High (This, speed) then
             This.Hist (x) := 1.0;
          elsif This.Hist (x) < Get_Binary_Hist_Low (This, speed) then
@@ -735,6 +740,7 @@ package body Algorithm is
       -- Mask out everything outside phi_left and phi_right
       --
       for x in This.Hist'Range loop
+         pragma Assert_And_Cut (x in 0 .. 360 and then This.SECTOR_ANGLE in 1 .. 360);
          angle := Float (x * This.SECTOR_ANGLE);
          if This.Hist (x) = 0.0 and then (
                                           (Delta_Angle (angle, phi_right) <= 0.0 and then
@@ -750,7 +756,6 @@ package body Algorithm is
          end if;
       end loop;
    end Build_Masked_Polar_Histogram;
-
    ----------------------
    -- Select_Direction --
    ----------------------

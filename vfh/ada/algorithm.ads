@@ -27,7 +27,10 @@ package Algorithm is
 
    -- Data
 
+   -- FIXME: what is the real meaning of this range?
    subtype Hist_Index is Integer range 0 .. 360;
+
+   subtype Hist_Size_Range is Natural range 1 .. 360;
 
    subtype Speed_Index is Integer range 0 .. 2000;
    subtype Max_Speed_Index is Speed_Index range 1 .. Speed_Index'Last;
@@ -94,11 +97,13 @@ package Algorithm is
                                Integer range <>    -- WINDOW_DIAMETER
                               ) of Sectors_Vector; -- (360 / SECTOR_ANGLE)
 
+   subtype Cell_Direction_t is Float range -180.0 .. +180.0;
+
    type Cell_Array is array (Integer range <>,
-                             Integer range <>) of Float;
+                             Integer range <>) of Cell_Direction_t;
 
    type VFH (
-             HIST_SIZE : Natural;                -- sectors (over 360deg)
+             HIST_SIZE : Hist_Size_Range;                -- sectors (over 360deg)
              HIST_COUNT : Ada.Containers.Count_Type;
              HIST_LAST : Natural;
              MIN_TURNING_VECTOR_CAPACITY : Ada.Containers.Count_Type;
@@ -242,7 +247,9 @@ private
    function Cant_Turn_To_Goal (This : VFH) return Boolean;
 
    -- Returns false if something got inside the safety distance, else true.
-   procedure Calculate_Cells_Mag (This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean);
+   procedure Calculate_Cells_Mag (This : in out VFH; laser_ranges : Laser_Range; speed : Integer; Ret : out Boolean)
+   with
+     Post => This.Current_Max_Speed = This.Current_Max_Speed'Old;
    -- Returns false if something got inside the safety distance, else true.
 
    procedure Build_Primary_Polar_Histogram (This : in out VFH; laser_ranges : Laser_Range; speed : Natural; Ret : out Boolean)

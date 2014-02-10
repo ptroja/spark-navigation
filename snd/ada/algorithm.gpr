@@ -1,4 +1,4 @@
-with "../../../ada/formal_numerics/formal_numerics.gpr";
+with "../../../ada/formal_numerics_libc/formal_numerics.gpr";
 
 library project Snd is
 
@@ -9,12 +9,16 @@ library project Snd is
    for Library_Dir use "algorithm";
    for Object_Dir use "algorithm/obj";
    for Source_Dirs use (".");
-   for Source_Files use ("algorithm.adb", "algorithm.ads", "debug_io.adb", "debug_io.ads", "gaps.adb", "gaps.ads", "interface_h.ads", "robot_iface.adb", "robot_iface.ads", "spaces.ads", "spaces-angles.adb", 
-      "spaces-angles.ads", "spaces-poses.adb", "spaces-poses.ads", "spaces-positions.adb", "spaces-positions.ads", "valleys.adb", "valleys.ads");
+   for Source_Files use ("algorithm.adb", "algorithm.ads", "debug_io.adb", "debug_io.ads", "gaps.adb", "gaps.ads", "interface_h.ads", "robot_iface.adb", "robot_iface.ads", "spaces.ads", "spaces-angles.adb", "spaces-angles.ads", 
+      "spaces-poses.adb", "spaces-poses.ads", "spaces-positions.adb", "spaces-positions.ads", "valleys.adb", "valleys.ads");
 
    package Compiler is
-      for Default_Switches ("ada") use ("-O3", "-gnat12", "-g", "-gnatf", "-gnatyaAbBdefhiIkprStxu");
+      for Default_Switches ("ada") use ("-gnatVn", "-O3", "-gnat12", "-gnatf", "-gnatyaAbBdefhiIkprStxu", "-gnatp", "-g");
    end Compiler;
+
+   package Builder is
+      for Default_Switches ("ada") use ("-s", "-g");
+   end Builder;
 
 end Snd;
 
