@@ -2,6 +2,9 @@ with "../../../formal-numerics/formal_numerics.gpr";
 
 library project Algorithm is
 
+   type Assertions_Checks is
+      ("enabled", "disabled");
+   Assertions : Assertions_Checks := external ("assertions", "enabled");
    for Languages use ("Ada");
    for Library_Name use "vfh";
    for Library_Interface use ("algorithm");
@@ -12,8 +15,16 @@ library project Algorithm is
    for Source_Files use ("algorithm.adb", "algorithm.ads", "algorithm-alloc.adb", "algorithm-alloc.ads", "utils.adb", "utils.ads");
 
    package Compiler is
-      for Default_Switches ("ada") use ("-gnat12", "-gnatn", "-msse2", "-mfpmath=sse", "-O3", "-gnatyAbBdIxafhikprStu");
       for Local_Configuration_Pragmas use "../../common/ada/gnat.adc";
+
+      case Assertions is
+
+         when "enabled" =>
+            for Default_Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-O3", "-gnatyAbBdIxafhikprStu", "-gnatVa", "-gnato", "-gnata");
+
+         when "disabled" =>
+            for Default_Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-O3", "-gnatyAbBdIxafhikprStu", "-gnatVn", "-gnatp");
+      end case;
    end Compiler;
 
    package Builder is
