@@ -619,7 +619,7 @@ package body Algorithm is
                                 Cell_Sector : Cell_Sectors) is
          begin
             pragma Assume (Cell_Predicate (Cell_Mag, Cell_Sector)); -- Only have to go through the cells in front.
-            for y in Integer range Cell_Sector'Range (3) loop --0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop
+            for y in Integer range 0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop
                pragma Loop_Invariant (Cell_Predicate (Cell_Mag, Cell_Sector));
                for x in Cell_Sector'Range (2) loop
                   pragma Loop_Invariant (Cell_Predicate (Cell_Mag, Cell_Sector));
@@ -740,7 +740,7 @@ package body Algorithm is
       -- Mask out everything outside phi_left and phi_right
       --
       for x in This.Hist'Range loop
-         pragma Assert_And_Cut (x in 0 .. 360 and then This.SECTOR_ANGLE in 1 .. 360);
+         pragma Assert_And_Cut (x in 0 .. 360);
          angle := Float (x * This.SECTOR_ANGLE);
          if This.Hist (x) = 0.0 and then (
                                           (Delta_Angle (angle, phi_right) <= 0.0 and then

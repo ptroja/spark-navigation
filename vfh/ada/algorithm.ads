@@ -100,7 +100,7 @@ package Algorithm is
    subtype Cell_Direction_t is Float range -180.0 .. +180.0;
 
    type Cell_Array is array (Integer range <>,
-                             Integer range <>) of Cell_Direction_t;
+                             Integer range <>) of Float;
 
    type VFH (
              HIST_SIZE : Hist_Size_Range;                -- sectors (over 360deg)
