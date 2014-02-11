@@ -5,7 +5,7 @@
 
 #define BILLION 1000000000
 
-static const clockid_t m = CLOCK_MONOTONIC;
+static const clockid_t m = CLOCK_PROCESS_CPUTIME_ID;
 
 struct timespec
 evAddTime(struct timespec addend1, struct timespec addend2) {
@@ -38,8 +38,6 @@ struct timespec
 evNowTime(void)
 {
   struct timespec tsnow;
-
-  const clockid_t m = CLOCK_MONOTONIC;
 
   if (clock_gettime(m, &tsnow) == 0)
     return (tsnow);
