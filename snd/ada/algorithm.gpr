@@ -1,4 +1,5 @@
 with "../../../formal-numerics/formal_numerics.gpr";
+with "../../common/ada/shared.gpr";
 
 library project Algorithm is
 
@@ -12,12 +13,12 @@ library project Algorithm is
    for Source_Files use ("algorithm.adb", "algorithm.ads", "debug_io.adb", "debug_io.ads", "gaps.adb", "gaps.ads", "interface_h.ads", "robot_iface.adb", "robot_iface.ads", "spaces.ads", "spaces-angles.adb", "spaces-angles.ads", 
       "spaces-poses.adb", "spaces-poses.ads", "spaces-positions.adb", "spaces-positions.ads", "valleys.adb", "valleys.ads");
 
-   package Compiler is
-      for Default_Switches ("ada") use ("-gnatVn", "-O3", "-gnat12", "-gnatf", "-gnatyaAbBdefhiIkprStxu", "-gnatp", "-g");
-   end Compiler;
+   package Compiler renames Shared.Compiler;
+
+   package Check renames Shared.Check;
 
    package Builder is
-      for Default_Switches ("ada") use ("-s", "-g");
+      for Default_Switches ("ada") use ("-s");
    end Builder;
 
 end Algorithm;
