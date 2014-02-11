@@ -608,7 +608,7 @@ package body Algorithm is
          function Cell_Predicate (Cell_Mag : Cell_Array;
                                   Cell_Sector : Cell_Sectors) return Boolean
          is
-           (speed_idx in Cell_Sector'Range(1) and then
+           (speed_idx in Cell_Sector'Range (1) and then
             Cell_Mag'First (1) = Cell_Sector'First (2) and then
             Cell_Mag'First (2) = Cell_Sector'First (3) and then
             Cell_Mag'Last (1) = Cell_Sector'Last (2) and then
@@ -619,7 +619,7 @@ package body Algorithm is
                                 Cell_Sector : Cell_Sectors) is
          begin
             pragma Assume (Cell_Predicate (Cell_Mag, Cell_Sector)); -- Only have to go through the cells in front.
-            for y in Integer range Cell_Sector'Range(3) loop --0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop
+            for y in Integer range Cell_Sector'Range (3) loop --0 .. Up_To_Half (Cell_Sector'Length (3), Inclusive) loop
                pragma Loop_Invariant (Cell_Predicate (Cell_Mag, Cell_Sector));
                for x in Cell_Sector'Range (2) loop
                   pragma Loop_Invariant (Cell_Predicate (Cell_Mag, Cell_Sector));
