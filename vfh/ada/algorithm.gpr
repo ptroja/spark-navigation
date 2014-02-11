@@ -1,4 +1,4 @@
-with "../../../ada/formal_numerics/formal_numerics.gpr";
+with "../../../formal-numerics/formal_numerics.gpr";
 
 library project Algorithm is
 

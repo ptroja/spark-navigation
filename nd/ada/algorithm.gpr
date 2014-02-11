@@ -1,6 +1,6 @@
-with "../../../ada/formal_numerics/formal_numerics.gpr";
+with "../../../formal-numerics/formal_numerics.gpr";
 
-library project algorithm is
+library project Algorithm is
 
    for Languages use ("Ada");
    for Library_Name use "nd";
@@ -23,5 +23,5 @@ library project algorithm is
       for Default_Switches ("ada") use ("-rules", "-from=../../common/ada/gnatcheck.rul");
    end Check;
 
-end algorithm;
+end Algorithm;
 
