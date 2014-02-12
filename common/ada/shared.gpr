@@ -1,5 +1,5 @@
 abstract project Shared is
-   for Source_Files use ();   --  no sources
+   for Source_Files use ();  --  no sources
 
    type Assertions_Checks is
       ("enabled", "disabled");
@@ -25,7 +25,7 @@ abstract project Shared is
    end Check;
 
    package Builder is
-      for Default_Switches ("ada") use ("-s -g");
+      for Default_Switches ("ada") use ("-s", "-g");
    end Builder;
 
 end Shared;
