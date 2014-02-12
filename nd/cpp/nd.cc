@@ -873,10 +873,10 @@ static float solLS1(TInfoND *nd) {
   if (final - nd->regiones.vector[nd->region].principio > SECTORES/4) {
     if (region->direccion_tipo==DIRECCION_DISCONTINUIDAD_INICIAL)
       angulo_parcial=nd->d[DECREMENTAR_SECTOR(region->principio)].a
-        -(float)atan2((robot.discontinuidad/2+robot.ds[SECTORES/2]),nd->d[DECREMENTAR_SECTOR(region->principio)].r);
+        -(float)atan2((robot.discontinuidad/2.0F+robot.ds[SECTORES/2]),nd->d[DECREMENTAR_SECTOR(region->principio)].r);
     else
       angulo_parcial=nd->d[INCREMENTAR_SECTOR(region->final)].a
-        +(float)atan2((robot.discontinuidad/2+robot.ds[SECTORES/2]),nd->d[INCREMENTAR_SECTOR(region->final)].r);
+        +(float)atan2((robot.discontinuidad/2.0F+robot.ds[SECTORES/2]),nd->d[INCREMENTAR_SECTOR(region->final)].r);
   } else
     angulo_parcial=sector2angulo(((region->principio+final)/2)%SECTORES);
 
@@ -1278,8 +1278,8 @@ TVelocities *IterarND(TCoordenadas objetivo,
     if ((nd.objetivo.c1.x>=robot.Dimensiones[0]) && (nd.objetivo.c1.x<=robot.Dimensiones[2]) &&
 	(nd.objetivo.c1.y>=robot.Dimensiones[3]) && (nd.objetivo.c1.y<=robot.Dimensiones[1])) { 
         */
-    if(hypot(objetivo.x - movimiento->SR1.posicion.x,
-             objetivo.y - movimiento->SR1.posicion.y) < goal_tol)
+    if(hypotf(objetivo.x - movimiento->SR1.posicion.x,
+              objetivo.y - movimiento->SR1.posicion.y) < goal_tol)
     {
       // Ya hemos llegado.
       velocidades.v=0.0F;
