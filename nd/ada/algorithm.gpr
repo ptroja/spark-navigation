@@ -16,9 +16,7 @@ library project Algorithm is
 
    package Check renames Shared.Check;
 
-   package Builder is
-      for Default_Switches ("ada") use ("-s");
-   end Builder;
+   package Builder renames Shared.Builder;
 
 end Algorithm;
 

@@ -13,15 +13,19 @@ abstract project Shared is
          --  do we still need the -gnatd.V switch?
 
          when "enabled" =>
-            for Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-O3", "-gnatyAbBdIxafhikprStu", "-gnatf", "-gnatVa", "-gnato", "-gnata");
+            for Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-g", "-O3", "-gnatn", "-gnatyAbBdIxafhikprStu", "-gnatf", "-gnatVa", "-gnato", "-gnata");
 
          when "disabled" =>
-            for Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-O3", "-gnatyAbBdIxafhikprStu", "-gnatf", "-gnatVn", "-gnatp");
+            for Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-g", "-O3", "-gnatn", "-gnatyAbBdIxafhikprStu", "-gnatf", "-gnatVn", "-gnatp");
       end case;
    end Compiler;
 
    package Check is
       for Switches ("ada") use ("-rules", "-from=../../common/ada/gnatcheck.rul");
    end Check;
+
+   package Builder is
+      for Default_Switches ("ada") use ("-s -g");
+   end Builder;
 
 end Shared;
