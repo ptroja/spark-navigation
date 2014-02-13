@@ -85,7 +85,7 @@ By default, GNATProve uses its own version of the
 (Alt-Ergo)[http://alt-ergo.lri.fr/] SMT solver. An alternative SMT
 solver that also gives good results is (Z3)[http://z3.codeplex.com/].
 
-Once you are comfortable with the tools you can:
+Once you are comfortable with the tools, you can:
 
 - check if the code is in the SPARK subset of Ada: `gnatprove -P
   algorithm --mode=check` and inspect the

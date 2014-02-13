@@ -13,7 +13,14 @@ VFH
 
 - use Arctan instead of Init::Cell_Direction
 
-- gnatd.V flag makes proof _much_ longer because of extensive flow-analysis
+- gnatd.V flag makes proof _much_ longer because of extensive
+  flow-analysis
+
+SND
+---
+
+- enabling assertions results in internal compiler error; the
+  workaround is to comment the assertion that causes the problem
 
 Formal.Numerics
 ---------------
@@ -26,7 +33,7 @@ GNATProve
 ---------
 
 - 'Loop_Entry in Loop_(In)Variants create constant values even if no assertions
-  are checked (-gnata option is missing)
+  are checked (-gnata option is missing); reported to AdaCore as N213-026 GAP
 
 - 'Remainder attribute: full formalization
 
@@ -38,5 +45,6 @@ GNATProve
 GNATcheck (style)
 -----------------
 
-- binary operators should be surrounded by spaces with '-gnatyt option', but
-  'a := Sqrt (c * c - b*b)' expression is accepted
+- binary operators should be surrounded by spaces with '-gnatyt
+  option', but 'a := Sqrt (c * c - b*b)' expression is accepted;
+  reported to GCC as http://gcc.gnu.org/bugzilla/show_bug.cgi?id=60163
