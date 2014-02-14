@@ -31,9 +31,9 @@ package body Algorithm is
    begin
       case Half is
          when Inclusive =>
-            return (if Size = 1 then 0 else (Size - 1)/2+1);
+            return (if Size = 1 then 0 else (Size - 1) / 2 + 1);
          when Exclusive =>
-            return (Size - 1)/2;
+            return (Size - 1) / 2;
       end case;
    end Up_To_Half;
 
@@ -50,13 +50,13 @@ package body Algorithm is
          if X < This.CENTER_X then
             if Y < This.CENTER_Y then
                val := Arctan (Float (This.CENTER_Y - Y) / Float (This.CENTER_X - X));
-               val := val * (360.0 / (2.0*M_PI));
+               val := val * (360.0 / (2.0 * M_PI));
                val := 180.0 - val;
             elsif Y = This.CENTER_Y then
                val := 180.0;
             elsif Y > This.CENTER_Y then
                val := Arctan (Float (Y - This.CENTER_Y) / Float (This.CENTER_X - X));
-               val := val * (360.0 / (2.0*M_PI));
+               val := val * (360.0 / (2.0 * M_PI));
                val := 180.0 + val;
             end if;
          elsif X = This.CENTER_X then
@@ -70,12 +70,12 @@ package body Algorithm is
          elsif X > This.CENTER_X then
             if Y < This.CENTER_Y then
                val := Arctan (Float (This.CENTER_Y - Y) / Float (X - This.CENTER_X));
-               val := val * (360.0 / (2.0*M_PI));
+               val := val * (360.0 / (2.0 * M_PI));
             elsif Y = This.CENTER_Y then
                val := 0.0;
             elsif Y > This.CENTER_Y then
                val := Arctan (Float (Y - This.CENTER_Y) / Float (X - This.CENTER_X));
-               val := val * (360.0 / (2.0*M_PI));
+               val := val * (360.0 / (2.0 * M_PI));
                val := 360.0 - val;
             end if;
          end if;
@@ -109,8 +109,8 @@ package body Algorithm is
                                    Capacity (This.Min_Turning_Radius) = Capacity (This.Min_Turning_Radius)'Loop_Entry);
             declare
                dx : constant Float := Float (x) / 1.0e6; -- dx in m/millisec
-               dtheta : constant Float := ((M_PI / 180.0)*Float (GetMaxTurnrate (This, x)))/1000.0; -- dTheta in radians/millisec
-               val : constant Integer := Integer (((dx / Tan (dtheta))*1000.0) * This.MIN_TURN_RADIUS_SAFETY_FACTOR); -- in mm
+               dtheta : constant Float := ((M_PI / 180.0) * Float (GetMaxTurnrate (This, x))) / 1000.0; -- dTheta in radians/millisec
+               val : constant Integer := Integer (((dx / Tan (dtheta)) * 1000.0) * This.MIN_TURN_RADIUS_SAFETY_FACTOR); -- in mm
             begin
                pragma Assert_And_Cut (True);
                Append (This.Min_Turning_Radius, val);
@@ -156,7 +156,7 @@ package body Algorithm is
                      begin
                         if abs (arg) <= 1.0 then
                            -- This.Cell_Enlarge(x,y) := arctan( r / This.Cell_Dist(x,y) ) * (180/M_PI);
-                           This.Cell_Enlarge (x, y) := Arcsin (r / This.Cell_Dist (x, y)) * (180.0/M_PI);
+                           This.Cell_Enlarge (x, y) := Arcsin (r / This.Cell_Dist (x, y)) * (180.0 / M_PI);
                            Cell_Enlarge_OK := True;
                         else
                            Cell_Enlarge_OK := False;
@@ -175,7 +175,7 @@ package body Algorithm is
                         neg_dir  : constant Float := This.Cell_Direction (x, y) - This.Cell_Enlarge (x, y);
                      begin
                         pragma Assert (Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
-                        for i in Integer range 0 .. (360 / This.SECTOR_ANGLE)-1 loop
+                        for i in Integer range 0 .. (360 / This.SECTOR_ANGLE) - W1 loop
                            pragma Loop_Invariant (Length (This.Cell_Sector (cell_sector_tablenum, x, y)) <= Ada.Containers.Count_Type (i) and then
                                                   Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
                            -- Set plus_sector and neg_sector to the angles to the two adjacent sectors
@@ -1083,7 +1083,7 @@ package body Algorithm is
 
    function Get_Speed_Index (This : VFH; speed : Natural) return Natural is
       val : Natural := Integer (Float'Floor (
-                                (Float (speed) / Float (This.Current_Max_Speed))*Float (This.Cell_Sector'Length (1))));
+                                (Float (speed) / Float (This.Current_Max_Speed)) * Float (This.Cell_Sector'Length (1))));
    begin
       pragma Assert (VFH_Predicate (This));
       if val > This.Cell_Sector'Last (1) then
@@ -1104,7 +1104,7 @@ package body Algorithm is
    function Get_Safety_Dist (This : VFH; speed : Integer) return Integer is
       val : Integer :=
         Integer (This.SAFETY_DIST_0MS +
-                   Float (speed)*(This.SAFETY_DIST_1MS - This.SAFETY_DIST_0MS)/1000.0);
+                   Float (speed) * (This.SAFETY_DIST_1MS - This.SAFETY_DIST_0MS) / 1000.0);
    begin
 
       if val < 0 then
@@ -1125,7 +1125,7 @@ package body Algorithm is
 
    function Get_Binary_Hist_Low (This : VFH; speed : Integer) return Float is
    begin
-      return This.BINARY_HIST_LOW_0MS - Float (speed)*(This.BINARY_HIST_LOW_0MS - This.BINARY_HIST_LOW_1MS)/1000.0;
+      return This.BINARY_HIST_LOW_0MS - Float (speed) * (This.BINARY_HIST_LOW_0MS - This.BINARY_HIST_LOW_1MS) / 1000.0;
    end Get_Binary_Hist_Low;
 
    --------------------------
@@ -1141,7 +1141,7 @@ package body Algorithm is
       return Float
    is
    begin
-      return This.BINARY_HIST_HIGH_0MS - Float (speed)*(This.BINARY_HIST_HIGH_0MS - This.BINARY_HIST_HIGH_1MS)/1000.0;
+      return This.BINARY_HIST_HIGH_0MS - Float (speed) * (This.BINARY_HIST_HIGH_0MS - This.BINARY_HIST_HIGH_1MS) / 1000.0;
    end Get_Binary_Hist_High;
 
 end Algorithm;

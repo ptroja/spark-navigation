@@ -21,7 +21,7 @@ package body Spaces.Angles is
       if This.Theta >= Other.Theta then
          myTheta := This.Theta;
       else
-         myTheta := This.Theta + 2.0*Pi;
+         myTheta := This.Theta + 2.0 * Pi;
       end if;
 
       return (Theta => norm2Pi (myTheta - Other.Theta));
@@ -58,7 +58,7 @@ package body Spaces.Angles is
       if This.Theta <= Other.Theta then
          otherTheta := Other.Theta;
       else
-         otherTheta := Other.Theta + 2.0*Pi;
+         otherTheta := Other.Theta + 2.0 * Pi;
       end if;
 
       return otherTheta - This.Theta;
@@ -70,7 +70,7 @@ package body Spaces.Angles is
       if This.Theta >= Other.Theta then
          myTheta := This.Theta;
       else
-         myTheta := This.Theta + 2.0*Pi;
+         myTheta := This.Theta + 2.0 * Pi;
       end if;
 
       return Other.Theta - myTheta;
@@ -93,10 +93,10 @@ package body Spaces.Angles is
          if This.Theta <= Other.Theta then
             otherTheta := Other.Theta;
          else
-            otherTheta := Other.Theta + 2.0*Pi;
+            otherTheta := Other.Theta + 2.0 * Pi;
          end if;
 
-         return Create ((otherTheta + This.Theta)/2.0);
+         return Create ((otherTheta + This.Theta) / 2.0);
       end;
    end ccwMean;
 
@@ -106,10 +106,10 @@ package body Spaces.Angles is
       if This.Theta >= Other.Theta then
          myTheta := This.Theta;
       else
-         myTheta := This.Theta + 2.0*Pi;
+         myTheta := This.Theta + 2.0 * Pi;
       end if;
 
-      return Create ((Other.Theta + myTheta)/2.0);
+      return Create ((Other.Theta + myTheta) / 2.0);
    end cwMean;
 
    function Print (This : Angle) return String is

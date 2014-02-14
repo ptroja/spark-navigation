@@ -38,7 +38,7 @@ is
      ((s + (SECTORES - 1)) mod SECTORES);
 
    function sector2angulo (sector : SECTOR_ID) return Float
-     is (Pi * (1.0-2.0*(Float (sector) / Float (SECTORES))));
+     is (Pi * (1.0 - 2.0 * (Float (sector) / Float (SECTORES))));
 --     with
 --       Post => sector2angulo'Result in -Pi .. Pi and
 --     (if sector > SECTOR_ID'First then sector2angulo'Result <  Pi ) and
@@ -53,13 +53,13 @@ is
 --     end;
 
    function angulo2sector (angulo : Unbounded_Float) return SECTOR_ID
-     is (Integer ((-Float (SECTORES)/(2.0*Pi))*angulo+((Float (SECTORES + 1))/2.0)))
+     is (Integer ((-Float (SECTORES) / (2.0 * Pi)) * angulo + ((Float (SECTORES + 1)) / 2.0)))
    with
      Pre => angulo in -Pi .. Pi;
 
    function ObtenerSectorP (p : TCoordenadasPolares) return SECTOR_ID is
-      FACTOR : constant := -Float (SECTORES)/(2.0*Pi);
-      SUMANDO : constant := (Float (SECTORES) + 1.0)/2.0;
+      FACTOR : constant := -Float (SECTORES) / (2.0 * Pi);
+      SUMANDO : constant := (Float (SECTORES) + 1.0) / 2.0;
       -- FIXME: Ada casting give different result from C, but we do not care.
    begin
       return Integer (FACTOR * p.a + SUMANDO) mod SECTORES;
@@ -72,7 +72,7 @@ is
       if s1 <= s2 then
          return s2 - s1;
       else
-         return ((s2 + SECTORES)-s1) mod SECTORES;
+         return ((s2 + SECTORES) - s1) mod SECTORES;
       end if;
    end DistanciaSectorialOrientada;
 
@@ -143,7 +143,7 @@ is
 
    procedure InicializarDS (dsmax, dsmin : Positive_Float)
    with
-      Pre => (robot.Dimensiones.Front - robot.Dimensiones.Rear)-(dsmax - dsmin) >= 0.0 and then dsmax > dsmin;
+      Pre => (robot.Dimensiones.Front - robot.Dimensiones.Rear) - (dsmax - dsmin) >= 0.0 and then dsmax > dsmin;
 
    procedure InicializarDS (dsmax, dsmin : Positive_Float) is
 
@@ -161,14 +161,14 @@ is
 
       b := dsmax - dsmin;  -- b > 0.0
       c := p2.x - p1.x; -- c > 0.0
-      a := Sqrt (c * c - b*b); -- a:=sqrt((c-b)*(c+b)); -- FIXME: only Metitarski can prove the numerically simpler form. -- a >= 0.0
+      a := Sqrt (c * c - b * b); -- a:=sqrt((c-b)*(c+b)); -- FIXME: only Metitarski can prove the numerically simpler form. -- a >= 0.0
 --      pragma Assert_and_cut(dsmin > 0.0 and dsmax > 0.0 and a >= 0.0 and b > 0.0 and c > 0.0);
       coseno := a / c; -- >= 0.0
       seno := b / c; -- > 0.0
 --      pragma Assert(seno > 0.0);
       SumarCoordenadasCxyC (p1, -dsmin, 0.0, q1);
-      SumarCoordenadasCxyC (p1, -dsmin*seno, dsmin * coseno, q2);
-      SumarCoordenadasCxyC (p2, -dsmax*seno, dsmax * coseno, q3);
+      SumarCoordenadasCxyC (p1, -dsmin * seno, dsmin * coseno, q2);
+      SumarCoordenadasCxyC (p2, -dsmax * seno, dsmax * coseno, q3);
       ConstruirCoordenadasPC (q4, p2);
       q4.r := q4.r + dsmax;
 
@@ -177,14 +177,14 @@ is
       limite3 := ARCOTANGENTE (q3.x, q3.y);
       limite4 := q4.a;
 
-      robot.ds (0) := -q1.x-robot.E (0); -- Pre => robot.Dimensiones.Rear - dsmin - robot.E(0) > 0.0
+      robot.ds (0) := -q1.x - robot.E (0); -- Pre => robot.Dimensiones.Rear - dsmin - robot.E(0) > 0.0
 
       m := CUADRADO (p1.x) + CUADRADO (p1.y) - CUADRADO (dsmin);
       n := CUADRADO (p2.x) + CUADRADO (p2.y) - CUADRADO (dsmax);
 
       b := q3.x - q2.x;
       c := q3.y - q2.y;
-      a := b * q2.y - c*q2.x;
+      a := b * q2.y - c * q2.x;
 
       for i in 1 .. SECTORES / 2 - 1 loop
          angulo := sector2angulo (i);
@@ -199,18 +199,18 @@ is
          elsif angulo >= limite2 then
 
             -- r2
-            distancia := p1.x * Cos (angulo) + p1.y* Sin (angulo);
+            distancia := p1.x * Cos (angulo) + p1.y * Sin (angulo);
             distancia := distancia + Sqrt (CUADRADO (distancia) - m);
 
          elsif angulo >= limite3 then
 
             -- r3
-            distancia := a / (b * Sin (angulo) - c* Cos (angulo));
+            distancia := a / (b * Sin (angulo) - c * Cos (angulo));
 
          elsif angulo >= limite4 then
 
             -- r4
-            distancia := p2.x * Cos (angulo) + p2.y* Sin (angulo);
+            distancia := p2.x * Cos (angulo) + p2.y * Sin (angulo);
             distancia := distancia + Sqrt (CUADRADO (distancia) - n);
 
          else
@@ -266,15 +266,15 @@ is
       robot.T := parametros.T;
 
       if not robot.holonomo then
-         robot.H (0, 0) := Exp (-parametros.almax*parametros.T/parametros.vlmax); -- in (0.0 .. 1.0)
+         robot.H (0, 0) := Exp (-parametros.almax * parametros.T / parametros.vlmax); -- in (0.0 .. 1.0)
          robot.H (0, 1) := 0.0; -- Se tiene en cuenta m�s adelante y no se incluye en las ecuaciones.
          robot.H (1, 0) := 0.0; -- Se tiene en cuenta m�s adelante y no se incluye en las ecuaciones.
-         robot.H (1, 1) := Exp (-parametros.aamax*parametros.T/parametros.vamax); -- in (0.0 .. 1.0)
+         robot.H (1, 1) := Exp (-parametros.aamax * parametros.T / parametros.vamax); -- in (0.0 .. 1.0)
 
-         robot.G (0, 0) := (1.0 - Exp (-parametros.almax*parametros.T/parametros.vlmax))*(parametros.vlmax / parametros.almax);
+         robot.G (0, 0) := (1.0 - Exp (-parametros.almax * parametros.T / parametros.vlmax)) * (parametros.vlmax / parametros.almax);
          robot.G (0, 1) := 0.0; -- Se tiene en cuenta m�s adelante y no se incluye en las ecuaciones.
          robot.G (1, 0) := 0.0; -- Se tiene en cuenta m�s adelante y no se incluye en las ecuaciones.
-         robot.G (1, 1) := (1.0 - Exp (-parametros.aamax*parametros.T/parametros.vamax))*(parametros.vamax / parametros.almax); -- Y no "aamax".
+         robot.G (1, 1) := (1.0 - Exp (-parametros.aamax * parametros.T / parametros.vamax)) * (parametros.vamax / parametros.almax); -- Y no "aamax".
       end if;
    end InicializarND;
 
@@ -353,7 +353,7 @@ is
       no_obstaculo_i, no_obstaculo_j : Boolean;
 
       function Inv_Dec (I : SECTOR_ID) return Positive is
-        ((if I <= principio then  I + SECTORES else I)-principio);
+        ((if I <= principio then  I + SECTORES else I) - principio);
       -- with Convention => Ghost;
 
       function Inv_Inc (I : SECTOR_ID) return Positive is
@@ -470,7 +470,7 @@ is
          else
             ConstruirCoordenadasCP (p1, nd.d (region.direccion_sector));
             ConstruirCoordenadasCP (p2, nd.d (sector_auxiliar));
-            ConstruirCoordenadasPxy (objetivo_intermedio_polares, (p1.x + p2.x)/2.0, (p1.y + p2.y)/2.0);
+            ConstruirCoordenadasPxy (objetivo_intermedio_polares, (p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
          end if;
 
       end if;
@@ -978,7 +978,7 @@ is
          final := final + SECTORES;
       end if;
 
-      return sector2angulo (((region.principio + final)/2) mod SECTORES);
+      return sector2angulo (((region.principio + final) / 2) mod SECTORES);
    end solHSNR;
 
    -- IterarND / control_angulo / solHSWR
@@ -1030,7 +1030,7 @@ is
               + Arctan ((robot.discontinuidad / 2.0 + robot.ds (SECTORES / 2)), nd.d (INCREMENTAR_SECTOR (region.final)).r);
          end if;
       else
-         angulo_parcial := sector2angulo (((region.principio + final)/2) mod SECTORES);
+         angulo_parcial := sector2angulo (((region.principio + final) / 2) mod SECTORES);
       end if;
 
       if nd.obstaculo_izquierda /= -1 then
@@ -1045,7 +1045,7 @@ is
       -- return AnguloNormalizado(angulo_parcial * dist_obs_dsegur  + angulo_cota * (1-dist_obs_dsegur));
 
       -- Codigo Minguez
-      anguloPrueba := angulo_parcial * dist_obs_dsegur  + angulo_cota * (1.0-dist_obs_dsegur);
+      anguloPrueba := angulo_parcial * dist_obs_dsegur  + angulo_cota * (1.0 - dist_obs_dsegur);
 
       if anguloPrueba > Pi then
          anguloPrueba := (Pi - 0.01);
@@ -1081,7 +1081,7 @@ is
       -- Codigo Osuna
       -- return AnguloNormalizado(angulo_parcial * dist_obs_dsegur  + angulo_cota * (1-dist_obs_dsegur));
 
-      anguloPrueba := angulo_parcial * dist_obs_dsegur  + angulo_cota * (1.0-dist_obs_dsegur);
+      anguloPrueba := angulo_parcial * dist_obs_dsegur  + angulo_cota * (1.0 - dist_obs_dsegur);
 
       -- Codigo Minguez
       if anguloPrueba > Pi then
@@ -1106,7 +1106,7 @@ is
       cd : constant Float := nd.dr (nd.obstaculo_derecha) / robot.ds (nd.obstaculo_derecha);
       -- �ngulos cota izquierdo y derecho.
       ad : constant := Pi / 2.0;
-      ai : constant := -Pi/2.0;
+      ai : constant := -Pi / 2.0;
       ang_par : constant Float := nd.regiones.vector (nd.region).direccion_angulo;
    begin
 
@@ -1119,9 +1119,9 @@ is
       --  */
 
       if ci <= cd then
-         return AnguloNormalizado (ang_par + (ci - cd)/(ci + cd)*(ang_par - ai));
+         return AnguloNormalizado (ang_par + (ci - cd) / (ci + cd) * (ang_par - ai));
       else
-         return AnguloNormalizado (ang_par + (ci - cd)/(ci + cd)*(ad - ang_par));
+         return AnguloNormalizado (ang_par + (ci - cd) / (ci + cd) * (ad - ang_par));
       end if;
    end solLS2;
 
@@ -1180,7 +1180,7 @@ is
          end if;
       end if;
 
-      AplicarCotas (nd.angulo, -Pi/2.0, Pi / 2.0);
+      AplicarCotas (nd.angulo, -Pi / 2.0, Pi / 2.0);
    end control_angulo;
 
    -----------------------------------------------------------
@@ -1304,7 +1304,7 @@ is
       loop
          pragma Loop_Invariant (i < SECTOR_ID'Last);
          pragma Loop_Variant (Increases => i);
-         if (nd.d (i).a < -Pi/2.0 or else nd.d (i).a > Pi / 2.0) and then nd.d (i).r >= 0.0 and then nd.dr (i) <= robot.enlarge / 2.0 then
+         if (nd.d (i).a < -Pi / 2.0 or else nd.d (i).a > Pi / 2.0) and then nd.d (i).r >= 0.0 and then nd.dr (i) <= robot.enlarge / 2.0 then
 
             ConstruirCoordenadasCP (p, nd.d (i));
 
@@ -1333,7 +1333,7 @@ is
 
          i := i + 1;
          if i = SECTORES / 4 + 1 then
-            i := 3*SECTORES/4;
+            i := 3 * SECTORES / 4;
          end if;
 
          exit when i = SECTOR_ID'Last;
@@ -1352,12 +1352,12 @@ is
    begin
       if robot.aceleracion_angular_maxima * robot.T < abs (nd.velocidades.w) then
          if nd.velocidades.w > 0.0 then
-            velocidades.w := nd.velocidades.w - robot.aceleracion_angular_maxima*robot.T;
+            velocidades.w := nd.velocidades.w - robot.aceleracion_angular_maxima * robot.T;
          else
-            velocidades.w := nd.velocidades.w + robot.aceleracion_angular_maxima*robot.T;
+            velocidades.w := nd.velocidades.w + robot.aceleracion_angular_maxima * robot.T;
          end if;
          if robot.aceleracion_lineal_maxima * robot.T < nd.velocidades.v then
-            velocidades.v := nd.velocidades.v - robot.aceleracion_lineal_maxima*robot.T;
+            velocidades.v := nd.velocidades.v - robot.aceleracion_lineal_maxima * robot.T;
          else
             velocidades.v := 0.0;
          end if;
@@ -1366,8 +1366,8 @@ is
          velocidades.w := 0.0;
       end if;
 
-      F.x := (velocidades.v - robot.H (0, 0)*nd.velocidades.v)/robot.G (0, 0);
-      F.y := (velocidades.w - robot.H (1, 1)*nd.velocidades.w)/robot.G (1, 1);
+      F.x := (velocidades.v - robot.H (0, 0) * nd.velocidades.v) / robot.G (0, 0);
+      F.y := (velocidades.w - robot.H (1, 1) * nd.velocidades.w) / robot.G (1, 1);
       angulo := ARCOTANGENTE (F.x, F.y);
    end AnguloSinRotacion;
 

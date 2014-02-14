@@ -34,9 +34,9 @@ package body Algorithm.Alloc is
       pragma Assert (sector_angle = MINIMAL_SECTOR_ANGLE);
       This : constant VFH_Ptr := new
         Algorithm.VFH (
-                       HIST_SIZE => rint (360.0/Float (sector_angle)),
-                       HIST_COUNT => Ada.Containers.Count_Type (360/sector_angle),
-                       HIST_LAST => rint (360.0/Float (sector_angle)) - 1,
+                       HIST_SIZE => rint (360.0 / Float (sector_angle)),
+                       HIST_COUNT => Ada.Containers.Count_Type (360 / sector_angle),
+                       HIST_LAST => rint (360.0 / Float (sector_angle)) - 1,
                        MIN_TURNING_VECTOR_CAPACITY => Ada.Containers.Count_Type (max_speed) + 1,
                        CELL_SECTOR_TABLES_LAST =>
                          (if safety_dist_0ms = safety_dist_1ms

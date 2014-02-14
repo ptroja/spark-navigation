@@ -101,10 +101,10 @@ package body Algorithm is
                      --d2 : constant Float := abs(forwardLength/cos(deltaAngle));
                      d : Float;
                   begin
-                     if abs (deltaAngle) < Arctan (abs (width)/2.0, abs (forwardLength)) then
+                     if abs (deltaAngle) < Arctan (abs (width) / 2.0, abs (forwardLength)) then
                         d := abs (forwardLength / Cos (deltaAngle));
                      else
-                        d := abs ((width / 2.0)/ Sin (deltaAngle));
+                        d := abs ((width / 2.0) / Sin (deltaAngle));
                      end if;
 
                      if scans (I).first < d then
@@ -260,7 +260,7 @@ package body Algorithm is
                                   This.robot.robot_radius = This.robot.robot_radius'Loop_Entry
                                  );
             pragma Loop_Variant (Decreases => Last_Index (This.gapVec) - To_Index (iterL));
-            if ccwDiff (Element (This.gapVec, iterR).bearing, Element (This.gapVec, iterL).bearing) < 2.0*This.robot.scan_Res and then
+            if ccwDiff (Element (This.gapVec, iterR).bearing, Element (This.gapVec, iterL).bearing) < 2.0 * This.robot.scan_Res and then
               Element (This.gapVec, iterL).iDir = 1 and then Element (This.gapVec, iterR).iDir = 1
             then
                if gDebug > 4 then
@@ -288,7 +288,7 @@ package body Algorithm is
          if iterR /= No_Element and then Length (This.gapVec) > 1 then
             iterL := First (This.gapVec);
 
-            if ccwDiff (Element (This.gapVec, iterR).bearing, Element (This.gapVec, iterL).bearing) < 2.0*This.robot.scan_Res and then
+            if ccwDiff (Element (This.gapVec, iterR).bearing, Element (This.gapVec, iterL).bearing) < 2.0 * This.robot.scan_Res and then
               Element (This.gapVec, iterL).iDir = 1 and then Element (This.gapVec, iterR).iDir = 1 then
                if gDebug > 4 then
                   Put ("    Removed duplicate gap at ");
@@ -314,7 +314,7 @@ package body Algorithm is
                                   This.robot.robot_radius = This.robot.robot_radius'Loop_Entry
                                  );
             pragma Loop_Variant (Decreases => To_Index (riterL));
-            if ccwDiff (Element (This.gapVec, riterR).bearing, Element (This.gapVec, riterL).bearing) < 2.0*This.robot.scan_Res and then
+            if ccwDiff (Element (This.gapVec, riterR).bearing, Element (This.gapVec, riterL).bearing) < 2.0 * This.robot.scan_Res and then
               Element (This.gapVec, riterL).iDir = -1 and then Element (This.gapVec, riterR).iDir = -1 then
                if gDebug > 4 then
                   Put ("    Removed duplicate gap at ");
@@ -330,7 +330,7 @@ package body Algorithm is
          if riterL /= First (This.gapVec) and then Length (This.gapVec) > 1 then
             riterR := Last (This.gapVec);
 
-            if ccwDiff (Element (This.gapVec, riterR).bearing, Element (This.gapVec, riterL).bearing) < 2.0*This.robot.scan_Res and then
+            if ccwDiff (Element (This.gapVec, riterR).bearing, Element (This.gapVec, riterL).bearing) < 2.0 * This.robot.scan_Res and then
               Element (This.gapVec, riterL).iDir = -1 and then Element (This.gapVec, riterR).iDir = -1 then
                if gDebug > 4 then
                   Put ("    Removed duplicate gap at ");
@@ -509,12 +509,12 @@ package body Algorithm is
       loop
          pragma Loop_Invariant (This.robot.robot_radius = This.robot.robot_radius'Loop_Entry);
          if This.laserScan (I).first <= safetyDist + This.robot.robot_radius then
-            deltaMag := limit ((safetyDist + This.robot.robot_radius - This.laserScan (I).first)/safetyDist, 0.0, 1.0);
+            deltaMag := limit ((safetyDist + This.robot.robot_radius - This.laserScan (I).first) / safetyDist, 0.0, 1.0);
             deltaAngle := alDiff (This.driveAngle, This.laserScan (I).second + Create (M_PI));
 
-            deltaAreaSum := deltaAreaSum + deltaMag*deltaMag;
+            deltaAreaSum := deltaAreaSum + deltaMag * deltaMag;
 
-            obstacleAvoidDelta := obstacleAvoidDelta + deltaMag*deltaMag*deltaMag*deltaAngle;
+            obstacleAvoidDelta := obstacleAvoidDelta + deltaMag * deltaMag * deltaMag * deltaAngle;
          end if;
       end loop;
 
@@ -575,7 +575,7 @@ package body Algorithm is
 
       for I in This.laserScan'Range loop
          This.laserScan (I).first := GetRange (This.robot, I);
-         This.laserScan (I).second := Create (This.robot.scan_Res * Float (I - This.laserScan'First - iNumLPs/2));
+         This.laserScan (I).second := Create (This.robot.scan_Res * Float (I - This.laserScan'First - iNumLPs / 2));
       end loop;
 
       pragma  Assert_And_Cut (True);
@@ -651,7 +651,7 @@ package body Algorithm is
 
       pragma  Assert_And_Cut (distToGoal /= Zero_Position and then distToClosestObstacle > This.robot.robot_radius);
       pragma Assert (This.robot.robot_radius / 10.0 <= This.robot.obstacle_avoid_dist);
-      safetyDist := limit (3.0*(distToClosestObstacle - This.robot.robot_radius), This.robot.robot_radius / 10.0, This.robot.obstacle_avoid_dist);
+      safetyDist := limit (3.0 * (distToClosestObstacle - This.robot.robot_radius), This.robot.robot_radius / 10.0, This.robot.obstacle_avoid_dist);
 
       --  Create list of gap/discontinuity angles
       buildGapVector (gapVec      => This.gapVec,
@@ -783,10 +783,10 @@ package body Algorithm is
          if dCastPi (This.driveAngle) < 0.0 then
             This.driveAngle := Create (M_PI / 2.0);
          end if;
-      elsif dCastPi (This.driveAngle) < -M_PI/2.0 then
+      elsif dCastPi (This.driveAngle) < -M_PI / 2.0 then
          This.driveAngle := This.driveAngle + Create (This.obsAvoidDelta);
          if dCast (This.driveAngle) > 0.0 then
-            This.driveAngle := Create (-M_PI/2.0);
+            This.driveAngle := Create (-M_PI / 2.0);
          end if;
       else
          This.driveAngle := This.driveAngle + Create (This.obsAvoidDelta);
@@ -795,7 +795,7 @@ package body Algorithm is
       pragma  Assert_And_Cut (distToClosestObstacle > This.robot.robot_radius);
 
       if dCast (This.driveAngle) > M_PI then
-         theta := dCast (This.driveAngle) - 2.0*M_PI;
+         theta := dCast (This.driveAngle) - 2.0 * M_PI;
       else
          theta := dCast (This.driveAngle);
       end if;
@@ -826,22 +826,22 @@ package body Algorithm is
 
       pragma  Assert_And_Cut (distToClosestObstacle > This.robot.robot_radius);
 
-      theta := limit (theta, -M_PI/2.0, M_PI / 2.0);
+      theta := limit (theta, -M_PI / 2.0, M_PI / 2.0);
 
-      driveTurnRate := This.robot.max_turn_rate * (2.0*theta/M_PI);
+      driveTurnRate := This.robot.max_turn_rate * (2.0 * theta / M_PI);
       driveTurnRate := driveTurnRate * limit (Sqrt (norm (distToGoal)), 0.2, 1.0);
       pragma Assert (distToClosestObstacle - This.robot.robot_radius > 0.0);
       pragma Assert (This.robot.obstacle_avoid_dist > 0.0); pragma Assert ((distToClosestObstacle - This.robot.robot_radius) > 0.0 and then This.robot.obstacle_avoid_dist > 0.0);
-      pragma Assert ((distToClosestObstacle - This.robot.robot_radius)/This.robot.obstacle_avoid_dist > 0.0);
-      pragma Assert ((distToClosestObstacle - This.robot.robot_radius)/This.robot.obstacle_avoid_dist >= 0.0);
-      driveTurnRate := driveTurnRate * limit (Sqrt ((distToClosestObstacle - This.robot.robot_radius)/This.robot.obstacle_avoid_dist), 0.5, 1.0);
+      pragma Assert ((distToClosestObstacle - This.robot.robot_radius) / This.robot.obstacle_avoid_dist > 0.0);
+      pragma Assert ((distToClosestObstacle - This.robot.robot_radius) / This.robot.obstacle_avoid_dist >= 0.0);
+      driveTurnRate := driveTurnRate * limit (Sqrt ((distToClosestObstacle - This.robot.robot_radius) / This.robot.obstacle_avoid_dist), 0.5, 1.0);
 
-      theta := limit (theta, -M_PI/4.0, M_PI / 4.0);
+      theta := limit (theta, -M_PI / 4.0, M_PI / 4.0);
 
       driveSpeed := This.robot.max_speed;
       driveSpeed := driveSpeed * limit (Sqrt (norm (distToGoal)), 0.0, 1.0);
-      driveSpeed := driveSpeed * limit (Sqrt ((distToClosestObstacle - This.robot.robot_radius)/This.robot.obstacle_avoid_dist), 0.0, 1.0);
-      driveSpeed := driveSpeed * limit ((M_PI / 6.0 - abs (theta))/(M_PI / 6.0), 0.0, 1.0);
+      driveSpeed := driveSpeed * limit (Sqrt ((distToClosestObstacle - This.robot.robot_radius) / This.robot.obstacle_avoid_dist), 0.0, 1.0);
+      driveSpeed := driveSpeed * limit ((M_PI / 6.0 - abs (theta)) / (M_PI / 6.0), 0.0, 1.0);
 
       SetSpeed (This.robot, driveSpeed, driveTurnRate);
 

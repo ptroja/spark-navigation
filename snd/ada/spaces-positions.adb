@@ -173,7 +173,7 @@ package body Spaces.Positions is
 
    function squareNorm (This : Position) return Float is
    begin
-      return This. x * This. x + This.y*This.y;
+      return This. x * This. x + This.y * This.y;
    end squareNorm;
 
    ----------
@@ -200,7 +200,7 @@ package body Spaces.Positions is
 
    function scalar (This, P : Position) return Float is
    begin
-      return This.x * P.x + This.y*P.y;
+      return This.x * P.x + This.y * P.y;
    end scalar;
 
    -----------

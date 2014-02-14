@@ -90,7 +90,7 @@ package Algorithm is
 
    MINIMAL_SECTOR_ANGLE : constant := 1;
 
-   subtype Sectors_Vector is Integer_Vector.Vector (360/MINIMAL_SECTOR_ANGLE);
+   subtype Sectors_Vector is Integer_Vector.Vector (360 / MINIMAL_SECTOR_ANGLE);
 
    type Cell_Sectors is array (Integer range <>,   -- NUM_CELL_SECTOR_TABLES
                                Integer range <>,   -- WINDOW_DIAMETER

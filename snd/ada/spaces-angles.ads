@@ -106,7 +106,7 @@ package Spaces.Angles is
 
 private
 
-   subtype normalized2Pi is Float range 0.0 .. 2.0*Pi;
+   subtype normalized2Pi is Float range 0.0 .. 2.0 * Pi;
 
    type Angle is record
       Theta : normalized2Pi;
@@ -115,7 +115,7 @@ private
    --  \brief Returns a value in [0, 2*M_PI).
    function norm2Pi (x : Float) return Float
    with
-     Post => norm2Pi'Result >= 0.0 and then norm2Pi'Result < 2.0*Pi;
+     Post => norm2Pi'Result >= 0.0 and then norm2Pi'Result < 2.0 * Pi;
 
    --  \brief Returns a value in (-M_PI, M_PI].
    function normPi (x : Float) return Float

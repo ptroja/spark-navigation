@@ -45,8 +45,8 @@ package body Spaces.Poses is
    ---------
 
    function "*" (This : Pose; P : Position) return Position is
-    x : constant Float := Spaces.Positions.X (P) *  Cos (dCast (This.ori)) - Spaces.Positions.Y (P)* Sin (dCast (This.ori)) + Spaces.Positions.X (This.pos);
-    y : constant Float := Spaces.Positions.X (P) *  Sin (dCast (This.ori)) + Spaces.Positions.Y (P)* Cos (dCast (This.ori)) + Spaces.Positions.Y (This.pos);
+    x : constant Float := Spaces.Positions.X (P) *  Cos (dCast (This.ori)) - Spaces.Positions.Y (P) * Sin (dCast (This.ori)) + Spaces.Positions.X (This.pos);
+    y : constant Float := Spaces.Positions.X (P) *  Sin (dCast (This.ori)) + Spaces.Positions.Y (P) * Cos (dCast (This.ori)) + Spaces.Positions.Y (This.pos);
    begin
       return Create (x, y);
    end "*";
