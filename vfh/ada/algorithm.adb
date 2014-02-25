@@ -1,11 +1,4 @@
-with Formal.Numerics.Elementary_Functions;
-with Ada.Text_IO;
-with Ada.Float_Text_IO;
 with Utils;
-
-use Ada.Text_IO;
-use Formal.Numerics;
-use Formal.Numerics.Elementary_Functions;
 use Utils;
 
 package body Algorithm is
@@ -15,16 +8,33 @@ package body Algorithm is
    use Integer_Vector;
    use Speed_Vector;
 
-   procedure Tab is
-   begin
-      Put (ASCII.HT);
-   end Tab;
+   -- procedure Tab is
+   -- begin
+   --    Put (ASCII.HT);
+   -- end Tab;
 
    type Half_Option is (Inclusive, Exclusive);
 
-   function Up_To_Half (Size : Positive; Half : Half_Option) return Natural
-   with
-     Post => Up_To_Half'Result < Size;
+   function Integer_Eq (X, Y : Integer) return Boolean is
+   begin 
+      return (X = Y);
+   end Integer_Eq;
+
+   function Border_Pair_Eq (X, Y : Border_Pair) return Boolean
+   is
+   begin
+     return (X.first = Y.first and then X.second = Y.second);
+   end Border_Pair_Eq;
+
+   function Candidate_Eq (X, Y : Candidate) return Boolean
+   is
+   begin
+     return (X.Angle = Y.Angle and then X.Speed = Y.Speed);
+   end Candidate_Eq;
+
+   -- function Up_To_Half (Size : Positive; Half : Half_Option) return Natural
+   -- with
+   --   Post => Up_To_Half'Result < Size;
 
    function Up_To_Half (Size : Positive; Half : Half_Option) return Natural
    is
@@ -43,7 +53,7 @@ package body Algorithm is
 
    procedure Init (This : in out VFH) is
       pragma Spark_Mode (Off);
-      function Cell_Direction (X, Y : Integer) return Float with Pre => X in This.Cell_Mag'Range (1) and then Y in This.Cell_Mag'Range (2);
+      -- function Cell_Direction (X, Y : Integer) return Float with Pre => X in This.Cell_Mag'Range (1) and then Y in This.Cell_Mag'Range (2);
       function Cell_Direction (X, Y : Integer) return Float is
          val : Float;
       begin pragma Assume (VFH_Predicate (This));
@@ -319,25 +329,25 @@ package body Algorithm is
          This.Picked_Angle := This.Last_Picked_Angle;
          This.Max_Speed_For_Picked_Angle := 0;
       else
-         if print then
-            Ada.Text_IO.Put_Line ("Primary Histogram");
-            Print_Hist (This);
-         end if;
+         -- if print then
+         --    Ada.Text_IO.Put_Line ("Primary Histogram");
+         --    Print_Hist (This);
+         -- end if;
 
          Build_Binary_Polar_Histogram (This, current_pos_speed);
 
-         if print then
-            Ada.Text_IO.Put_Line ("Binary Histogram");
-            Print_Hist (This);
-         end if;
+         -- if print then
+         --    Ada.Text_IO.Put_Line ("Binary Histogram");
+         --    Print_Hist (This);
+         -- end if;
 
          pragma Assert (Last_Index (This.Min_Turning_Radius) = This.Current_Max_Speed);
          Build_Masked_Polar_Histogram (This, current_pos_speed);
 
-         if print then
-            Ada.Text_IO.Put_Line ("Masked Histogram");
-            Print_Hist (This);
-         end if;
+         -- if print then
+         --    Ada.Text_IO.Put_Line ("Masked Histogram");
+         --    Print_Hist (This);
+         -- end if;
 
          -- Sets Picked_Angle, Last_Picked_Angle, and Max_Speed_For_Picked_Angle.
          Select_Direction (This);
@@ -375,13 +385,13 @@ package body Algorithm is
 
       This.last_chosen_speed := chosen_speed;
 
-      if print then
-         Ada.Text_IO.Put ("CHOSEN: SPEED: ");
-         Ada.Text_IO.Put (Integer'Image (chosen_speed)); Tab;
-         Ada.Text_IO.Put (" TURNRATE: ");
-         Ada.Text_IO.Put (Integer'Image (chosen_turnrate));
-         Ada.Text_IO.New_Line;
-      end if;
+      -- if print then
+      --    Ada.Text_IO.Put ("CHOSEN: SPEED: ");
+      --    Ada.Text_IO.Put (Integer'Image (chosen_speed)); Tab;
+      --    Ada.Text_IO.Put (" TURNRATE: ");
+      --    Ada.Text_IO.Put (Integer'Image (chosen_turnrate));
+      --    Ada.Text_IO.New_Line;
+      -- end if;
    end Update;
 
    --------------------
@@ -768,7 +778,7 @@ package body Algorithm is
 
       use Border_Pair_Vector;
 
-      border : Border_Pair_Vector.Vector (This.HIST_COUNT + 1);
+      border : array (Hist_Index) of Border_Pair; -- Border_Pair_Vector.Vector (This.HIST_COUNT + 1);
       new_border : Border_Pair;
    begin
       pragma Assume (VFH_Predicate (This));
@@ -825,8 +835,8 @@ package body Algorithm is
       declare
          CANDIDATE_CAPACITY : constant Ada.Containers.Count_Type := Length (border) * 4;
 
-         Candidates : Candidate_Vector.Vector (CANDIDATE_CAPACITY);
-         use Candidate_Vector;
+         Candidates : array (Candidate_Index) of Candidate; -- Candidate_Vector.Vector (CANDIDATE_CAPACITY);
+         -- use Candidate_Vector;
 
          ----------------------------
          -- Select_Candidate_Angle --
@@ -959,123 +969,123 @@ package body Algorithm is
    -- Print_Cells_Dir --
    ---------------------
 
-   procedure Print_Cells_Dir (This : VFH) is
-   begin
-      New_Line;
-      Put_Line ("Cell Directions:");
-      Put_Line ("****************");
-      for y in This.Cell_Direction'Range (2) loop
-         for x in This.Cell_Direction'Range (1) loop
-            Ada.Float_Text_IO.Put (Item => This.Cell_Direction (x, y),
-                                   Fore => 3,
-                                   Aft  => 1,
-                                   Exp  => 0);
-            Tab;
-         end loop;
-         New_Line;
-      end loop;
-   end Print_Cells_Dir;
+   -- procedure Print_Cells_Dir (This : VFH) is
+   -- begin
+   --    New_Line;
+   --    Put_Line ("Cell Directions:");
+   --    Put_Line ("****************");
+   --    for y in This.Cell_Direction'Range (2) loop
+   --       for x in This.Cell_Direction'Range (1) loop
+   --          Ada.Float_Text_IO.Put (Item => This.Cell_Direction (x, y),
+   --                                 Fore => 3,
+   --                                 Aft  => 1,
+   --                                 Exp  => 0);
+   --          Tab;
+   --       end loop;
+   --       New_Line;
+   --    end loop;
+   -- end Print_Cells_Dir;
 
    ---------------------
    -- Print_Cells_Mag --
    ---------------------
 
-   procedure Print_Cells_Mag (This : VFH) is
-   begin
-      New_Line;
-      Put_Line ("Cell Magnitudes:");
-      Put_Line ("****************");
-      for y in This.Cell_Mag'Range (2) loop
-         for x in This.Cell_Mag'Range (1) loop
-            Put (Float'Image (This.Cell_Mag (x, y)));
-            Tab;
-         end loop;
-         New_Line;
-      end loop;
-   end Print_Cells_Mag;
+   -- procedure Print_Cells_Mag (This : VFH) is
+   -- begin
+   --    New_Line;
+   --    Put_Line ("Cell Magnitudes:");
+   --    Put_Line ("****************");
+   --    for y in This.Cell_Mag'Range (2) loop
+   --       for x in This.Cell_Mag'Range (1) loop
+   --          Put (Float'Image (This.Cell_Mag (x, y)));
+   --          Tab;
+   --       end loop;
+   --       New_Line;
+   --    end loop;
+   -- end Print_Cells_Mag;
 
    ----------------------
    -- Print_Cells_Dist --
    ----------------------
 
-   procedure Print_Cells_Dist (This : VFH) is
-   begin
-      New_Line;
-      Put_Line ("Cell Distances:");
-      Put_Line ("****************");
-      for y in This.Cell_Dist'Range (2) loop
-         for x in This.Cell_Dist'Range (1) loop
-            Put (Float'Image (This.Cell_Dist (x, y)));
-            Tab;
-         end loop;
-         New_Line;
-      end loop;
-   end Print_Cells_Dist;
+   -- procedure Print_Cells_Dist (This : VFH) is
+   -- begin
+   --    New_Line;
+   --    Put_Line ("Cell Distances:");
+   --    Put_Line ("****************");
+   --    for y in This.Cell_Dist'Range (2) loop
+   --       for x in This.Cell_Dist'Range (1) loop
+   --          Put (Float'Image (This.Cell_Dist (x, y)));
+   --          Tab;
+   --       end loop;
+   --       New_Line;
+   --    end loop;
+   -- end Print_Cells_Dist;
 
    ------------------------
    -- Print_Cells_Sector --
    ------------------------
 
-   procedure Print_Cells_Sector (This : VFH) is
-   begin
-      New_Line;
-      Put_Line ("Cell Sectors for table 0:");
-      Put_Line ("***************************");
+   -- procedure Print_Cells_Sector (This : VFH) is
+   -- begin
+   --    New_Line;
+   --    Put_Line ("Cell Sectors for table 0:");
+   --    Put_Line ("***************************");
 
-      --        for y in This.Cell_Sector'Range(3) loop
-      --           for x in This.Cell_Sector'Range(2) loop
-      --              for i in Integer range 0 .. 1 loop -- i<Cell_Sector[0][x][y].size();i++
-      --                 if i < This.Cell_Sector[0][x][y].size() - 1 then
-      --                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
-      --                    Put(",");
-      --                 else
-      --                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
-      --                    Tab;
-      --                 end if;
-      --              end loop;
-      --           end loop;
-      --           New_Line;
-      --        end loop;
-   end Print_Cells_Sector;
+   --    --        for y in This.Cell_Sector'Range(3) loop
+   --    --           for x in This.Cell_Sector'Range(2) loop
+   --    --              for i in Integer range 0 .. 1 loop -- i<Cell_Sector[0][x][y].size();i++
+   --    --                 if i < This.Cell_Sector[0][x][y].size() - 1 then
+   --    --                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
+   --    --                    Put(",");
+   --    --                 else
+   --    --                    Put(Integer'Image(Cell_Sector(0,x,y,i)));
+   --    --                    Tab;
+   --    --                 end if;
+   --    --              end loop;
+   --    --           end loop;
+   --    --           New_Line;
+   --    --        end loop;
+   -- end Print_Cells_Sector;
 
    -----------------------------------
    -- Print_Cells_Enlargement_Angle --
    -----------------------------------
 
-   procedure Print_Cells_Enlargement_Angle (This : VFH) is
-   begin
-      New_Line;
-      Put_Line ("Enlargement Angles:");
-      Put_Line ("****************");
-      for y in This.Cell_Enlarge'Range (2) loop
-         for x in This.Cell_Enlarge'Range (1) loop
-            Put (Float'Image (This.Cell_Enlarge (x, y)));
-            Tab;
-         end loop;
-         New_Line;
-      end loop;
-   end Print_Cells_Enlargement_Angle;
+   -- procedure Print_Cells_Enlargement_Angle (This : VFH) is
+   -- begin
+   --    New_Line;
+   --    Put_Line ("Enlargement Angles:");
+   --    Put_Line ("****************");
+   --    for y in This.Cell_Enlarge'Range (2) loop
+   --       for x in This.Cell_Enlarge'Range (1) loop
+   --          Put (Float'Image (This.Cell_Enlarge (x, y)));
+   --          Tab;
+   --       end loop;
+   --       New_Line;
+   --    end loop;
+   -- end Print_Cells_Enlargement_Angle;
 
    ----------------
    -- Print_Hist --
    ----------------
 
-   procedure Print_Hist (This : VFH) is
-   begin
-      Put_Line ("Histogram:");
-      Put_Line ("****************");
+   -- procedure Print_Hist (This : VFH) is
+   -- begin
+   --    Put_Line ("Histogram:");
+   --    Put_Line ("****************");
 
-      pragma Assume (VFH_Predicate (This));
-      for x in 0 .. This.HIST_SIZE / 2 loop
-         -- printf("%d:\t%1.1f\n", (x * SECTOR_ANGLE), Hist[x]);
-         Put (Integer'Image (x * This.SECTOR_ANGLE));
-         Tab;
-         Put (Float'Image (This.Hist (x)));
-         New_Line;
-      end loop;
-      New_Line;
-      New_Line;
-   end Print_Hist;
+   --    pragma Assume (VFH_Predicate (This));
+   --    for x in 0 .. This.HIST_SIZE / 2 loop
+   --       -- printf("%d:\t%1.1f\n", (x * SECTOR_ANGLE), Hist[x]);
+   --       Put (Integer'Image (x * This.SECTOR_ANGLE));
+   --       Tab;
+   --       Put (Float'Image (This.Hist (x)));
+   --       New_Line;
+   --    end loop;
+   --    New_Line;
+   --    New_Line;
+   -- end Print_Hist;
 
    ---------------------
    -- Get_Speed_Index --
