@@ -63,13 +63,10 @@ heap_free(heap_t* h)
 void
 heap_heapify(heap_t* h, int i)
 {
-  int l, r;
+  int l = HEAP_LEFT(i);
+  int r = HEAP_RIGHT(i);
   int largest;
-  double tmp;
   void* tmp_data;
-
-  l = HEAP_LEFT(i);
-  r = HEAP_RIGHT(i);
 
   if((l < h->len) && (h->A[l] > h->A[i]))
     largest = l;
@@ -81,7 +78,7 @@ heap_heapify(heap_t* h, int i)
 
   if(largest != i)
   {
-    tmp = h->A[i];
+    double tmp = h->A[i];
     tmp_data = h->data[i];
     h->A[i] = h->A[largest];
     h->data[i] = h->data[largest];

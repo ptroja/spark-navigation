@@ -46,7 +46,6 @@
 #include <errno.h>
 
 #include <libplayercommon/playercommon.h>
-#include <libplayercommon/playercommon.h>
 
 #include "plan.h"
 //#include "heap.h"
@@ -73,9 +72,7 @@ plan_t *plan_alloc(double abs_min_radius, double des_min_radius,
                    double max_radius, double dist_penalty,
                    double hysteresis_factor)
 {
-  plan_t *plan;
-
-  plan = calloc(1, sizeof(plan_t));
+  plan_t *plan = calloc(1, sizeof(plan_t));
 
   plan->abs_min_radius = abs_min_radius;
   plan->des_min_radius = des_min_radius;
@@ -124,9 +121,8 @@ plan_set_obstacles(plan_t* plan, double* obs, size_t num)
   for(i=0;i<num;i++)
   {
     // Convert to grid coords
-    int gx,gy;
-    gx = PLAN_GXWX(plan, obs[2*i]);
-    gy = PLAN_GYWY(plan, obs[2*i+1]);
+    int gx = PLAN_GXWX(plan, obs[2*i]);
+    int gy = PLAN_GYWY(plan, obs[2*i+1]);
 
     if(!PLAN_VALID(plan,gx,gy))
       continue;
@@ -216,9 +212,8 @@ void plan_free(plan_t *plan)
 plan_t *plan_copy(plan_t *plan)
 {
   int i;
-  plan_t* ret_plan;
 
-  ret_plan = plan_alloc(plan->abs_min_radius,
+  plan_t* ret_plan = plan_alloc(plan->abs_min_radius,
                         plan->des_min_radius,
                         plan->max_radius,
                         plan->dist_penalty,
@@ -246,7 +241,7 @@ plan_t *plan_copy(plan_t *plan)
   plan_init(ret_plan);
 
   // Copy the map data
-  for (i = 0; i < ret_plan->size_x * ret_plan->size_y; i++)
+  for (i = 0; i < ret_plan->size_x * ret_plan->size_y; ++i)
   {
     ret_plan->cells[i].occ_dist = plan->cells[i].occ_dist;
     ret_plan->cells[i].occ_state = plan->cells[i].occ_state;
@@ -294,13 +289,11 @@ void plan_init(plan_t *plan)
 void plan_reset(plan_t *plan)
 {
   int i, j;
-  plan_cell_t *cell;
-
   for (j = plan->min_y; j <= plan->max_y; j++)
   {
     for (i = plan->min_x; i <= plan->max_x; i++)
     {
-      cell = plan->cells + PLAN_INDEX(plan,i,j);
+      plan_cell_t *cell = plan->cells + PLAN_INDEX(plan,i,j);
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
       cell->mark = 0;
@@ -337,10 +330,8 @@ plan_set_bounds(plan_t* plan, int min_x, int min_y, int max_x, int max_y)
 int
 plan_check_inbounds(plan_t* plan, double x, double y)
 {
-  int gx, gy;
-
-  gx = PLAN_GXWX(plan, x);
-  gy = PLAN_GYWY(plan, y);
+  int gx = PLAN_GXWX(plan, x);
+  int gy = PLAN_GYWY(plan, y);
 
   if((gx >= plan->min_x) && (gx <= plan->max_x) &&
      (gy >= plan->min_y) && (gy <= plan->max_y))
@@ -418,27 +409,24 @@ plan_set_bbox(plan_t* plan, double padding, double min_size,
 void
 plan_compute_cspace(plan_t* plan)
 {
-  int i, j;
-  int di, dj;
-  float* p;
-  plan_cell_t *cell, *ncell;
-
+  int j, i;
+  int dj, di;
   puts("Generating C-space....");
 
   for (j = plan->min_y; j <= plan->max_y; j++)
   {
-    cell = plan->cells + PLAN_INDEX(plan, 0, j);
+    plan_cell_t *cell = plan->cells + PLAN_INDEX(plan, 0, j);
     for (i = plan->min_x; i <= plan->max_x; i++, cell++)
     {
       if (cell->occ_state < 0)
         continue;
 
-      p = plan->dist_kernel;
+      float *p = plan->dist_kernel;
       for (dj = -plan->dist_kernel_width/2; 
            dj <= plan->dist_kernel_width/2; 
            dj++)
       {
-        ncell = cell + -plan->dist_kernel_width/2 + dj*plan->size_x;
+        plan_cell_t *ncell = cell + -plan->dist_kernel_width/2 + dj*plan->size_x;
         for (di = -plan->dist_kernel_width/2;
              di <= plan->dist_kernel_width/2; 
              di++, p++, ncell++)

@@ -60,6 +60,7 @@ main(int argc, char** argv)
   double max_radius=0.25;
   double dist_penalty=1.0;;
   double plan_halfwidth = 5.0;
+  int read_map_status;
 
   double t_c0, t_c1, t_p0, t_p1, t_w0, t_w1;
 
@@ -76,18 +77,21 @@ main(int argc, char** argv)
   gx = atof(argv[5]);
   gy = atof(argv[6]);
 
-  assert(read_map_from_image(&sx, &sy, &mapdata, fname, 0) == 0);
+  read_map_status = read_map_from_image(&sx, &sy, &mapdata, fname, 0);
+  assert(read_map_status == 0);
 
-  assert((plan = plan_alloc(robot_radius+safety_dist,
+  plan = plan_alloc(robot_radius+safety_dist,
 			    robot_radius+safety_dist,
 			    max_radius,
-			    dist_penalty,0.5)));
+			    dist_penalty,0.5);
+  assert(plan);
 
   // allocate space for map cells
   assert(plan->cells == NULL);
-  assert((plan->cells = 
+  plan->cells = 
 	  (plan_cell_t*)realloc(plan->cells,
-				(sx * sy * sizeof(plan_cell_t)))));
+				(sx * sy * sizeof(plan_cell_t)));
+  assert(plan->cells);
   
   // Copy over obstacle information from the image data that we read
   for(j=0;j<sy;j++)
@@ -204,7 +208,8 @@ read_map_from_image(int* size_x, int* size_y, char** mapdata,
   *size_x = gdk_pixbuf_get_width(pixbuf);
   *size_y = gdk_pixbuf_get_height(pixbuf);
 
-  assert(*mapdata = (char*)malloc(sizeof(char) * (*size_x) * (*size_y)));
+  *mapdata = (char*)malloc(sizeof(char) * (*size_x) * (*size_y));
+  assert(*mapdata);
 
   rowstride = gdk_pixbuf_get_rowstride(pixbuf);
   bps = gdk_pixbuf_get_bits_per_sample(pixbuf)/8;

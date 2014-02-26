@@ -750,8 +750,9 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   {
     // Draw the points
     player_graphics2d_cmd_points pts;
-    assert(pts.points = (player_point_2d_t*)malloc(sizeof(player_point_2d_t)*
-                                                   hitpt_cnt/2));
+    pts.points = (player_point_2d_t*)malloc(sizeof(player_point_2d_t)*
+                                                   hitpt_cnt/2);
+    assert(pts.points);
     pts.points_count = hitpt_cnt/2;
     pts.color.alpha = 0;
     pts.color.red = 255;
