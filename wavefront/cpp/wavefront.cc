@@ -345,7 +345,7 @@ class Wavefront : public ThreadedDriver
     int ShutdownLaser();
     int ShutdownMap();
     int ShutdownGraphics2d();
-    double angle_diff(double a, double b);
+    static double angle_diff(double a, double b);
 
     void ProcessCommand(player_planner_cmd_t* cmd);
     void ProcessLaserScan(player_laser_data_scanpose_t* data);
@@ -408,7 +408,8 @@ int player_driver_init(DriverTable* table)
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
 Wavefront::Wavefront( ConfigFile* cf, int section)
-  : ThreadedDriver(cf, section, true)
+  : ThreadedDriver(cf, section, true),
+    scans(NULL)
 {
   this->have_offline_planner = false;
   // Must have a position device to control
@@ -562,10 +563,8 @@ Wavefront::MainSetup()
     if(SetupLaser() < 0)
       return(-1);
 
-    this->scans =
-            (player_laser_data_scanpose_t*)malloc(this->scans_size *
-                                                  sizeof(player_laser_data_scanpose_t));
-    assert(this->scans);
+    this->scans = new player_laser_data_scanpose_t[this->scans_size];
+
     this->scans_idx = 0;
     this->scans_count = 0;
     this->scan_points = NULL;
@@ -587,7 +586,6 @@ Wavefront::MainSetup()
 void
 Wavefront::MainQuit()
 {
-
   if(this->plan)
     plan_free(this->plan);
   if(this->offline_plan)
@@ -602,6 +600,8 @@ Wavefront::MainQuit()
     ShutdownLaser();
   if(this->graphics2d_id.interf)
     ShutdownGraphics2d();
+
+  if(this->scans) delete [] this->scans;
 }
 
 void
@@ -776,8 +776,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   {
     // Draw the points
     player_graphics2d_cmd_points pts;
-    pts.points = (player_point_2d_t*)malloc(sizeof(player_point_2d_t)*
-                                                   hitpt_cnt/2);
+    pts.points =  new player_point_2d_t[hitpt_cnt/2];
     assert(pts.points);
 
     pts.points_count = hitpt_cnt/2;
@@ -795,7 +794,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
                              PLAYER_MSGTYPE_CMD,
                              PLAYER_GRAPHICS2D_CMD_POINTS,
                              (void*)&pts,0,NULL);
-    free(pts.points);
+    delete [] pts.points;
   }
 }
 
@@ -1132,7 +1131,7 @@ void Wavefront::Main()
       {
         player_graphics2d_cmd_polyline_t line;
         line.points_count = this->plan->lpath_count;
-        line.points = (player_point_2d_t*)malloc(sizeof(player_point_2d_t)*line.points_count);
+        line.points = new player_point_2d_t[line.points_count];
         line.color.alpha = 0;
         line.color.red = 0;
         line.color.green = 255;
@@ -1146,14 +1145,14 @@ void Wavefront::Main()
                                  PLAYER_MSGTYPE_CMD,
                                  PLAYER_GRAPHICS2D_CMD_POLYLINE,
                                  (void*)&line,0,NULL);
-        free(line.points);
+        delete [] line.points;
       }
 
       if(this->graphics2d_id.interf && this->plan->path_count)
       {
         player_graphics2d_cmd_polyline_t line;
         line.points_count = this->plan->path_count;
-        line.points = (player_point_2d_t*)malloc(sizeof(player_point_2d_t)*line.points_count);
+        line.points = new player_point_2d_t[line.points_count];
         line.color.alpha = 0;
         line.color.red = 255;
         line.color.green = 0;
@@ -1167,7 +1166,7 @@ void Wavefront::Main()
                                  PLAYER_MSGTYPE_CMD,
                                  PLAYER_GRAPHICS2D_CMD_POLYLINE,
                                  (void*)&line,0,NULL);
-        free(line.points);
+        delete [] line.points;
       }
 
       double t1 = get_time();
@@ -1272,7 +1271,7 @@ void Wavefront::Main()
             {
               player_graphics2d_cmd_polyline_t line;
               line.points_count = 2;
-              line.points = (player_point_2d_t*)malloc(sizeof(player_point_2d_t)*line.points_count);
+              line.points = new player_point_2d_t[line.points_count];
               line.color.alpha = 0;
               line.color.red = 0;
               line.color.green = 0;
@@ -1286,7 +1285,7 @@ void Wavefront::Main()
                                        PLAYER_MSGTYPE_CMD,
                                        PLAYER_GRAPHICS2D_CMD_POLYLINE,
                                        (void*)&line,0,NULL);
-              free(line.points);
+              delete [] line.points;
             }
 
             // Establish fake waypoints, for client-side visualization
