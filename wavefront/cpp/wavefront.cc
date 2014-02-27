@@ -346,10 +346,10 @@ class Wavefront : public ThreadedDriver
     int ShutdownGraphics2d();
     static double angle_diff(double a, double b);
 
-    void ProcessCommand(player_planner_cmd_t* cmd);
+    void ProcessCommand(const player_planner_cmd_t & cmd);
     void ProcessLaserScan(player_laser_data_scanpose_t* data);
-    void ProcessLocalizeData(player_position2d_data_t* data);
-    void ProcessPositionData(player_position2d_data_t* data);
+    void ProcessLocalizeData(const player_position2d_data_t & data);
+    void ProcessPositionData(const player_position2d_data_t & data);
     void ProcessMapInfo(player_map_info_t* info);
 
     enum POSITION_CMD_TYPE { VELOCITY_CMD, POSITION_CMD };
@@ -357,9 +357,9 @@ class Wavefront : public ThreadedDriver
     void PutPositionCommand(double x, double y, double a, POSITION_CMD_TYPE type);
     void PutPlannerData();
     void StopPosition();
-    void LocalizeToPosition(double* px, double* py, double* pa,
-                            double lx, double ly, double la);
-    void SetWaypoint(double wx, double wy, double wa);
+    void LocalizeToPosition(player_pose2d_t * p,
+                            const player_pose2d_t & l);
+    void SetWaypoint(const player_pose2d_t & w);
     void ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_planner_waypoints_req_t* reply);
 
   public:
@@ -519,17 +519,19 @@ Wavefront::Wavefront( ConfigFile* cf, int section)
 int
 Wavefront::MainSetup()
 {
+  const player_pose2d_t zero = { 0.0, 0.0, 0.0 };
+
   this->have_map = false;
   this->new_map = false;
   this->new_map_available = false;
   this->stopped = true;
   this->atgoal = true;
   this->enable = true;
-  this->target.px = this->target.py = this->target.pa = 0.0;
-  this->position.px = this->position.py = this->position.pa = 0.0;
-  this->localize.px = this->localize.py = this->localize.pa = 0.0;
-  this->waypoint.px = this->waypoint.py = this->waypoint.pa = 0.0;
-  this->waypoint_odom.px = this->waypoint_odom.py = this->waypoint_odom.pa = 0.0;
+  this->target = zero;
+  this->position = zero;
+  this->localize = zero;
+  this->waypoint = zero;
+  this->waypoint_odom = zero;
   this->curr_waypoint = -1;
 
   this->new_goal = false;
@@ -610,14 +612,10 @@ Wavefront::MainQuit()
 }
 
 void
-Wavefront::ProcessCommand(player_planner_cmd_t* cmd)
+Wavefront::ProcessCommand(const player_planner_cmd_t & cmd)
 {
-  double new_x, new_y, new_a;
+  const player_pose2d_t & new_goal = cmd.goal;
   //double eps = 1e-3;
-
-  new_x = cmd->goal.px;
-  new_y = cmd->goal.py;
-  new_a = cmd->goal.pa;
 
 #if 0
   if((std::abs(new_x - this->target.px) > eps) ||
@@ -625,9 +623,7 @@ Wavefront::ProcessCommand(player_planner_cmd_t* cmd)
      (std::abs(this->angle_diff(new_a,this->target.pa)) > eps))
   {
 #endif
-    this->target.px = new_x;
-    this->target.py = new_y;
-    this->target.pa = new_a;
+    this->target = new_goal;
     printf("new goal: %f, %f, %f\n", target.px, target.py, target.pa);
     this->new_goal = true;
     this->atgoal = false;
@@ -639,28 +635,21 @@ Wavefront::ProcessCommand(player_planner_cmd_t* cmd)
 void
 Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_planner_waypoints_req_t* reply)
 {
-  double sx, sy, sa, gx, gy, ga;
-
-  sx = this->offline_start.px;
-  sy = this->offline_start.py;
-  sa = this->offline_start.pa;
-
-  gx = this->offline_goal.px;
-  gy = this->offline_goal.py;
-  ga = this->offline_goal.pa;
+  const player_pose2d_t & s = this->offline_start;
+  const player_pose2d_t & g = this->offline_goal;
 
   // If there is no offline_plan, create by duplicating plan
   if(!this->offline_plan)
     this->offline_plan = plan_copy(this->plan);
 
   // Compute path in offline plan
-  if(plan_do_global(this->offline_plan, sx, sy, gx, gy) < 0)
+  if(plan_do_global(this->offline_plan, s.px, s.py, g.px, g.py) < 0)
   {
     puts("Wavefront: offline path computation failed");
   }
 
   // Extract waypoints along the path to the goal from the start position
-  plan_update_waypoints(this->offline_plan, sx, sy);
+  plan_update_waypoints(this->offline_plan, s.px, s.py);
 
   // Fill in reply
   // - waypoints
@@ -669,24 +658,23 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
     reply->waypoints = (player_pose2d_t*)calloc(sizeof(reply->waypoints[0]),reply->waypoints_count);
 
     double distance = 0.0;
-    double last_wx, last_wy;
+    player_point_2d_t last_w;
     for(int i=0;i<(int)reply->waypoints_count;i++)
     {
       // Convert and copy waypoint
-      double wx, wy;
+      player_point_2d_t w;
       plan_convert_waypoint(this->offline_plan,
                             this->offline_plan->waypoints[i],
-                            &wx, &wy);
-      reply->waypoints[i].px = wx;
-      reply->waypoints[i].py = wy;
+                            &w.px, &w.py);
+      reply->waypoints[i].px = w.px;
+      reply->waypoints[i].py = w.py;
       reply->waypoints[i].pa = 0.0;
       // Update path length
       if(i != 0)
       {
-        distance += hypot(wx-last_wx,wy-last_wy);
+        distance += hypot(w.px-last_w.px,w.py-last_w.py);
       }
-      last_wx = wx;
-      last_wy = wy;
+      last_w = w;
     }
     reply->waypoints_distance = distance;
   }
@@ -804,19 +792,15 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
 }
 
 void
-Wavefront::ProcessLocalizeData(player_position2d_data_t* data)
+Wavefront::ProcessLocalizeData(const player_position2d_data_t & data)
 {
-  this->localize.px = data->pos.px;
-  this->localize.py = data->pos.py;
-  this->localize.pa = data->pos.pa;
+  this->localize = data.pos;
 }
 
 void
-Wavefront::ProcessPositionData(player_position2d_data_t* data)
+Wavefront::ProcessPositionData(const player_position2d_data_t & data)
 {
-  this->position.px = data->pos.px;
-  this->position.py = data->pos.py;
-  this->position.pa = data->pos.pa;
+  this->position = data.pos;
 }
 
 void
@@ -864,19 +848,13 @@ Wavefront::PutPlannerData()
     data.done = 0;
 
   // put the current localize pose
-  data.pos.px = this->localize.px;
-  data.pos.py = this->localize.py;
-  data.pos.pa = this->localize.pa;
+  data.pos = this->localize;
 
-  data.goal.px = this->target.px;
-  data.goal.py = this->target.py;
-  data.goal.pa = this->target.pa;
+  data.goal = this->target;
 
   if(data.valid && !data.done)
   {
-    data.waypoint.px = this->waypoint.px;
-    data.waypoint.py = this->waypoint.py;
-    data.waypoint.pa = this->waypoint.pa;
+    data.waypoint = this->waypoint;
 
     data.waypoint_idx = this->curr_waypoint;
     data.waypoints_count = this->waypoint_count;
@@ -926,8 +904,8 @@ Wavefront::PutPositionCommand(double x, double y, double a, POSITION_CMD_TYPE ty
 }
 
 void
-Wavefront::LocalizeToPosition(double* px, double* py, double* pa,
-                              double lx, double ly, double la)
+Wavefront::LocalizeToPosition(player_pose2d_t * p,
+		                      const player_pose2d_t & l)
 {
   double offset_x, offset_y, offset_a;
   double lx_rot, ly_rot;
@@ -941,9 +919,9 @@ Wavefront::LocalizeToPosition(double* px, double* py, double* pa,
 
   //printf("offset: %f, %f, %f\n", offset_x, offset_y, RTOD(offset_a));
 
-  *px = lx * cos(offset_a) - ly * sin(offset_a) + offset_x;
-  *py = lx * sin(offset_a) + ly * cos(offset_a) + offset_y;
-  *pa = la + offset_a;
+  p->px = l.px * cos(offset_a) - l.py * sin(offset_a) + offset_x;
+  p->py = l.px * sin(offset_a) + l.py * cos(offset_a) + offset_y;
+  p->pa = l.pa + offset_a;
 }
 
 void
@@ -958,22 +936,20 @@ Wavefront::StopPosition()
 }
 
 void
-Wavefront::SetWaypoint(double wx, double wy, double wa)
+Wavefront::SetWaypoint(const player_pose2d_t & w)
 {
-  double wx_odom, wy_odom, wa_odom;
+  player_pose2d_t w_odom;
 
   // transform to odometric frame
-  LocalizeToPosition(&wx_odom, &wy_odom, &wa_odom, wx, wy, wa);
+  LocalizeToPosition(&w_odom, w);
 
   // hand down waypoint
   printf("sending waypoint: %.3f %.3f %.3f\n",
-         wx_odom, wy_odom, RTOD(wa_odom));
-  PutPositionCommand(wx_odom, wy_odom, wa_odom, POSITION_CMD);
+         w_odom.px, w_odom.py, RTOD(w_odom.pa));
+  PutPositionCommand(w_odom.px, w_odom.py, w_odom.pa, POSITION_CMD);
 
   // cache this waypoint, odometric coords
-  this->waypoint_odom.px = wx_odom;
-  this->waypoint_odom.py = wy_odom;
-  this->waypoint_odom.pa = wa_odom;
+  this->waypoint_odom = w_odom;
 }
 
 void
@@ -1434,7 +1410,7 @@ void Wavefront::Main()
           this->new_goal = false;
         }
 
-        SetWaypoint(this->waypoint.px, this->waypoint.py, this->waypoint.pa);
+        SetWaypoint(this->waypoint);
       }
     }
 
@@ -1771,13 +1747,13 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
                            PLAYER_POSITION2D_DATA_STATE,
                            this->position_id))
   {
-    this->ProcessPositionData((player_position2d_data_t*)data);
+    this->ProcessPositionData(*(player_position2d_data_t*)data);
 
     // In case localize_id and position_id are the same
     if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_DATA,
                              PLAYER_POSITION2D_DATA_STATE,
                              this->localize_id))
-      this->ProcessLocalizeData((player_position2d_data_t*)data);
+      this->ProcessLocalizeData(*(player_position2d_data_t*)data);
     return(0);
   }
   // Is it new localization data?
@@ -1785,7 +1761,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
                                 PLAYER_POSITION2D_DATA_STATE,
                                 this->localize_id))
   {
-    this->ProcessLocalizeData((player_position2d_data_t*)data);
+    this->ProcessLocalizeData(*(player_position2d_data_t*)data);
     return(0);
   }
   // Is it a new goal for the planner?
@@ -1816,7 +1792,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
       this->new_map = true;
     }
     assert(data);
-    this->ProcessCommand((player_planner_cmd_t*)data);
+    this->ProcessCommand(*(player_planner_cmd_t*)data);
     return(0);
   }
   else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_REQ,
@@ -1828,7 +1804,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
     reply.waypoints_count = this->waypoint_count;
     reply.waypoints = (player_pose2d_t*)calloc(sizeof(reply.waypoints[0]),this->waypoint_count);
     double distance = 0.0;
-    double last_px, last_py;
+    player_point_2d_t last_p;
     for(int i=0;i<(int)reply.waypoints_count;i++)
     {
       // copy waypoint for length computation
@@ -1837,10 +1813,10 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
       reply.waypoints[i].pa = 0.0;
       if(i != 0) 
       {
-        distance += hypot(px-last_px,py-last_py);
+        distance += hypot(px-last_p.px,py-last_p.py);
       }
-      last_px = px;
-      last_py = py;
+      last_p.px = px;
+      last_p.py = py;
     }
     reply.waypoints_distance = distance;
 
@@ -1857,9 +1833,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
                                 this->offline_planner_id))
   {
     assert(data);
-    this->offline_start.px = ((player_planner_cmd_t*)data)->goal.px;
-    this->offline_start.py = ((player_planner_cmd_t*)data)->goal.py;
-    this->offline_start.pa = ((player_planner_cmd_t*)data)->goal.pa;
+    this->offline_start = ((player_planner_cmd_t*)data)->goal;
     return(0);
   }
   // Is it a goal position for an offline computed path?
@@ -1868,9 +1842,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
                                 this->offline_planner_id))
   {
     assert(data);
-    this->offline_goal.px = ((player_planner_cmd_t*)data)->goal.px;
-    this->offline_goal.py = ((player_planner_cmd_t*)data)->goal.py;
-    this->offline_goal.pa = ((player_planner_cmd_t*)data)->goal.pa;
+    this->offline_goal = ((player_planner_cmd_t*)data)->goal;
     return(0);
   }
 
