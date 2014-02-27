@@ -1004,8 +1004,8 @@ void Wavefront::Main()
 
     if((t - last_publish_time) > 0.25)
     {
-      last_publish_time = t;
       this->PutPlannerData();
+      last_publish_time = t;
     }
 
     if(!this->enable)
