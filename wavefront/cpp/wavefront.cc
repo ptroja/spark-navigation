@@ -997,7 +997,7 @@ Wavefront::Sleep(double loopstart)
 // Main function for device thread
 void Wavefront::Main()
 {
-  double last_replan_lx=0.0, last_replan_ly=0.0;
+  player_point_2d_t last_replan = { 0.0, 0.0 };
   double last_replan_time = 0.0;
   double last_publish_time = 0.0;
   bool rotate_waypoint=false;
@@ -1041,8 +1041,8 @@ void Wavefront::Main()
 
     // Is it time to replan?
     double replan_timediff = t - last_replan_time;
-    double replan_dist = hypot(this->localize.px - last_replan_lx,
-                               this->localize.py - last_replan_ly);
+    double replan_dist = hypot(this->localize.px - last_replan.px,
+                               this->localize.py - last_replan.py);
     bool replan = (this->replan_dist_thresh >= 0.0) &&
             (replan_dist > this->replan_dist_thresh) &&
             (this->replan_min_time >= 0.0) &&
@@ -1230,8 +1230,8 @@ void Wavefront::Main()
           this->new_goal = true;
         }
         last_replan_time = t;
-        last_replan_lx = this->localize.px;
-        last_replan_ly = this->localize.py;
+        last_replan.px = this->localize.px;
+        last_replan.py = this->localize.py;
       }
     }
 
