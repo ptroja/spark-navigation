@@ -1802,7 +1802,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
     player_planner_waypoints_req_t reply;
 
     reply.waypoints_count = this->waypoint_count;
-    reply.waypoints = (player_pose2d_t*)calloc(sizeof(reply.waypoints[0]),this->waypoint_count);
+    reply.waypoints = new player_pose2d_t[this->waypoint_count];
     double distance = 0.0;
     player_point_2d_t last_p;
     for(int i=0;i<(int)reply.waypoints_count;i++)
@@ -1824,7 +1824,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
                   PLAYER_MSGTYPE_RESP_ACK,
                   PLAYER_PLANNER_REQ_GET_WAYPOINTS,
                   (void*)&reply);
-    free(reply.waypoints);
+    delete [] reply.waypoints;
     return(0);
   }
   // Is it a start position for an offline computed path?
