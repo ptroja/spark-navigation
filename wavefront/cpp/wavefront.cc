@@ -209,11 +209,11 @@ driver
 */
 /** @} */
 
-#include <string.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <math.h>
+#include <cstring>
+#include <cstddef>
+#include <cstdlib>
+#include <cassert>
+#include <cmath>
 
 #ifndef WIN32
   #include <unistd.h>
@@ -352,7 +352,10 @@ class Wavefront : public ThreadedDriver
     void ProcessLocalizeData(player_position2d_data_t* data);
     void ProcessPositionData(player_position2d_data_t* data);
     void ProcessMapInfo(player_map_info_t* info);
-    void PutPositionCommand(double x, double y, double a, unsigned char type);
+
+    enum POSITION_CMD_TYPE { VELOCITY_CMD, POSITION_CMD };
+
+    void PutPositionCommand(double x, double y, double a, POSITION_CMD_TYPE type);
     void PutPlannerData();
     void StopPosition();
     void LocalizeToPosition(double* px, double* py, double* pa,
@@ -612,9 +615,9 @@ Wavefront::ProcessCommand(player_planner_cmd_t* cmd)
   new_a = cmd->goal.pa;
 
 #if 0
-  if((fabs(new_x - this->target_x) > eps) ||
-     (fabs(new_y - this->target_y) > eps) ||
-     (fabs(this->angle_diff(new_a,this->target_a)) > eps))
+  if((std::abs(new_x - this->target_x) > eps) ||
+     (std::abs(new_y - this->target_y) > eps) ||
+     (std::abs(this->angle_diff(new_a,this->target_a)) > eps))
   {
 #endif
     this->target_x = new_x;
@@ -660,7 +663,7 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
   {
     reply->waypoints = (player_pose2d_t*)calloc(sizeof(reply->waypoints[0]),reply->waypoints_count);
 
-    double distance = 0;
+    double distance = 0.0;
     double last_wx, last_wy;
     for(int i=0;i<(int)reply->waypoints_count;i++)
     {
@@ -675,7 +678,7 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
       // Update path length
       if(i != 0)
       {
-        distance += sqrt(pow(wx-last_wx, 2) + pow(wy-last_wy, 2));
+        distance += hypot(wx-last_wx,wy-last_wy);
       }
       last_wx = wx;
       last_wy = wy;
@@ -693,9 +696,7 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
 void
 Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
 {
-  double t0,t1;
-
-  t0 = get_time();
+  double t0 = get_time();
 
   // free up the old scan, if we're replacing one
   if(this->scans_idx < this->scans_count)
@@ -768,7 +769,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   //printf("setting %d hit points\n", this->scan_points_count);
   plan_set_obstacles(plan, this->scan_points, this->scan_points_count);
 
-  t1 = get_time();
+  double t1 = get_time();
   //printf("ProcessLaserScan: %.6lf\n", t1-t0);
 
   if(this->graphics2d_id.interf)
@@ -884,16 +885,13 @@ Wavefront::PutPlannerData()
 }
 
 void
-Wavefront::PutPositionCommand(double x, double y, double a, unsigned char type)
+Wavefront::PutPositionCommand(double x, double y, double a, POSITION_CMD_TYPE type)
 {
-  player_position2d_cmd_vel_t vel_cmd;
-  player_position2d_cmd_pos_t pos_cmd;
-
-  memset(&vel_cmd,0,sizeof(vel_cmd));
-  memset(&pos_cmd,0,sizeof(pos_cmd));
-
-  if(type)
+  if(type == POSITION_CMD)
   {
+	player_position2d_cmd_pos_t pos_cmd;
+	memset(&pos_cmd,0,sizeof(pos_cmd));
+
     // position control
     pos_cmd.pos.px = x;
     pos_cmd.pos.py = y;
@@ -906,6 +904,9 @@ Wavefront::PutPositionCommand(double x, double y, double a, unsigned char type)
   }
   else
   {
+	player_position2d_cmd_vel_t vel_cmd;
+	memset(&vel_cmd,0,sizeof(vel_cmd));
+
     // velocity control (used to stop the robot)
     vel_cmd.vel.px = x;
     vel_cmd.vel.py = y;
@@ -947,7 +948,7 @@ Wavefront::StopPosition()
   if(!this->stopped)
   {
     //puts("stopping robot");
-    PutPositionCommand(0.0,0.0,0.0,0);
+    PutPositionCommand(0.0,0.0,0.0,VELOCITY_CMD);
     this->stopped = true;
   }
 }
@@ -963,7 +964,7 @@ Wavefront::SetWaypoint(double wx, double wy, double wa)
   // hand down waypoint
   //printf("sending waypoint: %.3f %.3f %.3f\n",
          //wx_odom, wy_odom, RTOD(wa_odom));
-  PutPositionCommand(wx_odom, wy_odom, wa_odom,1);
+  PutPositionCommand(wx_odom, wy_odom, wa_odom,POSITION_CMD);
 
   // cache this waypoint, odometric coords
   this->waypoint_odom_x = wx_odom;
@@ -974,13 +975,16 @@ Wavefront::SetWaypoint(double wx, double wy, double wa)
 void
 Wavefront::Sleep(double loopstart)
 {
-  double currt,tdiff;
   //GlobalTime->GetTimeDouble(&currt);
-  currt = get_time();
+  double currt = get_time();
+
   //printf("cycle: %.6lf\n", currt-loopstart);
-  tdiff = MAX(0.0, this->cycletime - (currt-loopstart));
+
+  double tdiff = MAX(0.0, this->cycletime - (currt-loopstart));
+
   if(tdiff == 0.0)
     PLAYER_WARN("Wavefront missed deadline and not sleeping; check machine load");
+
   usleep((unsigned int)rint(tdiff*1e6));
 }
 
@@ -989,14 +993,10 @@ Wavefront::Sleep(double loopstart)
 // Main function for device thread
 void Wavefront::Main()
 {
-  double dist, angle;
-  double t;
   double last_replan_lx=0.0, last_replan_ly=0.0;
   double last_replan_time = 0.0;
   double last_publish_time = 0.0;
-  double replan_timediff, replan_dist;
   bool rotate_waypoint=false;
-  bool replan;
   int rotate_dir=0;
   bool printed_warning=false;
 
@@ -1010,7 +1010,7 @@ void Wavefront::Main()
   for(;;)
   {
     //GlobalTime->GetTimeDouble(&t);
-    t = get_time();
+    double t = get_time();
 
     pthread_testcancel();
 
@@ -1021,7 +1021,6 @@ void Wavefront::Main()
       this->Sleep(t);
       continue;
     }
-
 
     if((t - last_publish_time) > 0.25)
     {
@@ -1037,12 +1036,10 @@ void Wavefront::Main()
     }
 
     // Is it time to replan?
-    replan_timediff = t - last_replan_time;
-    replan_dist = sqrt(((this->localize_x - last_replan_lx) *
-                        (this->localize_x - last_replan_lx)) +
-                       ((this->localize_y - last_replan_ly) *
-                        (this->localize_y - last_replan_ly)));
-    replan = (this->replan_dist_thresh >= 0.0) &&
+    double replan_timediff = t - last_replan_time;
+    double replan_dist = hypot(this->localize_x - last_replan_lx,
+                               this->localize_y - last_replan_ly);
+    bool replan = (this->replan_dist_thresh >= 0.0) &&
             (replan_dist > this->replan_dist_thresh) &&
             (this->replan_min_time >= 0.0) &&
             (replan_timediff > this->replan_min_time) &&
@@ -1088,13 +1085,10 @@ void Wavefront::Main()
                       this->localize_x, this->localize_y,
                       this->target_x, this->target_y);
 
-        struct timeval t0, t1;
-        gettimeofday(&t0, NULL);
+        double t0 = get_time();
         plan_update_cspace(this->plan,this->cspace_fname);
-        gettimeofday(&t1, NULL);
-        printf("time to update: %f\n",
-               (t1.tv_sec + t1.tv_usec/1e6) -
-               (t0.tv_sec + t0.tv_usec/1e6));
+        double t1 = get_time();
+        printf("time to update: %f\n", t1 - t0);
         this->new_map = false;
       }
 #endif
@@ -1106,9 +1100,7 @@ void Wavefront::Main()
                                  NULL,0,NULL);
       }
 
-      double t0,t1;
-
-      t0 = get_time();
+      double t0 = get_time();
 
       // compute costs to the new goal.  Try local plan first
       if(new_goal ||
@@ -1178,7 +1170,7 @@ void Wavefront::Main()
         free(line.points);
       }
 
-      t1 = get_time();
+      double t1 = get_time();
       //printf("planning: %.6lf\n", t1-t0);
 
       if(!this->velocity_control)
@@ -1242,16 +1234,13 @@ void Wavefront::Main()
 
     if(this->velocity_control)
     {
-      double t0, t1;
-      t0 = get_time();
+      double t0 = get_time();
       if(this->plan->path_count && !this->atgoal)
       {
         // Check doneness
-        dist = sqrt(((this->localize_x - this->target_x) *
-                     (this->localize_x - this->target_x)) +
-                    ((this->localize_y - this->target_y) *
-                     (this->localize_y - this->target_y)));
-        angle = fabs(this->angle_diff(this->target_a,this->localize_a));
+        double dist = hypot(this->localize_x - this->target_x,
+                            this->localize_y - this->target_y);
+        double angle = std::abs(this->angle_diff(this->target_a,this->localize_a));
         if((dist < this->dist_eps) && (angle < this->ang_eps))
         {
           this->StopPosition();
@@ -1309,12 +1298,10 @@ void Wavefront::Main()
             this->waypoint_y = this->waypoints[1][1] = wy;
             this->waypoint_a = 0.0;
 
-            double goald = sqrt((this->localize_x-this->target_x)*
-                                (this->localize_x-this->target_x) +
-                                (this->localize_y-this->target_y)*
-                                (this->localize_y-this->target_y));
-            double d = sqrt((this->localize_x-wx)*(this->localize_x-wx) +
-                            (this->localize_y-wy)*(this->localize_y-wy));
+            double goald = hypot(this->localize_x-this->target_x,
+                                 this->localize_y-this->target_y);
+
+            double d = hypot(this->localize_x-wx,this->localize_y-wy);
             double b = atan2(wy - this->localize_y, wx - this->localize_x);
 
             double av,tv;
@@ -1333,14 +1320,14 @@ void Wavefront::Main()
               }
 
               tv = 0.0;
-              av = rotate_dir * (this->avmin + (fabs(ad)/M_PI) *
+              av = rotate_dir * (this->avmin + (std::abs(ad)/M_PI) *
                                  (this->avmax-this->avmin));
             }
             else
             {
               rotate_dir = 0;
 
-              if(fabs(ad) > a)
+              if(std::abs(ad) > a)
                 tv = 0.0;
               else
               {
@@ -1348,35 +1335,32 @@ void Wavefront::Main()
                 tv = this->tvmin + (d / maxd) * (this->tvmax-this->tvmin);
               }
 
-              av = this->avmin + (fabs(ad)/M_PI) * (this->avmax-this->avmin);
+              av = this->avmin + (std::abs(ad)/M_PI) * (this->avmax-this->avmin);
               if(ad < 0)
                 av = -av;
             }
 
-            this->PutPositionCommand(tv,0.0,av,0);
+            this->PutPositionCommand(tv,0.0,av,VELOCITY_CMD);
           }
         }
       }
       else
         this->StopPosition();
 
-      t1 = get_time();
+      double t1 = get_time();
       //printf("control: %.6lf\n", t1-t0);
     }
     else // !velocity_control
     {
       bool going_for_target = (this->curr_waypoint == this->plan->waypoint_count);
-      dist = sqrt(((this->localize_x - this->target_x) *
-                   (this->localize_x - this->target_x)) +
-                  ((this->localize_y - this->target_y) *
-                   (this->localize_y - this->target_y)));
+      double dist = hypot(this->localize_x - this->target_x,this->localize_y - this->target_y);
       // Note that we compare the current heading and waypoint heading in the
       // *odometric* frame.   We do this because comparing the current
       // heading and waypoint heading in the localization frame is unreliable
       // when making small adjustments to achieve a desired heading (i.e., the
       // robot gets there and VFH stops, but here we don't realize we're done
       // because the localization heading hasn't changed sufficiently).
-      angle = fabs(this->angle_diff(this->waypoint_odom_a,this->position_a));
+      double angle = std::abs(this->angle_diff(this->waypoint_odom_a,this->position_a));
       if(going_for_target && dist < this->dist_eps && angle < this->ang_eps)
       {
         // we're at the final target, so stop
@@ -1393,10 +1377,8 @@ void Wavefront::Main()
       else
       {
         // are we there yet?  ignore angle, cause this is just a waypoint
-        dist = sqrt(((this->localize_x - this->waypoint_x) *
-                     (this->localize_x - this->waypoint_x)) +
-                    ((this->localize_y - this->waypoint_y) *
-                     (this->localize_y - this->waypoint_y)));
+        dist = hypot(this->localize_x - this->waypoint_x,
+        		     this->localize_y - this->waypoint_y);
         // Note that we compare the current heading and waypoint heading in the
         // *odometric* frame.   We do this because comparing the current
         // heading and waypoint heading in the localization frame is unreliable
@@ -1405,7 +1387,7 @@ void Wavefront::Main()
         // because the localization heading hasn't changed sufficiently).
         if(this->new_goal ||
            (rotate_waypoint &&
-            (fabs(this->angle_diff(this->waypoint_odom_a,this->position_a))
+            (std::abs(this->angle_diff(this->waypoint_odom_a,this->position_a))
              < M_PI/4.0)) ||
            (!rotate_waypoint && (dist < this->dist_eps)))
         {
@@ -1426,14 +1408,12 @@ void Wavefront::Main()
           if(this->always_insert_rotational_waypoints ||
              (this->curr_waypoint == 2))
           {
-            dist = sqrt((this->waypoint_x - this->localize_x) *
-                        (this->waypoint_x - this->localize_x) +
-                        (this->waypoint_y - this->localize_y) *
-                        (this->waypoint_y - this->localize_y));
+            dist = hypot(this->waypoint_x - this->localize_x,
+            		     this->waypoint_y - this->localize_y);
             angle = atan2(this->waypoint_y - this->localize_y,
                           this->waypoint_x - this->localize_x);
             if((dist > this->dist_eps) &&
-               fabs(this->angle_diff(angle,this->localize_a)) > M_PI/4.0)
+               std::abs(this->angle_diff(angle,this->localize_a)) > M_PI/4.0)
             {
               this->waypoint_x = this->localize_x;
               this->waypoint_y = this->localize_y;
@@ -1464,9 +1444,6 @@ void Wavefront::Main()
 int
 Wavefront::SetupPosition()
 {
-  player_position2d_geom_t* geom;
-  player_position2d_power_config_t motorconfig;
-
   // Subscribe to the position device.
   if(!(this->position = deviceTable->GetDevice(this->position_id)))
   {
@@ -1479,9 +1456,12 @@ Wavefront::SetupPosition()
     return(-1);
   }
 
-  Message* msg;
   // Enable the motors
+  player_position2d_power_config_t motorconfig;
   motorconfig.state = 1;
+
+  Message* msg;
+
   if(!(msg = this->position->Request(this->InQueue,
                                      PLAYER_MSGTYPE_REQ,
                                      PLAYER_POSITION2D_REQ_MOTOR_POWER,
@@ -1506,7 +1486,7 @@ Wavefront::SetupPosition()
     return(-1);
   }
 
-  geom = (player_position2d_geom_t*)msg->GetPayload();
+  player_position2d_geom_t * geom = (player_position2d_geom_t*)msg->GetPayload();
 
   // take the bigger of the two dimensions, convert to meters, and halve
   // to get a radius
@@ -1597,7 +1577,6 @@ Wavefront::GetMap(bool threaded)
   // now, get the map data
   player_map_data_t data_req;
   memset(&data_req,0,sizeof(player_map_data_t));
-  int i,j;
   int oi,oj;
   int sx,sy;
   int si,sj;
@@ -1632,9 +1611,9 @@ Wavefront::GetMap(bool threaded)
     plan_cell_t* cell;
 
     // copy the map data
-    for(j=0;j<sj;j++)
+    for(int j=0;j<sj;j++)
     {
-      for(i=0;i<si;i++)
+      for(int i=0;i<si;i++)
       {
         cell = this->plan->cells + PLAN_INDEX(this->plan,oi+i,oj+j);
         cell->occ_dist = this->plan->max_radius;
@@ -1717,7 +1696,6 @@ Wavefront::SetupMap()
     return(0);
 
   printf("Wavefront: Loading map from map:%d...\n", this->map_id.index);
-  fflush(stdout);
 
   // Fill in the map structure
 
@@ -1845,17 +1823,17 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
 
     reply.waypoints_count = this->waypoint_count;
     reply.waypoints = (player_pose2d_t*)calloc(sizeof(reply.waypoints[0]),this->waypoint_count);
-    double distance = 0;
-    double px, py, last_px, last_py;
+    double distance = 0.0;
+    double last_px, last_py;
     for(int i=0;i<(int)reply.waypoints_count;i++)
     {
       // copy waypoint for length computation
-      px = reply.waypoints[i].px = this->waypoints[i][0];
-      py = reply.waypoints[i].py = this->waypoints[i][1];
+      double px = reply.waypoints[i].px = this->waypoints[i][0];
+      double py = reply.waypoints[i].py = this->waypoints[i][1];
       reply.waypoints[i].pa = 0.0;
       if(i != 0) 
       {
-        distance += sqrt(pow(px-last_px, 2) + pow(py-last_py, 2));
+        distance += hypot(px-last_px,py-last_py);
       }
       last_px = px;
       last_py = py;
@@ -1897,9 +1875,10 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
                                 PLAYER_PLANNER_REQ_GET_WAYPOINTS,
                                 this->offline_planner_id))
   {
+    assert(data);
+
     player_planner_waypoints_req_t reply;
 
-    assert(data);
     this->ComputeOfflineWaypoints((player_planner_waypoints_req_t*)data, &reply);
 
     this->Publish(this->offline_planner_id, resp_queue,
@@ -1974,10 +1953,10 @@ Wavefront::angle_diff(double a, double b)
   a = NORMALIZE(a);
   b = NORMALIZE(b);
   d1 = a-b;
-  d2 = 2*M_PI - fabs(d1);
+  d2 = 2*M_PI - std::abs(d1);
   if(d1 > 0)
     d2 *= -1.0;
-  if(fabs(d1) < fabs(d2))
+  if(std::abs(d1) < std::abs(d2))
     return(d1);
   else
     return(d2);
