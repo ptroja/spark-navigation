@@ -108,15 +108,15 @@ typedef struct
   heap_t* heap;
 
   // The global path
-  int path_count, path_size;
+  size_t path_count, path_size;
   plan_cell_t **path;
   
   // The local path (mainly for debugging)
-  int lpath_count, lpath_size;
+  size_t lpath_count, lpath_size;
   plan_cell_t **lpath;
 
   // Waypoints extracted from global path
-  int waypoint_count, waypoint_size;
+  size_t waypoint_count, waypoint_size;
   plan_cell_t **waypoints;
 } plan_t;
 

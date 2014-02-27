@@ -282,8 +282,8 @@ class Wavefront : public ThreadedDriver
     player_pose2d_t position;
     // current list of waypoints
     double (*waypoints)[2];
-    int waypoint_count;
-    int waypoints_allocated;
+    size_t waypoint_count;
+    size_t waypoints_allocated;
     // current localize pose
     player_pose2d_t localize;
     // have we told the underlying position device to stop?
