@@ -389,6 +389,19 @@ void wavefront_Register(DriverTable* table)
 }
 
 
+// Extra stuff for building a shared object.
+/* need the extern to avoid C++ name-mangling  */
+extern "C"
+{
+
+int player_driver_init(DriverTable* table)
+{
+	wavefront_Register(table);
+	return(0);
+}
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
 Wavefront::Wavefront( ConfigFile* cf, int section)
@@ -423,12 +436,24 @@ Wavefront::Wavefront( ConfigFile* cf, int section)
     PLAYER_ERROR("Wavefront must provide a Planner");
     this->SetError(-1);
     return;
+  } else {
+    if (this->AddInterface(this->device_addr) != 0)
+    {
+      this->SetError(-1);
+      return;
+    }
   }
   if (cf->ReadDeviceAddr(&this->offline_planner_id, section, "provides",
                          PLAYER_PLANNER_CODE, -1, "offline") != 0)
   {
     this->have_offline_planner = true;
     PLAYER_WARN("Wavefront providing offline planner");
+  } else {
+    if (this->AddInterface(this->offline_planner_id) != 0)
+    {
+      this->SetError(-1);
+      return;
+    }
   }
 
   // Can use a laser device
@@ -753,6 +778,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
     pts.points = (player_point_2d_t*)malloc(sizeof(player_point_2d_t)*
                                                    hitpt_cnt/2);
     assert(pts.points);
+
     pts.points_count = hitpt_cnt/2;
     pts.color.alpha = 0;
     pts.color.red = 255;
