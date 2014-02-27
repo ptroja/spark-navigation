@@ -211,7 +211,6 @@ driver
 
 #include <cstring>
 #include <cstddef>
-#include <cstdlib>
 #include <cassert>
 #include <cmath>
 #include <vector>
@@ -320,9 +319,9 @@ class Wavefront : public ThreadedDriver
     player_laser_data_scanpose_t* scans;
     int scans_count;
     int scans_idx;
-    double* scan_points;
-    int scan_points_size;
-    int scan_points_count;
+    std::vector<double> scan_points;
+    size_t scan_points_size;
+    size_t scan_points_count;
     
 
     // Do we have an offline planner
@@ -568,7 +567,7 @@ Wavefront::MainSetup()
 
     this->scans_idx = 0;
     this->scans_count = 0;
-    this->scan_points = NULL;
+    this->scan_points.clear();
     this->scan_points_size = 0;
     this->scan_points_count = 0;
   }
@@ -711,7 +710,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
 
   // run through the scans to see how much room we need to store all the
   // hitpoints
-  int hitpt_cnt=0;
+  size_t hitpt_cnt=0;
   player_laser_data_scanpose_t* scan = this->scans;
   for(int i=0;i<this->scans_count;i++,scan++)
     hitpt_cnt += scan->scan.ranges_count*2;
@@ -720,14 +719,13 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   if(this->scan_points_size < hitpt_cnt)
   {
     this->scan_points_size = hitpt_cnt;
-    this->scan_points = (double*)realloc(this->scan_points,
-                                         this->scan_points_size*sizeof(double));
-    assert(this->scan_points);
+    this->scan_points.clear();
+    this->scan_points.reserve(this->scan_points_size);
   }
 
   // project hit points from each scan
   scan = this->scans;
-  double* pts = this->scan_points;
+  double* pts = this->scan_points.data();
   this->scan_points_count = 0;
   for(int i=0;i<this->scans_count;i++,scan++)
   {
@@ -759,7 +757,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   }
 
   //printf("setting %d hit points\n", this->scan_points_count);
-  plan_set_obstacles(plan, this->scan_points, this->scan_points_count);
+  plan_set_obstacles(plan, this->scan_points.data(), this->scan_points_count);
 
   double t1 = get_time();
   //printf("ProcessLaserScan: %.6lf\n", t1-t0);
@@ -768,8 +766,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   {
     // Draw the points
     player_graphics2d_cmd_points pts;
-    pts.points =  new player_point_2d_t[hitpt_cnt/2];
-    assert(pts.points);
+    pts.points = new player_point_2d_t[hitpt_cnt/2];
 
     pts.points_count = hitpt_cnt/2;
     pts.color.alpha = 0;
