@@ -37,13 +37,13 @@
   #include <openssl/md5.h>
 #endif
 
-#include <assert.h>
-#include <math.h>
-#include <float.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
+#include <cassert>
+#include <cmath>
+#include <cfloat>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
 
 #include <libplayercommon/playercommon.h>
 
@@ -72,7 +72,7 @@ plan_t *plan_alloc(double abs_min_radius, double des_min_radius,
                    double max_radius, double dist_penalty,
                    double hysteresis_factor)
 {
-  plan_t *plan = calloc(1, sizeof(plan_t));
+  plan_t *plan = (plan_t *) calloc(1, sizeof(plan_t));
 
   plan->abs_min_radius = abs_min_radius;
   plan->des_min_radius = des_min_radius;
@@ -85,13 +85,13 @@ plan_t *plan_alloc(double abs_min_radius, double des_min_radius,
   assert(plan->heap);
 
   plan->path_size = 1000;
-  plan->path = calloc(plan->path_size, sizeof(plan->path[0]));
+  plan->path = (plan_cell_t **) calloc(plan->path_size, sizeof(plan->path[0]));
 
   plan->lpath_size = 100;
-  plan->lpath = calloc(plan->lpath_size, sizeof(plan->lpath[0]));
+  plan->lpath = (plan_cell_t **) calloc(plan->lpath_size, sizeof(plan->lpath[0]));
 
   plan->waypoint_size = 100;
-  plan->waypoints = calloc(plan->waypoint_size, sizeof(plan->waypoints[0]));
+  plan->waypoints = (plan_cell_t **) calloc(plan->waypoint_size, sizeof(plan->waypoints[0]));
   
   return plan;
 }

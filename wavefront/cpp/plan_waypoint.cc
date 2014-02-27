@@ -28,10 +28,10 @@
  * CVS: $Id: plan_waypoint.c 9120 2013-01-07 00:18:52Z jpgr87 $
 **************************************************************************/
 
-#include <assert.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
 
 #include <libplayercommon/playercommon.h>
 
@@ -64,8 +64,8 @@ void plan_update_waypoints(plan_t *plan, double px, double py)
     if (plan->waypoint_count >= plan->waypoint_size)
     {
       plan->waypoint_size *= 2;
-      plan->waypoints = realloc(plan->waypoints,
-                                plan->waypoint_size * sizeof(plan->waypoints[0]));
+      plan->waypoints = (plan_cell_t **) realloc(plan->waypoints,
+                                         plan->waypoint_size * sizeof(plan->waypoints[0]));
     }
     
     plan->waypoints[plan->waypoint_count++] = cell;

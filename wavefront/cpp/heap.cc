@@ -23,9 +23,9 @@
  * An implementation of a heap, as seen in "Introduction to Algorithms," by
  * Cormen, Leiserson, and Rivest, pages 140-152.
  */
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cassert>
+#include <cstdio>
 
 #include "heap.h"
 
@@ -34,13 +34,13 @@ heap_alloc(int size, heap_free_elt_fn_t free_fn)
 {
   heap_t* h;
 
-  h = calloc(1,sizeof(heap_t));
+  h = (heap_t *) calloc(1,sizeof(heap_t));
   assert(h);
   h->size = size;
   h->free_fn = free_fn;
-  h->A = calloc(h->size,sizeof(double));
+  h->A = (double *) calloc(h->size,sizeof(double));
   assert(h->A);
-  h->data = calloc(h->size,sizeof(void*));
+  h->data = (void **) calloc(h->size,sizeof(void*));
   assert(h->data);
   h->len = 0;
 
@@ -117,9 +117,9 @@ heap_insert(heap_t* h, double key, void* data)
   if(h->len == h->size)
   {
     h->size *= 2;
-    h->A = realloc(h->A, h->size * sizeof(double));
+    h->A = (double *) realloc(h->A, h->size * sizeof(double));
     assert(h->A);
-    h->data = realloc(h->data, h->size * sizeof(void*));
+    h->data = (void **) realloc(h->data, h->size * sizeof(void*));
     assert(h->data);
   }
 

@@ -27,12 +27,12 @@
  * CVS: $Id: plan_plan.c 9120 2013-01-07 00:18:52Z jpgr87 $
 **************************************************************************/
 
-#include <assert.h>
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
-#include <float.h>
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <climits>
+#include <cfloat>
 
 #if defined (WIN32)
   #include <replace/replace.h>
@@ -382,7 +382,7 @@ plan_cell_t *plan_pop(plan_t *plan)
   if(heap_empty(plan->heap))
     return(NULL);
   else
-    return(heap_extract_max(plan->heap));
+    return((plan_cell_t *) heap_extract_max(plan->heap));
 }
 
 double 

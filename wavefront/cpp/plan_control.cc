@@ -20,10 +20,10 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cmath>
+#include <cassert>
 
 #include "plan.h"
 
@@ -42,7 +42,7 @@ plan_check_done(plan_t* plan,
 {
   double dt, da;
   dt = sqrt((gx-lx)*(gx-lx) + (gy-ly)*(gy-ly));
-  da = fabs(_angle_diff(ga,la));
+  da = std::abs(_angle_diff(ga,la));
 
   if((dt < goal_d) && (da < goal_a))
     return(1);
