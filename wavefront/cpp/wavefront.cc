@@ -281,7 +281,7 @@ class Wavefront : public ThreadedDriver
     // current odom pose
     player_pose2d_t position;
     // current list of waypoints
-    double (*waypoints)[2];
+    player_point_2d_t *waypoints;
     size_t waypoint_count;
     size_t waypoints_allocated;
     // current localize pose
@@ -350,7 +350,7 @@ class Wavefront : public ThreadedDriver
     void ProcessLaserScan(player_laser_data_scanpose_t* data);
     void ProcessLocalizeData(const player_position2d_data_t & data);
     void ProcessPositionData(const player_position2d_data_t & data);
-    void ProcessMapInfo(player_map_info_t* info);
+    void ProcessMapInfo(const player_map_info_t & info);
 
     enum POSITION_CMD_TYPE { VELOCITY_CMD, POSITION_CMD };
 
@@ -538,7 +538,7 @@ Wavefront::MainSetup()
 
   this->waypoint_count = 0;
   this->waypoints_allocated = 8;
-  this->waypoints = (double (*)[2])malloc(this->waypoints_allocated *
+  this->waypoints = (player_point_2d_t *)malloc(this->waypoints_allocated *
                                           sizeof(this->waypoints[0]));
 
   if(SetupPosition() < 0)
@@ -804,15 +804,15 @@ Wavefront::ProcessPositionData(const player_position2d_data_t & data)
 }
 
 void
-Wavefront::ProcessMapInfo(player_map_info_t* info)
+Wavefront::ProcessMapInfo(const player_map_info_t & info)
 {
   // Got new map info pushed to us.  We'll save this info and get the new
   // map.
-  this->plan->scale = info->scale;
-  this->plan->size_x = info->width;
-  this->plan->size_y = info->height;
-  this->plan->origin_x = info->origin.px;
-  this->plan->origin_y = info->origin.py;
+  this->plan->scale = info.scale;
+  this->plan->size_x = info.width;
+  this->plan->size_y = info.height;
+  this->plan->origin_x = info.origin.px;
+  this->plan->origin_y = info.origin.py;
 
   // Now get the map data, possibly in separate tiles.
   if(this->GetMap(true) < 0)
@@ -1183,7 +1183,7 @@ void Wavefront::Main()
         {
           if (this->plan->waypoint_count > this->waypoints_allocated)
           {
-            this->waypoints = (double (*)[2])realloc(this->waypoints, sizeof(this->waypoints[0])*this->plan->waypoint_count);
+            this->waypoints = (player_point_2d_t *)realloc(this->waypoints, sizeof(this->waypoints[0])*this->plan->waypoint_count);
             this->waypoints_allocated = this->plan->waypoint_count;
           }
           this->waypoint_count = this->plan->waypoint_count;
@@ -1197,8 +1197,8 @@ void Wavefront::Main()
             plan_convert_waypoint(this->plan,
                                   this->plan->waypoints[i],
                                   &wx, &wy);
-            this->waypoints[i][0] = wx;
-            this->waypoints[i][1] = wy;
+            this->waypoints[i].px = wx;
+            this->waypoints[i].py = wy;
           }
 
           this->curr_waypoint = 0;
@@ -1272,10 +1272,10 @@ void Wavefront::Main()
             // Establish fake waypoints, for client-side visualization
             this->curr_waypoint = 0;
             this->waypoint_count = 2;
-            this->waypoints[0][0] = this->localize.px;
-            this->waypoints[0][1] = this->localize.py;
-            this->waypoint.px = this->waypoints[1][0] = wx;
-            this->waypoint.py = this->waypoints[1][1] = wy;
+            this->waypoints[0].px = this->localize.px;
+            this->waypoints[0].py = this->localize.py;
+            this->waypoint.px = this->waypoints[1].px = wx;
+            this->waypoint.py = this->waypoints[1].py = wy;
             this->waypoint.pa = 0.0;
 
             double goald = hypot(this->localize.px-this->target.px,
@@ -1380,8 +1380,8 @@ void Wavefront::Main()
             continue;
           }
           // get next waypoint
-          this->waypoint.px = this->waypoints[this->curr_waypoint][0];
-          this->waypoint.py = this->waypoints[this->curr_waypoint][1];
+          this->waypoint.px = this->waypoints[this->curr_waypoint].px;
+          this->waypoint.py = this->waypoints[this->curr_waypoint].py;
           this->curr_waypoint++;
 
           this->waypoint.pa = this->target.pa;
@@ -1808,8 +1808,8 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
     for(int i=0;i<(int)reply.waypoints_count;i++)
     {
       // copy waypoint for length computation
-      double px = reply.waypoints[i].px = this->waypoints[i][0];
-      double py = reply.waypoints[i].py = this->waypoints[i][1];
+      double px = reply.waypoints[i].px = this->waypoints[i].px;
+      double py = reply.waypoints[i].py = this->waypoints[i].py;
       reply.waypoints[i].pa = 0.0;
       if(i != 0) 
       {
@@ -1904,7 +1904,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
       PLAYER_ERROR("incorrect size for map info");
       return(-1);
     }
-    //this->ProcessMapInfo((player_map_info_t*)data);
+    //this->ProcessMapInfo(*(player_map_info_t*)data);
     this->new_map_available = true;
     return(0);
   }
