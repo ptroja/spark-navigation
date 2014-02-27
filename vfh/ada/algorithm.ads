@@ -81,11 +81,6 @@ package Algorithm is
    type Sectors_Vector is array (Hist_Index) of Integer;
       -- Integer_Vector.Vector (360 / MINIMAL_SECTOR_ANGLE);
 
-   type Cell_Sectors is array (Integer range <>,   -- NUM_CELL_SECTOR_TABLES
-                               Integer range <>,   -- WINDOW_DIAMETER
-                               Integer range <>    -- WINDOW_DIAMETER
-                              ) of Sectors_Vector; -- (360 / SECTOR_ANGLE)
-
    subtype Cell_Direction_t is Float range -180.0 .. +180.0;
 
 
@@ -141,6 +136,11 @@ package Algorithm is
    type History_Array is array (0 .. HIST_LAST) of Float;
    type Cell_Array is array (0 .. WINDOW_DIAMETER_LAST, 0 .. WINDOW_DIAMETER_LAST)
                              of Float;
+   type Cell_Sectors is array (0 .. CELL_SECTOR_TABLES_LAST,   -- NUM_CELL_SECTOR_TABLES
+                               0 .. WINDOW_DIAMETER_LAST,   -- WINDOW_DIAMETER
+                               0 .. WINDOW_DIAMETER_LAST    -- WINDOW_DIAMETER
+                              ) of Sectors_Vector; -- (360 / SECTOR_ANGLE)
+
    type VFH  is
       record
 
@@ -186,35 +186,26 @@ package Algorithm is
          Blocked_Circle_Radius : Float;
 
          -- FIXME: these are Float(WINDOW_DIAMETER,WINDOW_DIAMETER).
-         Cell_Direction : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
-                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
-         Cell_Base_Mag  : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
-                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
-         Cell_Mag       : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
-                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
-         Cell_Dist      : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
-                                      Integer range 0 .. WINDOW_DIAMETER_LAST); -- non-negative float.
-         Cell_Enlarge   : Cell_Array (Integer range 0 .. WINDOW_DIAMETER_LAST,
-                                      Integer range 0 .. WINDOW_DIAMETER_LAST);
+         Cell_Direction : Cell_Array ;
+         Cell_Base_Mag  : Cell_Array ;
+         Cell_Mag       : Cell_Array ;
+         Cell_Dist      : Cell_Array ; -- non-negative float.
+         Cell_Enlarge   : Cell_Array ;
 
          -- Cell_Sector[x][y] is a vector of indices to sectors that are effected if cell (x,y) contains
          -- an obstacle.
          -- Cell enlargement is taken into account.
          -- Acess as: Cell_Sector[speed_index][x][y][sector_index]
-         Cell_Sector : Cell_Sectors (
-                                     Integer range 0 .. CELL_SECTOR_TABLES_LAST,
-                                     Integer range 0 .. WINDOW_DIAMETER_LAST,
-                                     Integer range 0 .. WINDOW_DIAMETER_LAST
-                                    );
+         Cell_Sector : Cell_Sectors ;
 
-         Last_Binary_Hist : History_Array (Integer range 0 .. HIST_LAST) := (others => 1.0);
+         Last_Binary_Hist : History_Array := (others => 1.0);
 
          -- Minimum turning radius at different speeds, in millimeters
-         Min_Turning_Radius : array (Speed_Index) of Integer;
+         Min_Turning_Radius : array (0 .. 2000) of Integer; -- Speed_Index
             -- Speed_Vector.Vector (MIN_TURNING_VECTOR_CAPACITY); -- MAX_SPEED+1 is size.
 
          -- Keep track of last update, so we can monitor acceleration
-         last_update_time : Ada.Real_Time.Time := Ada.Real_Time.Clock;
+         -- last_update_time : Ada.Real_Time.Time := Ada.Real_Time.Clock;
 
          last_chosen_speed : Speed_Index := 0;
       end record;
@@ -229,8 +220,8 @@ package Algorithm is
    --  - goal_distance_tolerance in mm.
    --
 
-   type Laser_Range is array (Integer range 0 .. 360,
-                              Integer range 0 .. 1) of Float;
+   type Laser_Range is array (0 .. 360,
+                              0 .. 1) of Float;
 
    procedure Update (This : in out VFH;
                      laser_ranges : Laser_Range;
@@ -252,16 +243,16 @@ package Algorithm is
    function GetCurrentMaxSpeed (This : VFH) return Integer;
 
    -- Set methods
-   procedure SetRobotRadius (This : in out VFH; robot_radius : Formal.Numerics.NonNegative_Float);
+   procedure SetRobotRadius (This : in out VFH; robot_radius : Float);
    procedure SetMinTurnrate (This : in out VFH; min_turnrate : Integer);
 
-   pragma Export (Cpp, Init, "Init");
-   pragma Export (CPP, Update, "Update_VFH");
-   pragma Export (CPP, GetMinTurnrate, "GetMinTurnrate");
-   pragma Export (CPP, GetMaxTurnrate, "GetMaxTurnrate");
-   pragma Export (CPP, GetCurrentMaxSpeed, "GetCurrentMaxSpeed");
-   pragma Export (CPP, SetRobotRadius, "SetRobotRadius");
-   pragma Export (CPP, SetMinTurnrate, "SetMinTurnrate");
+   -- pragma Export (Cpp, Init, "Init");
+   -- pragma Export (CPP, Update, "Update_VFH");
+   -- pragma Export (CPP, GetMinTurnrate, "GetMinTurnrate");
+   -- pragma Export (CPP, GetMaxTurnrate, "GetMaxTurnrate");
+   -- pragma Export (CPP, GetCurrentMaxSpeed, "GetCurrentMaxSpeed");
+   -- pragma Export (CPP, SetRobotRadius, "SetRobotRadius");
+   -- pragma Export (CPP, SetMinTurnrate, "SetMinTurnrate");
 
    -- The Histogram.
    -- This is public so that monitoring tools can get at it; it shouldn't
@@ -270,7 +261,7 @@ package Algorithm is
    -- float *Hist;
    -- function Get_Histogram (This : VFH) return array (<>) of Float;
 
-private
+-- private
 
    -- Methods
 
@@ -326,33 +317,7 @@ private
    function Get_Binary_Hist_Low (This : VFH; speed : Integer) return Float;
    function Get_Binary_Hist_High (This : VFH; speed : Integer) return Float;
 
-   function VFH_Predicate (This : VFH) return Boolean is
-     (This.HIST_SIZE = Integer (This.HIST_COUNT) and then
-      This.HIST_LAST = This.HIST_SIZE - 1 and then
-      This.Hist'Last = This.Last_Binary_Hist'Last and then
-      This.Hist'Last = This.HIST_LAST and then
-
-      -- Speed_Vector.Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY and then
-      Integer (This.MIN_TURNING_VECTOR_CAPACITY) - 1 = This.MAX_SPEED and then
-
-      This.CENTER_X = (This.WINDOW_DIAMETER_LAST + 1) / 2 and then
-      This.CENTER_Y = This.CENTER_X and then
-
-      This.Cell_Direction'Last (1) = This.WINDOW_DIAMETER_LAST and then
-      This.Cell_Direction'Last (1) = This.Cell_Base_Mag'Last (1) and then
-      This.Cell_Direction'Last (1) = This.Cell_Mag'Last (1) and then
-      This.Cell_Direction'Last (1) = This.Cell_Dist'Last (1) and then
-      This.Cell_Direction'Last (1) = This.Cell_Enlarge'Last (1) and then
-
-      This.Cell_Direction'Last (2) = This.WINDOW_DIAMETER_LAST and then
-      This.Cell_Direction'Last (2) = This.Cell_Base_Mag'Last (2) and then
-      This.Cell_Direction'Last (2) = This.Cell_Mag'Last (2) and then
-      This.Cell_Direction'Last (2) = This.Cell_Dist'Last (2) and then
-      This.Cell_Direction'Last (2) = This.Cell_Enlarge'Last (2) and then
-
-      This.CELL_SECTOR_TABLES_LAST = This.Cell_Sector'Last (1) and then
-      This.Cell_Direction'Last (1) = This.Cell_Sector'Last (2) and then
-      This.Cell_Direction'Last (2) = This.Cell_Sector'Last (3));
+   function VFH_Predicate (This : VFH) return Boolean;
    -- with
    -- Convention => Ghost;
 

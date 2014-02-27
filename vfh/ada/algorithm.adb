@@ -3,10 +3,10 @@ use Utils;
 
 package body Algorithm is
 
-   M_PI : constant := Formal.Numerics.Pi;
+   M_PI : constant := Utils.Pi;
 
-   use Integer_Vector;
-   use Speed_Vector;
+   -- use Integer_Vector;
+   -- use Speed_Vector;
 
    -- procedure Tab is
    -- begin
@@ -1154,4 +1154,33 @@ package body Algorithm is
       return This.BINARY_HIST_HIGH_0MS - Float (speed) * (This.BINARY_HIST_HIGH_0MS - This.BINARY_HIST_HIGH_1MS) / 1000.0;
    end Get_Binary_Hist_High;
 
+   function VFH_Predicate (This : VFH) return Boolean is
+   begin
+     return (This.HIST_SIZE = Integer (This.HIST_COUNT) and then
+      This.HIST_LAST = This.HIST_SIZE - 1 and then
+      This.Hist'Last = This.Last_Binary_Hist'Last and then
+      This.Hist'Last = This.HIST_LAST and then
+
+      -- Speed_Vector.Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY and then
+      Integer (This.MIN_TURNING_VECTOR_CAPACITY) - 1 = This.MAX_SPEED and then
+
+      This.CENTER_X = (This.WINDOW_DIAMETER_LAST + 1) / 2 and then
+      This.CENTER_Y = This.CENTER_X and then
+
+      This.Cell_Direction'Last (1) = This.WINDOW_DIAMETER_LAST and then
+      This.Cell_Direction'Last (1) = This.Cell_Base_Mag'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Mag'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Dist'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Enlarge'Last (1) and then
+
+      This.Cell_Direction'Last (2) = This.WINDOW_DIAMETER_LAST and then
+      This.Cell_Direction'Last (2) = This.Cell_Base_Mag'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Mag'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Dist'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Enlarge'Last (2) and then
+
+      This.CELL_SECTOR_TABLES_LAST = This.Cell_Sector'Last (1) and then
+      This.Cell_Direction'Last (1) = This.Cell_Sector'Last (2) and then
+      This.Cell_Direction'Last (2) = This.Cell_Sector'Last (3));
+   end VFH_Predicate;
 end Algorithm;
