@@ -282,8 +282,6 @@ class Wavefront : public ThreadedDriver
     player_pose2d_t position;
     // current waypoints
     std::vector<player_point_2d_t> waypoints;
-    size_t waypoint_count;
-    size_t waypoints_allocated;
     // current localize pose
     player_pose2d_t localize;
     // have we told the underlying position device to stop?
@@ -320,9 +318,9 @@ class Wavefront : public ThreadedDriver
     int scans_count;
     int scans_idx;
     std::vector<double> scan_points;
+    // TODO: remove _size and _count and use only std::vector
     size_t scan_points_size;
     size_t scan_points_count;
-    
 
     // Do we have an offline planner
     bool have_offline_planner;
@@ -535,10 +533,6 @@ Wavefront::MainSetup()
   this->curr_waypoint = -1;
 
   this->new_goal = false;
-
-  this->waypoint_count = 0;
-  this->waypoints_allocated = 8;
-  this->waypoints.reserve(this->waypoints_allocated);
 
   if(SetupPosition() < 0)
     return(-1);
@@ -833,12 +827,12 @@ Wavefront::PutPlannerData()
 
   memset(&data,0,sizeof(data));
 
-  if(this->waypoint_count > 0)
-    data.valid = 1;
-  else
+  if(this->waypoints.empty())
     data.valid = 0;
+  else
+    data.valid = 1;
 
-  if((this->waypoint_count > 0) && (this->curr_waypoint < 0))
+  if((!this->waypoints.empty()) && (this->curr_waypoint < 0))
     data.done = 1;
   else
     data.done = 0;
@@ -853,7 +847,7 @@ Wavefront::PutPlannerData()
     data.waypoint = this->waypoint;
 
     data.waypoint_idx = this->curr_waypoint;
-    data.waypoints_count = this->waypoint_count;
+    data.waypoints_count = this->waypoints.size();
   }
 
   this->Publish(this->device_addr,
@@ -1172,28 +1166,20 @@ void Wavefront::Main()
           {
             //this->curr_waypoint = -1;
             this->new_goal=false;
-            this->waypoint_count = 0;
+            this->waypoints.clear();
           }
         }
         else
         {
-          if (this->plan->waypoint_count > this->waypoints_allocated)
-          {
-        	this->waypoints.clear();
-            this->waypoints.resize(this->plan->waypoint_count);
-            this->waypoints_allocated = this->plan->waypoint_count;
-          }
-          this->waypoint_count = this->plan->waypoint_count;
-
+          this->waypoints.clear();
 
           for(int i=0;i<this->plan->waypoint_count;i++)
           {
-            double wx, wy;
+            player_point_2d_t w;
             plan_convert_waypoint(this->plan,
                                   this->plan->waypoints[i],
-                                  &wx, &wy);
-            this->waypoints[i].px = wx;
-            this->waypoints[i].py = wy;
+                                  &w.px, &w.py);
+            this->waypoints.push_back(w);
           }
 
           this->curr_waypoint = 0;
@@ -1267,7 +1253,7 @@ void Wavefront::Main()
 
             // Establish fake waypoints, for client-side visualization
             this->curr_waypoint = 0;
-            this->waypoint_count = 2;
+            this->waypoints.resize(2);
             this->waypoints[0].px = this->localize.px;
             this->waypoints[0].py = this->localize.py;
             this->waypoint.px = this->waypoints[1].px = wx;
@@ -1367,7 +1353,7 @@ void Wavefront::Main()
              < M_PI/4.0)) ||
            (!rotate_waypoint && (dist < this->dist_eps)))
         {
-          if(this->curr_waypoint == this->waypoint_count)
+          if(this->curr_waypoint == this->waypoints.size())
           {
             // no more waypoints, so wait for target achievement
 
@@ -1624,9 +1610,9 @@ Wavefront::GetMapInfo(bool threaded)
 {
   Message* msg;
   if(!(msg = this->map_dev->Request(this->InQueue,
-                                      PLAYER_MSGTYPE_REQ,
-                                      PLAYER_MAP_REQ_GET_INFO,
-                                      NULL, 0, NULL, threaded)))
+                                    PLAYER_MSGTYPE_REQ,
+                                    PLAYER_MAP_REQ_GET_INFO,
+                                    NULL, 0, NULL, threaded)))
   {
     PLAYER_WARN("failed to get map info");
     this->plan->scale = 0.1;
@@ -1797,8 +1783,8 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
   {
     player_planner_waypoints_req_t reply;
 
-    reply.waypoints_count = this->waypoint_count;
-    reply.waypoints = new player_pose2d_t[this->waypoint_count];
+    reply.waypoints_count = this->waypoints.size();
+    reply.waypoints = new player_pose2d_t[this->waypoints.size()];
     double distance = 0.0;
     player_point_2d_t last_p;
     for(int i=0;i<(int)reply.waypoints_count;i++)
