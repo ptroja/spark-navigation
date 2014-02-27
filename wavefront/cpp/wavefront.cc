@@ -214,6 +214,7 @@ driver
 #include <cstdlib>
 #include <cassert>
 #include <cmath>
+#include <vector>
 
 #ifndef WIN32
   #include <unistd.h>
@@ -280,8 +281,8 @@ class Wavefront : public ThreadedDriver
     bool new_goal;
     // current odom pose
     player_pose2d_t position;
-    // current list of waypoints
-    player_point_2d_t *waypoints;
+    // current waypoints
+    std::vector<player_point_2d_t> waypoints;
     size_t waypoint_count;
     size_t waypoints_allocated;
     // current localize pose
@@ -538,8 +539,7 @@ Wavefront::MainSetup()
 
   this->waypoint_count = 0;
   this->waypoints_allocated = 8;
-  this->waypoints = (player_point_2d_t *)malloc(this->waypoints_allocated *
-                                          sizeof(this->waypoints[0]));
+  this->waypoints.reserve(this->waypoints_allocated);
 
   if(SetupPosition() < 0)
     return(-1);
@@ -597,8 +597,7 @@ Wavefront::MainQuit()
     this->offline_plan = NULL;
   }
 
-  free(this->waypoints);
-  this->waypoints = NULL;
+  this->waypoints.clear();
 
   ShutdownPosition();
   ShutdownLocalize();
@@ -655,7 +654,7 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
   // - waypoints
   if((reply->waypoints_count = this->offline_plan->waypoint_count))
   {
-    reply->waypoints = (player_pose2d_t*)calloc(sizeof(reply->waypoints[0]),reply->waypoints_count);
+    reply->waypoints = new player_pose2d_t[reply->waypoints_count];
 
     double distance = 0.0;
     player_point_2d_t last_w;
@@ -1183,14 +1182,13 @@ void Wavefront::Main()
         {
           if (this->plan->waypoint_count > this->waypoints_allocated)
           {
-            this->waypoints = (player_point_2d_t *)realloc(this->waypoints, sizeof(this->waypoints[0])*this->plan->waypoint_count);
+        	this->waypoints.clear();
+            this->waypoints.resize(this->plan->waypoint_count);
             this->waypoints_allocated = this->plan->waypoint_count;
           }
           this->waypoint_count = this->plan->waypoint_count;
-        }
 
-        if(this->plan->waypoint_count > 0)
-        {
+
           for(int i=0;i<this->plan->waypoint_count;i++)
           {
             double wx, wy;
@@ -1205,6 +1203,7 @@ void Wavefront::Main()
           // Why is this here?
           this->new_goal = true;
         }
+
         last_replan_time = t;
         last_replan.px = this->localize.px;
         last_replan.py = this->localize.py;
@@ -1862,7 +1861,7 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
                   PLAYER_PLANNER_REQ_GET_WAYPOINTS,
                   (void*)&reply);
     if(reply.waypoints)
-      free(reply.waypoints);
+      delete [] reply.waypoints;
     return(0);
   }
   // Is it a request to enable or disable the planner?
