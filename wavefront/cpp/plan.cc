@@ -255,15 +255,14 @@ plan_t *plan_copy(plan_t *plan)
 // Initialize the plan
 void plan_init(plan_t *plan)
 {
-  int i, j;
   plan_cell_t *cell;
 
   printf("scale: %.3lf\n", plan->scale);
 
   cell = plan->cells;
-  for (j = 0; j < plan->size_y; j++)
+  for (int j = 0; j < plan->size_y; j++)
   {
-    for (i = 0; i < plan->size_x; i++, cell++)
+    for (int i = 0; i < plan->size_x; i++, cell++)
     {
       cell->ci = i;
       cell->cj = j;
@@ -288,10 +287,9 @@ void plan_init(plan_t *plan)
 // Reset the plan
 void plan_reset(plan_t *plan)
 {
-  int i, j;
-  for (j = plan->min_y; j <= plan->max_y; j++)
+  for (int j = plan->min_y; j <= plan->max_y; j++)
   {
-    for (i = plan->min_x; i <= plan->max_x; i++)
+    for (int i = plan->min_x; i <= plan->max_x; i++)
     {
       plan_cell_t *cell = plan->cells + PLAN_INDEX(plan,i,j);
       cell->plan_cost = PLAN_MAX_COST;
@@ -409,27 +407,25 @@ plan_set_bbox(plan_t* plan, double padding, double min_size,
 void
 plan_compute_cspace(plan_t* plan)
 {
-  int j, i;
-  int dj, di;
   puts("Generating C-space....");
 
-  for (j = plan->min_y; j <= plan->max_y; j++)
+  for (int j = plan->min_y; j <= plan->max_y; j++)
   {
     plan_cell_t *cell = plan->cells + PLAN_INDEX(plan, 0, j);
-    for (i = plan->min_x; i <= plan->max_x; i++, cell++)
+    for (int i = plan->min_x; i <= plan->max_x; i++, cell++)
     {
       if (cell->occ_state < 0)
         continue;
 
       float *p = plan->dist_kernel;
-      for (dj = -plan->dist_kernel_width/2; 
-           dj <= plan->dist_kernel_width/2; 
-           dj++)
+      for (int dj = -plan->dist_kernel_width/2;
+               dj <= plan->dist_kernel_width/2;
+               dj++)
       {
         plan_cell_t *ncell = cell + -plan->dist_kernel_width/2 + dj*plan->size_x;
-        for (di = -plan->dist_kernel_width/2;
-             di <= plan->dist_kernel_width/2; 
-             di++, p++, ncell++)
+        for (int di = -plan->dist_kernel_width/2;
+                 di <= plan->dist_kernel_width/2;
+                 di++, p++, ncell++)
         {
           if(!PLAN_VALID_BOUNDS(plan,i+di,j+dj))            
             continue;
