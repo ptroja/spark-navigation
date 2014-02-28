@@ -41,7 +41,11 @@ package body Algorithm is
    begin
       case Half is
          when Inclusive =>
-            return (if Size = 1 then 0 else (Size - 1) / 2 + 1);
+            if Size = 1 then
+               return 0;
+            else
+               return (Size - 1) / 2 + 1;
+            end if;
          when Exclusive =>
             return (Size - 1) / 2;
       end case;
@@ -50,16 +54,12 @@ package body Algorithm is
    ----------
    -- Init --
    ----------
-
-   procedure Init (This : in out VFH) is
-      pragma Spark_Mode (Off);
-      -- function Cell_Direction (X, Y : Integer) return Float with Pre => X in This.Cell_Mag'Range (1) and then Y in This.Cell_Mag'Range (2);
-      function Cell_Direction (X, Y : Integer) return Float is
+      function Init_Cell_Direction (This : in out VFH; X, Y : Integer) return Float is
          val : Float;
-      begin pragma Assume (VFH_Predicate (This));
+      begin -- pragma Assume (VFH_Predicate (This));
          if X < This.CENTER_X then
             if Y < This.CENTER_Y then
-               val := Arctan (Float (This.CENTER_Y - Y) / Float (This.CENTER_X - X));
+               val := Utils.Arctan (Float (This.CENTER_Y - Y) / Float (This.CENTER_X - X));
                val := val * (360.0 / (2.0 * M_PI));
                val := 180.0 - val;
             elsif Y = This.CENTER_Y then
@@ -90,18 +90,20 @@ package body Algorithm is
             end if;
          end if;
          return val;
-      end Cell_Direction;
+      end Init_Cell_Direction;
 
-      procedure SetCurrentMaxSpeed is
+      procedure Init_SetCurrentMaxSpeed(This : in out VFH) is
       begin
-         pragma Assert (VFH_Predicate (This));
+         -- pragma Assert (VFH_Predicate (This));
          This.Current_Max_Speed := This.MAX_SPEED;
 
          -- This should always succeed.
-         Reserve_Capacity (This.Min_Turning_Radius,
-                           Ada.Containers.Count_Type (This.Current_Max_Speed) + 1);
+         -- Reserve_Capacity (This.Min_Turning_Radius,
+         --                   Ada.Containers.Count_Type (This.Current_Max_Speed) + 1);
          -- Instead of C++'s resize and set, in Ada we clear and append.
-         Clear (This.Min_Turning_Radius);
+         -- Clear (This.Min_Turning_Radius);
+         This.Min_Turning_Radius := (others => 0);
+         This.Min_Turning_Radius_length := 0;
 
          -- small chunks of forward movements and turns-in-place used to
          -- estimate turning radius, coz I'm too lazy to screw around with limits -> 0.
@@ -113,24 +115,29 @@ package body Algorithm is
          -- WARNING: This assumes that the max_turnrate that has been set for VFH is
          --          accurate.
          --
-         pragma Assert (Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY);
-         for x in Integer range 0 .. This.Current_Max_Speed loop
-            pragma Loop_Invariant (Length (This.Min_Turning_Radius) = Ada.Containers.Count_Type (x) and then
-                                   Capacity (This.Min_Turning_Radius) = Capacity (This.Min_Turning_Radius)'Loop_Entry);
+         -- pragma Assert (Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY);
+         for x in 0 .. This.Current_Max_Speed loop
+            --pragma Loop_Invariant (This.Min_Turning_Radius_Length = x and then
+            --                       Capacity (This.Min_Turning_Radius) = Capacity (This.Min_Turning_Radius)'Loop_Entry);
             declare
                dx : constant Float := Float (x) / 1.0e6; -- dx in m/millisec
                dtheta : constant Float := ((M_PI / 180.0) * Float (GetMaxTurnrate (This, x))) / 1000.0; -- dTheta in radians/millisec
-               val : constant Integer := Integer (((dx / Tan (dtheta)) * 1000.0) * This.MIN_TURN_RADIUS_SAFETY_FACTOR); -- in mm
+               val : constant Integer := Integer (((dx / Utils.Tan (dtheta)) * 1000.0) * This.MIN_TURN_RADIUS_SAFETY_FACTOR); -- in mm
             begin
-               pragma Assert_And_Cut (True);
-               Append (This.Min_Turning_Radius, val);
+               -- pragma Assert_And_Cut (True);
+               This.Min_Turning_Radius(This.Min_Turning_Radius_Length) := val;
+               This.Min_Turning_Radius_Length := This.Min_Turning_Radius_Length + 1;
+               -- Append (This.Min_Turning_Radius, val);
             end;
          end loop;
-      end SetCurrentMaxSpeed;
+      end Init_SetCurrentMaxSpeed;
+
+   procedure Init (This : in out VFH) is
+      -- function Cell_Direction (X, Y : Integer) return Float with Pre => X in This.Cell_Mag'Range (1) and then Y in This.Cell_Mag'Range (2);
    begin
       pragma Assume (VFH_Predicate (This));
 
-      SetCurrentMaxSpeed;
+      Init_SetCurrentMaxSpeed(This);
 
       -- For the following calcs:
       --   - (x,y) = (0,0)   is to the front-left of the robot
@@ -142,7 +149,7 @@ package body Algorithm is
             This.Cell_Dist (x, y) := Hypot (Float (This.CENTER_X - x), Float (This.CENTER_Y - y)) * This.CELL_WIDTH;
             This.Cell_Base_Mag (x, y) := ((3000.0 - This.Cell_Dist (x, y))**4) / 100000000.0;
 
-            This.Cell_Direction (x, y) := Cell_Direction (x, y);
+            This.Init_Cell_Direction (This, x, y) := Init_Cell_Direction (This, x, y);
 
             -- For the case where we have a speed-dependent safety_dist, calculate all tables
             for cell_sector_tablenum in This.Cell_Sector'Range (1) loop
@@ -181,8 +188,8 @@ package body Algorithm is
 
                   if Cell_Enlarge_OK then
                      declare
-                        plus_dir : constant Float := This.Cell_Direction (x, y) + This.Cell_Enlarge (x, y);
-                        neg_dir  : constant Float := This.Cell_Direction (x, y) - This.Cell_Enlarge (x, y);
+                        plus_dir : constant Float := This.Init_Cell_Direction (This, x, y) + This.Cell_Enlarge (x, y);
+                        neg_dir  : constant Float := This.Init_Cell_Direction (This, x, y) - This.Cell_Enlarge (x, y);
                      begin
                         pragma Assert (Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
                         for i in Integer range 0 .. (360 / This.SECTOR_ANGLE) - W1 loop
@@ -694,8 +701,8 @@ package body Algorithm is
       -- center_x_[left|right] is the centre of the circles on either side that
       -- are blocked due to the robot's dynamics.  Units are in cells, in the robot's
       -- local coordinate system (+y is forward).
-      center_x_right : constant Float := Float (This.CENTER_X) + (Float (Element (This.Min_Turning_Radius, speed)) / This.CELL_WIDTH);
-      center_x_left  : constant Float := Float (This.CENTER_X) - (Float (Element (This.Min_Turning_Radius, speed)) / This.CELL_WIDTH);
+      center_x_right : constant Float := Float (This.CENTER_X) + (Float (This.Min_Turning_Radius(speed)) / This.CELL_WIDTH);
+      center_x_left  : constant Float := Float (This.CENTER_X) - (Float (This.Min_Turning_Radius(speed)) / This.CELL_WIDTH);
       center_y       : constant Float := Float (This.CENTER_Y);
 
       dist_r, dist_l : Float;
@@ -707,7 +714,7 @@ package body Algorithm is
       angle : Float;
    begin
       pragma Assume (VFH_Predicate (This));
-      This.Blocked_Circle_Radius := Float (Element (This.Min_Turning_Radius, speed)) + This.ROBOT_RADIUS + Float (Get_Safety_Dist (This, speed));
+      This.Blocked_Circle_Radius := Float (This.Min_Turning_Radius(speed)) + This.ROBOT_RADIUS + Float (Get_Safety_Dist (This, speed));
       --
       -- This loop fixes phi_left and phi_right so that they go through the inside-most
       -- occupied cells inside the left/right circles.  These circles are centred at the

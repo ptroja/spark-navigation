@@ -202,6 +202,7 @@ package Algorithm is
 
          -- Minimum turning radius at different speeds, in millimeters
          Min_Turning_Radius : array (0 .. 2000) of Integer; -- Speed_Index
+         Min_Turning_Radius_length : Integer := 0;
             -- Speed_Vector.Vector (MIN_TURNING_VECTOR_CAPACITY); -- MAX_SPEED+1 is size.
 
          -- Keep track of last update, so we can monitor acceleration

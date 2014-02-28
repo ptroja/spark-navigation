@@ -17,4 +17,14 @@ package body Utils is
    begin
      return Elem_Fun.sqrt(X*X + Y*Y);
    end Hypot;
+
+   function Arctan (X : Float) return Float is
+   begin
+     return Elem_Fun.Arctan(X);
+   end Arctan;
+
+   function Tan (X : Float) return Float is
+   begin
+     return Elem_Fun.Tan(X);
+   end Arctan;
 end Utils;
