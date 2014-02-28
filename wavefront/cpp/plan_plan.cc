@@ -173,7 +173,8 @@ plan_t::update_plan(double lx, double ly, double gx, double gy)
   float old_occ_dist;
 
   // Reset the queue
-  heap_reset(heap);
+  // TODO: use C++11 swap with empty heap.
+  while(!heap.empty()) heap.pop();
 
   // Initialize the goal cell
   gi = PLAN_GXWX(this, gx);
@@ -363,18 +364,20 @@ void plan_t::push(plan_cell_t *cell)
   // element.  This could of course be changed.
   assert(PLAN_MAX_COST-cell->plan_cost > 0);
   cell->mark = 1;
-  heap_insert(heap, PLAN_MAX_COST - cell->plan_cost, cell);
+  heap.push(cell);
 }
 
 
 // Pop a plan location from the queue
 plan_cell_t *plan_t::pop()
 {
-
-  if(heap_empty(heap))
+  if(heap.empty())
     return(NULL);
-  else
-    return((plan_cell_t *) heap_extract_max(heap));
+  else {
+	plan_cell_t * top = heap.top();
+	heap.pop();
+    return top;
+  }
 }
 
 double 

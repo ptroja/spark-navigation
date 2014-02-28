@@ -8,4 +8,4 @@ SET (CMAKE_MODULE_PATH "/opt/player/share/cmake/Modules")
 INCLUDE (UsePlayerPlugin)
 
 #include_directories(../../common/clock)
-PLAYER_ADD_PLUGIN_DRIVER (wavefront SOURCES plan.cc plan_plan.cc plan_waypoint.cc wavefront.cc heap.cc plan_control.cc)
+PLAYER_ADD_PLUGIN_DRIVER (wavefront SOURCES plan.cc plan_plan.cc plan_waypoint.cc wavefront.cc plan_control.cc)

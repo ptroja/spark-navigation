@@ -48,7 +48,6 @@
 #include <libplayercommon/playercommon.h>
 
 #include "plan.h"
-//#include "heap.h"
 
 #if HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
 // length of the hash, in unsigned ints
@@ -76,7 +75,6 @@ plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
 		max_radius(_max_radius),
 		dist_penalty(_dist_penalty),
 		hysteresis_factor(_hysteresis_factor),
-		heap(heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL)),
 		path_size(1000),
 		lpath_size(100),
 	 	waypoint_size(100),
@@ -88,14 +86,10 @@ plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
 	 	path_count(0), lpath_count(0), waypoint_count(0),
 	 	dist_kernel(NULL), dist_kernel_width(0)
 {
-  //plan_t *plan = (plan_t *) calloc(1, sizeof(plan_t));
-  
-  this->heap = heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL);
   this->path = (plan_cell_t **) calloc(this->path_size, sizeof(path[0]));
   this->lpath = (plan_cell_t **) calloc(this->lpath_size, sizeof(lpath[0]));
   this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
 
-  assert(this->heap);
   assert(this->path);
   assert(this->lpath);
   assert(this->waypoints);
@@ -106,7 +100,6 @@ plan_t::~plan_t()
 {
   if (cells)
     free(cells);
-  heap_free(heap);
   free(waypoints);
   if(dist_kernel)
     free(dist_kernel);
@@ -119,7 +112,6 @@ plan_t::plan_t(const plan_t & plan) :
 	max_radius(plan.max_radius),
 	dist_penalty(plan.dist_penalty),
 	hysteresis_factor(plan.hysteresis_factor),
-	heap(heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL)),
 	path_size(1000),
 	lpath_size(100),
 	waypoint_size(100),
@@ -131,12 +123,10 @@ plan_t::plan_t(const plan_t & plan) :
 	path_count(0), lpath_count(0), waypoint_count(0),
 	dist_kernel(NULL), dist_kernel_width(0)
 {
-  this->heap = heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL);
   this->path = (plan_cell_t **) calloc(this->path_size, sizeof(path[0]));
   this->lpath = (plan_cell_t **) calloc(this->lpath_size, sizeof(lpath[0]));
   this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
 
-  assert(this->heap);
   assert(this->path);
   assert(this->lpath);
   assert(this->waypoints);

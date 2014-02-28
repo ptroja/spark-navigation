@@ -31,9 +31,8 @@
 #ifndef PLAN_H
 #define PLAN_H
 
-#include "heap.h"
+#include <queue>
 
-#define PLAN_DEFAULT_HEAP_SIZE 1000
 #define PLAN_MAX_COST 1e9
 
 // Description for a grid single cell
@@ -60,9 +59,21 @@ typedef struct _plan_cell_t
 
   // The next cell in the plan
   struct _plan_cell_t *plan_next;
-  
+
 } plan_cell_t;
 
+// For std::priority_queue comparison.
+namespace std {
+	template<>
+	struct less<plan_cell_t *>
+	{
+	   bool operator()(const plan_cell_t * c1, const plan_cell_t * c2) const
+	   {
+		   // We want a min-heap, to take the opposite of a 'less'.
+		   return (c1->plan_cost > c2->plan_cost);
+	   }
+	};
+}
 
 // Planner info
 struct plan_t
@@ -101,7 +112,8 @@ struct plan_t
   float dist_kernel_3x3[9];
   
   // Priority queue of cells to update
-  heap_t* heap;
+  //heap_t* heap;
+  std::priority_queue<plan_cell_t *> heap;
 
   // The global path
   size_t path_count, path_size;
