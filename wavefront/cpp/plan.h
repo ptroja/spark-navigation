@@ -122,8 +122,7 @@ struct plan_t
   std::vector<plan_cell_t *> lpath;
 
   // Waypoints extracted from global path
-  size_t waypoint_count, waypoint_size;
-  plan_cell_t **waypoints;
+  std::vector<plan_cell_t *> waypoints;
 
   // Create a planner
   plan_t(double abs_min_radius,

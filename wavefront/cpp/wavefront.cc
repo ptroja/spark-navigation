@@ -645,7 +645,7 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
 
   // Fill in reply
   // - waypoints
-  if((reply->waypoints_count = this->offline_plan->waypoint_count))
+  if((reply->waypoints_count = this->offline_plan->waypoints.size()))
   {
     reply->waypoints = new player_pose2d_t[reply->waypoints_count];
 
@@ -1147,7 +1147,7 @@ void Wavefront::Main()
         // extract waypoints along the path to the goal from the current position
         this->plan->update_waypoints(this->localize.px, this->localize.py);
 
-        if(this->plan->waypoint_count == 0)
+        if(this->plan->waypoints.empty())
         {
           fprintf(stderr, "Wavefront (port %d):\n  "
                   "No path from (%.3lf,%.3lf,%.3lf) to (%.3lf,%.3lf,%.3lf)\n",
@@ -1172,7 +1172,7 @@ void Wavefront::Main()
         {
           this->waypoints.clear();
 
-          for(int i=0;i<this->plan->waypoint_count;i++)
+          for(int i=0;i<this->plan->waypoints.size();i++)
           {
             player_point_2d_t w;
             this->plan->convert_waypoint(this->plan->waypoints[i],
@@ -1312,7 +1312,7 @@ void Wavefront::Main()
     }
     else // !velocity_control
     {
-      bool going_for_target = (this->curr_waypoint == this->plan->waypoint_count);
+      bool going_for_target = (this->curr_waypoint == this->plan->waypoints.size());
       double dist = hypot(this->localize.px - this->target.px,this->localize.py - this->target.py);
       // Note that we compare the current heading and waypoint heading in the
       // *odometric* frame.   We do this because comparing the current

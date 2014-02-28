@@ -44,7 +44,7 @@ void plan_t::update_waypoints(double px, double py)
   int ni, nj;
   plan_cell_t *cell, *ncell;
 
-  waypoint_count = 0;
+  waypoints.clear();
 
   ni = PLAN_GXWX(this, px);
   nj = PLAN_GYWY(this, py);
@@ -57,14 +57,7 @@ void plan_t::update_waypoints(double px, double py)
 
   while (cell != NULL)
   {
-    if (waypoint_count >= waypoint_size)
-    {
-      waypoint_size *= 2;
-      waypoints = (plan_cell_t **) realloc(waypoints,
-                                           waypoint_size * sizeof(waypoints[0]));
-    }
-    
-    waypoints[waypoint_count++] = cell;
+    waypoints.push_back(cell);
 
     if (cell->plan_next == NULL)
     {
@@ -95,7 +88,7 @@ void plan_t::update_waypoints(double px, double py)
   if(cell && (cell->plan_cost > 0))
   {
     // no path
-    waypoint_count = 0;
+    waypoints.clear();
   }
   
   return;
@@ -105,7 +98,7 @@ void plan_t::update_waypoints(double px, double py)
 // Get the ith waypoint; returns non-zero of there are no more waypoints
 int plan_t::get_waypoint(int i, double *px, double *py) const
 {
-  if (i < 0 || i >= waypoint_count)
+  if (i < 0 || i >= waypoints.size())
     return 0;
 
   *px = PLAN_WXGX(this, waypoints[i]->ci);

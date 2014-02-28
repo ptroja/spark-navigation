@@ -74,18 +74,13 @@ plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
 		max_radius(_max_radius),
 		dist_penalty(_dist_penalty),
 		hysteresis_factor(_hysteresis_factor),
-	 	waypoint_size(100),
 	 	min_x(0), min_y(0), max_x(0), max_y(0),
 	 	size_x(0), size_y(0),
 	 	origin_x(0), origin_y(0),
 	 	scale(0.0),
 	 	cells(NULL),
-	 	waypoint_count(0),
 	 	dist_kernel(NULL), dist_kernel_width(0)
 {
-  this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
-
-  assert(this->waypoints);
 }
 
 // Destroy a planner
@@ -93,7 +88,6 @@ plan_t::~plan_t()
 {
   if (cells)
     free(cells);
-  free(waypoints);
   if(dist_kernel)
     free(dist_kernel);
 }
@@ -105,19 +99,13 @@ plan_t::plan_t(const plan_t & plan) :
 	max_radius(plan.max_radius),
 	dist_penalty(plan.dist_penalty),
 	hysteresis_factor(plan.hysteresis_factor),
-	waypoint_size(100),
 	min_x(0), min_y(0), max_x(0), max_y(0),
 	size_x(plan.size_x), size_y(plan.size_y),
 	origin_x(plan.origin_x), origin_y(plan.origin_y),
 	scale(plan.scale),
 	cells(NULL),
-	waypoint_count(0),
 	dist_kernel(NULL), dist_kernel_width(0)
 {
-  this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
-
-  assert(this->waypoints);
-
   // Now get the map data
   // Allocate space for map cells
   this->cells = (plan_cell_t*)malloc((this->size_x *
@@ -247,7 +235,7 @@ void plan_t::init()
       cell->lpathmark = 0;
     }
   }
-  waypoint_count = 0;
+  waypoints.clear();
 
   compute_dist_kernel();
 
@@ -268,7 +256,7 @@ void plan_t::reset()
       cell->mark = 0;
     }
   }
-  waypoint_count = 0;
+  waypoints.clear();
 }
 
 void
