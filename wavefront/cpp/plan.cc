@@ -60,7 +60,6 @@
 #else
   #include <sys/time.h>
 #endif
-static double get_time(void);
 
 #if 0
 void draw_cspace(plan_t* plan, const char* fname);
@@ -76,22 +75,19 @@ plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
 		dist_penalty(_dist_penalty),
 		hysteresis_factor(_hysteresis_factor),
 		path_size(1000),
-		lpath_size(100),
 	 	waypoint_size(100),
 	 	min_x(0), min_y(0), max_x(0), max_y(0),
 	 	size_x(0), size_y(0),
 	 	origin_x(0), origin_y(0),
 	 	scale(0.0),
 	 	cells(NULL),
-	 	path_count(0), lpath_count(0), waypoint_count(0),
+	 	path_count(0), waypoint_count(0),
 	 	dist_kernel(NULL), dist_kernel_width(0)
 {
   this->path = (plan_cell_t **) calloc(this->path_size, sizeof(path[0]));
-  this->lpath = (plan_cell_t **) calloc(this->lpath_size, sizeof(lpath[0]));
   this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
 
   assert(this->path);
-  assert(this->lpath);
   assert(this->waypoints);
 }
 
@@ -113,22 +109,19 @@ plan_t::plan_t(const plan_t & plan) :
 	dist_penalty(plan.dist_penalty),
 	hysteresis_factor(plan.hysteresis_factor),
 	path_size(1000),
-	lpath_size(100),
 	waypoint_size(100),
 	min_x(0), min_y(0), max_x(0), max_y(0),
 	size_x(plan.size_x), size_y(plan.size_y),
 	origin_x(plan.origin_x), origin_y(plan.origin_y),
 	scale(plan.scale),
 	cells(NULL),
-	path_count(0), lpath_count(0), waypoint_count(0),
+	path_count(0), waypoint_count(0),
 	dist_kernel(NULL), dist_kernel_width(0)
 {
   this->path = (plan_cell_t **) calloc(this->path_size, sizeof(path[0]));
-  this->lpath = (plan_cell_t **) calloc(this->lpath_size, sizeof(lpath[0]));
   this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
 
   assert(this->path);
-  assert(this->lpath);
   assert(this->waypoints);
 
   // Now get the map data

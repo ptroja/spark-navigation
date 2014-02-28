@@ -1097,16 +1097,16 @@ void Wavefront::Main()
         }
       }
 
-      if(this->graphics2d_id.interf && this->plan->lpath_count)
+      if(this->graphics2d_id.interf && !this->plan->lpath.empty())
       {
         player_graphics2d_cmd_polyline_t line;
-        line.points_count = this->plan->lpath_count;
+        line.points_count = this->plan->lpath.size();
         line.points = new player_point_2d_t[line.points_count];
         line.color.alpha = 0;
         line.color.red = 0;
         line.color.green = 255;
         line.color.blue = 0;
-        for(int i=0;i<this->plan->lpath_count;i++)
+        for(int i=0;i<this->plan->lpath.size();i++)
         {
           line.points[i].px = PLAN_WXGX(this->plan,this->plan->lpath[i]->ci);
           line.points[i].py = PLAN_WYGY(this->plan,this->plan->lpath[i]->cj);

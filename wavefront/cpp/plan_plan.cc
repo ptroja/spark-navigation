@@ -34,20 +34,11 @@
 #include <climits>
 #include <cfloat>
 
-#if defined (WIN32)
-  #include <replace/replace.h>
-  #include <winsock2.h> // For struct timeval
-#else
-  #include <sys/time.h>
-#endif
-
 #include "plan.h"
 
 int
 plan_t::do_global(double lx, double ly, double gx, double gy)
 {
-  plan_cell_t* cell;
-  int li, lj;
   double t0,t1;
 
   t0 = get_time();
@@ -65,13 +56,14 @@ plan_t::do_global(double lx, double ly, double gx, double gy)
     return(-1);
   }
 
+  int li, lj;
   li = PLAN_GXWX(this, lx);
   lj = PLAN_GYWY(this, ly);
 
   // Cache the path
-  for(cell = cells + PLAN_INDEX(this,li,lj);
-      cell;
-      cell = cell->plan_next)
+  for(plan_cell_t * cell = cells + PLAN_INDEX(this,li,lj);
+                    cell;
+                    cell = cell->plan_next)
   {
     if(path_count >= path_size)
     {
@@ -96,9 +88,7 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
   double gx, gy;
   int li, lj;
   int xmin,ymin,xmax,ymax;
-  plan_cell_t* cell;
   double t0,t1;
-  int i;
 
   t0 = get_time();
 
@@ -121,7 +111,6 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
 
   //printf("local goal: %.3lf, %.3lf\n", gx, gy);
 
-  lpath_count = 0;
   if(update_plan(lx, ly, gx, gy) != 0)
   {
     puts("local plan update failed");
@@ -132,23 +121,16 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
   lj = PLAN_GYWY(this, ly);
 
   // Reset path marks (TODO: find a smarter place to do this)
-  cell = cells;
-  for(i=0;i<size_x*size_y;i++,cell++)
-    cell->lpathmark = 0;
+  for(int i=0;i<size_x*size_y;i++)
+    cells[i].lpathmark = 0;
 
   // Cache the path
-  for(cell = cells + PLAN_INDEX(this,li,lj);
-      cell;
-      cell = cell->plan_next)
+  lpath.clear();
+  for(plan_cell_t * cell = cells + PLAN_INDEX(this,li,lj);
+                    cell;
+                    cell = cell->plan_next)
   {
-    if(lpath_count >= lpath_size)
-    {
-      lpath_size *= 2;
-      lpath = (plan_cell_t**)realloc(lpath,
-                                     lpath_size * sizeof(plan_cell_t*));
-      assert(lpath);
-    }
-    lpath[lpath_count++] = cell;
+	lpath.push_back(cell);
     cell->lpathmark = 1;
   }
 
@@ -285,8 +267,6 @@ int
 plan_t::find_local_goal(double* gx, double* gy,
                         double lx, double ly) const
 {
-  int c;
-  int c_min;
   double squared_d;
   double squared_d_min;
   int li,lj;
@@ -306,8 +286,8 @@ plan_t::find_local_goal(double* gx, double* gy,
 
   // Find the closest place to jump on the global path
   squared_d_min = DBL_MAX;
-  c_min = -1;
-  for(c=0;c<path_count;c++)
+  int c_min = -1;
+  for(int c=0;c<path_count;c++)
   {
     cell = path[c];
     squared_d = ((cell->ci - li) * (cell->ci - li) + 
@@ -322,6 +302,7 @@ plan_t::find_local_goal(double* gx, double* gy,
 
   // Follow the path to find the last cell that's inside the local planning
   // area
+  int c;
   for(c=c_min; c<path_count; c++)
   {
     cell = path[c];

@@ -32,6 +32,7 @@
 #define PLAN_H
 
 #include <queue>
+#include <vector>
 
 #define PLAN_MAX_COST 1e9
 
@@ -120,8 +121,7 @@ struct plan_t
   plan_cell_t **path;
   
   // The local path (mainly for debugging)
-  size_t lpath_count, lpath_size;
-  plan_cell_t **lpath;
+  std::vector<plan_cell_t *> lpath;
 
   // Waypoints extracted from global path
   size_t waypoint_count, waypoint_size;
