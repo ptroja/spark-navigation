@@ -37,38 +37,34 @@
 
 #include "plan.h"
 
-// Test to see if once cell is reachable from another
-int plan_test_reachable(plan_t *plan, plan_cell_t *cell_a, plan_cell_t *cell_b);
-
-
 // Generate a path to the goal
-void plan_update_waypoints(plan_t *plan, double px, double py)
+void plan_t::update_waypoints(double px, double py)
 {
   double dist;
   int ni, nj;
   plan_cell_t *cell, *ncell;
 
-  plan->waypoint_count = 0;
+  waypoint_count = 0;
 
-  ni = PLAN_GXWX(plan, px);
-  nj = PLAN_GYWY(plan, py);
+  ni = PLAN_GXWX(this, px);
+  nj = PLAN_GYWY(this, py);
 
   // Can't plan a path if we're off the map
-  if(!PLAN_VALID(plan,ni,nj))
+  if(!PLAN_VALID(this,ni,nj))
     return;
 
-  cell = plan->cells + PLAN_INDEX(plan, ni, nj);
+  cell = cells + PLAN_INDEX(this, ni, nj);
 
   while (cell != NULL)
   {
-    if (plan->waypoint_count >= plan->waypoint_size)
+    if (waypoint_count >= waypoint_size)
     {
-      plan->waypoint_size *= 2;
-      plan->waypoints = (plan_cell_t **) realloc(plan->waypoints,
-                                         plan->waypoint_size * sizeof(plan->waypoints[0]));
+      waypoint_size *= 2;
+      waypoints = (plan_cell_t **) realloc(waypoints,
+                                           waypoint_size * sizeof(waypoints[0]));
     }
     
-    plan->waypoints[plan->waypoint_count++] = cell;
+    waypoints[waypoint_count++] = cell;
 
     if (cell->plan_next == NULL)
     {
@@ -83,10 +79,10 @@ void plan_update_waypoints(plan_t *plan, double px, double py)
     {
       if(dist > 0.50)
       {
-        if(!plan_test_reachable(plan, cell, ncell->plan_next))
+        if(!test_reachable(cell, ncell->plan_next))
           break;
       }
-      dist += plan->scale;
+      dist += scale;
     }
     if(ncell == cell)
     {
@@ -99,7 +95,7 @@ void plan_update_waypoints(plan_t *plan, double px, double py)
   if(cell && (cell->plan_cost > 0))
   {
     // no path
-    plan->waypoint_count = 0;
+    waypoint_count = 0;
   }
   
   return;
@@ -107,27 +103,26 @@ void plan_update_waypoints(plan_t *plan, double px, double py)
 
 
 // Get the ith waypoint; returns non-zero of there are no more waypoints
-int plan_get_waypoint(plan_t *plan, int i, double *px, double *py)
+int plan_t::get_waypoint(int i, double *px, double *py) const
 {
-  if (i < 0 || i >= plan->waypoint_count)
+  if (i < 0 || i >= waypoint_count)
     return 0;
 
-  *px = PLAN_WXGX(plan, plan->waypoints[i]->ci);
-  *py = PLAN_WYGY(plan, plan->waypoints[i]->cj);
+  *px = PLAN_WXGX(this, waypoints[i]->ci);
+  *py = PLAN_WYGY(this, waypoints[i]->cj);
 
   return 1;
 }
 
 // Convert given waypoint cell to global x,y
-void plan_convert_waypoint(plan_t* plan, 
-                           plan_cell_t *waypoint, double *px, double *py)
+void plan_t::convert_waypoint(plan_cell_t *waypoint, double *px, double *py) const
 {
-  *px = PLAN_WXGX(plan, waypoint->ci);
-  *py = PLAN_WYGY(plan, waypoint->cj);
+  *px = PLAN_WXGX(this, waypoint->ci);
+  *py = PLAN_WYGY(this, waypoint->cj);
 }
 
 // Test to see if once cell is reachable from another.
-int plan_test_reachable(plan_t *plan, plan_cell_t *cell_a, plan_cell_t *cell_b)
+int plan_t::test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const
 {
   double theta;
   double sinth, costh;
@@ -149,13 +144,13 @@ int plan_test_reachable(plan_t *plan, plan_cell_t *cell_a, plan_cell_t *cell_b)
     {
       lasti = (int)floor(i);
       lastj = (int)floor(j);
-      if(!PLAN_VALID(plan,lasti,lastj))
+      if(!PLAN_VALID(this,lasti,lastj))
       {
         //PLAYER_WARN("stepped off the map!");
         return(0);
       }
-      if(plan->cells[PLAN_INDEX(plan,lasti,lastj)].occ_dist <
-         plan->abs_min_radius)
+      if(cells[PLAN_INDEX(this,lasti,lastj)].occ_dist <
+         abs_min_radius)
         return(0);
     }
     
@@ -170,7 +165,7 @@ int plan_test_reachable(plan_t *plan, plan_cell_t *cell_a, plan_cell_t *cell_b)
 #if 0
 // Test to see if once cell is reachable from another.
 // This could be improved.
-int plan_test_reachable(plan_t *plan, plan_cell_t *cell_a, plan_cell_t *cell_b)
+int plan_t::test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const
 {
   int i, j;
   int ai, aj, bi, bj;

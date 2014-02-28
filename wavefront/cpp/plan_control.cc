@@ -51,15 +51,15 @@ plan_check_done(plan_t* plan,
 }
 
 int
-plan_compute_diffdrive_cmds(plan_t* plan, double* vx, double *va,
-                            int* rotate_dir,
-                            double lx, double ly, double la,
-                            double gx, double gy, double ga,
-                            double goal_d, double goal_a,
-                            double maxd, double dweight, 
-                            double tvmin, double tvmax, 
-                            double avmin, double avmax, 
-                            double amin, double amax)
+plan_t::compute_diffdrive_cmds(double* vx, double *va,
+                               int* rotate_dir,
+                               double lx, double ly, double la,
+                               double gx, double gy, double ga,
+                               double goal_d, double goal_a,
+                               double maxd, double dweight,
+                               double tvmin, double tvmax,
+                               double avmin, double avmax,
+                               double amin, double amax)
 {
   double cx, cy;
   double d,b,a,ad;
@@ -67,7 +67,7 @@ plan_compute_diffdrive_cmds(plan_t* plan, double* vx, double *va,
   //puts("*******plan_compute_diffdrive_cmds************");
   
   // Are we at the goal?
-  if(plan_check_done(plan,lx,ly,la,gx,gy,ga,goal_d,goal_a))
+  if(check_done(lx,ly,la,gx,gy,ga,goal_d,goal_a))
   {
     *vx = 0.0;
     *va = 0.0;
@@ -96,7 +96,7 @@ plan_compute_diffdrive_cmds(plan_t* plan, double* vx, double *va,
   *rotate_dir = 0;
 
   // We're away from the goal; compute velocities
-  if(plan_get_carrot(plan, &cx, &cy, lx, ly, maxd, dweight) < 0.0)
+  if(get_carrot(&cx, &cy, lx, ly, maxd, dweight) < 0.0)
   {
     //puts("no carrot");
     return(-1);
@@ -122,8 +122,8 @@ plan_compute_diffdrive_cmds(plan_t* plan, double* vx, double *va,
 }
 
 double
-plan_get_carrot(plan_t* plan, double* px, double* py, 
-                double lx, double ly, double maxdist, double distweight)
+plan_t::get_carrot(double* px, double* py,
+                   double lx, double ly, double maxdist, double distweight)
 {
   plan_cell_t* cell, *ncell;
   int li, lj;
@@ -132,30 +132,30 @@ plan_get_carrot(plan_t* plan, double* px, double* py,
   char old_occ_state;
   float old_occ_dist;
 
-  li = PLAN_GXWX(plan, lx);
-  lj = PLAN_GYWY(plan, ly);
+  li = PLAN_GXWX(this, lx);
+  lj = PLAN_GYWY(this, ly);
 
-  cell = plan->cells + PLAN_INDEX(plan,li,lj);
+  cell = cells + PLAN_INDEX(this,li,lj);
 
   // Latch and clear the obstacle state for the cell I'm in
-  cell = plan->cells + PLAN_INDEX(plan, li, lj);
+  cell = cells + PLAN_INDEX(this, li, lj);
   old_occ_state = cell->occ_state_dyn;
   old_occ_dist = cell->occ_dist_dyn;
   cell->occ_state_dyn = -1;
-  cell->occ_dist_dyn = (float) (plan->max_radius);
+  cell->occ_dist_dyn = (float) (max_radius);
 
   // Step back from maxdist, looking for the best carrot
   bestcost = -1.0;
-  for(dist = maxdist; dist >= plan->scale; dist -= plan->scale)
+  for(dist = maxdist; dist >= scale; dist -= scale)
   {
     // Find a point the required distance ahead, following the cost gradient
-    d=plan->scale;
+    d=scale;
     for(ncell = cell;
         (ncell->plan_next && (d < dist));
-        ncell = ncell->plan_next, d+=plan->scale);
+        ncell = ncell->plan_next, d+=scale);
 
     // Check whether the straight-line path is clear
-    if((cost = _plan_check_path(plan, cell, ncell)) < 0.0)
+    if((cost = check_path(cell, ncell)) < 0.0)
     {
       //printf("no path from (%d,%d) to (%d,%d)\n",
              //cell->ci, cell->cj, ncell->ci, ncell->cj);
@@ -167,21 +167,21 @@ plan_get_carrot(plan_t* plan, double* px, double* py,
     if((bestcost < 0.0) || (cost < bestcost))
     {
       bestcost = cost;
-      *px = PLAN_WXGX(plan,ncell->ci);
-      *py = PLAN_WYGY(plan,ncell->cj);
+      *px = PLAN_WXGX(this,ncell->ci);
+      *py = PLAN_WYGY(this,ncell->cj);
     }
   }
  
   // Restore the obstacle state for the cell I'm in
-  cell = plan->cells + PLAN_INDEX(plan, li, lj);
+  cell = cells + PLAN_INDEX(this, li, lj);
   cell->occ_state_dyn = old_occ_state;
   cell->occ_dist_dyn = old_occ_dist;
 
   return(bestcost);
 }
 
-static double
-_plan_check_path(plan_t* plan, plan_cell_t* s, plan_cell_t* g)
+double
+plan_t::check_path(plan_cell_t* s, plan_cell_t* g) const
 {
   // Bresenham raytracing
   int x0,x1,y0,y1;
@@ -233,21 +233,21 @@ _plan_check_path(plan_t* plan, plan_cell_t* s, plan_cell_t* g)
 
   if(steep)
   {
-    if(plan->cells[PLAN_INDEX(plan,y,x)].occ_dist_dyn < plan->abs_min_radius)
+    if(cells[PLAN_INDEX(this,y,x)].occ_dist_dyn < abs_min_radius)
       return -1;
-    else if(plan->cells[PLAN_INDEX(plan,y,x)].occ_dist_dyn < plan->max_radius)
-      obscost += (int) (plan->dist_penalty * 
-              (plan->max_radius - 
-               plan->cells[PLAN_INDEX(plan,y,x)].occ_dist_dyn));
+    else if(cells[PLAN_INDEX(this,y,x)].occ_dist_dyn < max_radius)
+      obscost += (int) (dist_penalty *
+              (max_radius -
+               cells[PLAN_INDEX(this,y,x)].occ_dist_dyn));
   }
   else
   {
-    if(plan->cells[PLAN_INDEX(plan,x,y)].occ_dist_dyn < plan->abs_min_radius)
+    if(cells[PLAN_INDEX(this,x,y)].occ_dist_dyn < abs_min_radius)
       return -1;
-    else if(plan->cells[PLAN_INDEX(plan,x,y)].occ_dist_dyn < plan->max_radius)
-      obscost += (int) (plan->dist_penalty * 
-              (plan->max_radius - 
-               plan->cells[PLAN_INDEX(plan,x,y)].occ_dist_dyn));
+    else if(cells[PLAN_INDEX(this,x,y)].occ_dist_dyn < max_radius)
+      obscost += (int) (dist_penalty *
+              (max_radius -
+               cells[PLAN_INDEX(this,x,y)].occ_dist_dyn));
   }
 
   while(x != (x1 + xstep * 1))
@@ -262,21 +262,21 @@ _plan_check_path(plan_t* plan, plan_cell_t* s, plan_cell_t* g)
 
     if(steep)
     {
-      if(plan->cells[PLAN_INDEX(plan,y,x)].occ_dist_dyn < plan->abs_min_radius)
+      if(cells[PLAN_INDEX(this,y,x)].occ_dist_dyn < abs_min_radius)
         return -1;
-      else if(plan->cells[PLAN_INDEX(plan,y,x)].occ_dist_dyn < plan->max_radius)
-        obscost += (int) (plan->dist_penalty * 
-                (plan->max_radius - 
-                 plan->cells[PLAN_INDEX(plan,y,x)].occ_dist_dyn));
+      else if(cells[PLAN_INDEX(this,y,x)].occ_dist_dyn < max_radius)
+        obscost += (int) (dist_penalty *
+                (max_radius -
+                 cells[PLAN_INDEX(this,y,x)].occ_dist_dyn));
     }
     else
     {
-      if(plan->cells[PLAN_INDEX(plan,x,y)].occ_dist_dyn < plan->abs_min_radius)
+      if(cells[PLAN_INDEX(this,x,y)].occ_dist_dyn < abs_min_radius)
         return -1;
-      else if(plan->cells[PLAN_INDEX(plan,x,y)].occ_dist_dyn < plan->max_radius)
-        obscost += (int) (plan->dist_penalty * 
-                (plan->max_radius - 
-                 plan->cells[PLAN_INDEX(plan,x,y)].occ_dist_dyn));
+      else if(cells[PLAN_INDEX(this,x,y)].occ_dist_dyn < max_radius)
+        obscost += (int) (dist_penalty *
+                (max_radius -
+                 cells[PLAN_INDEX(this,x,y)].occ_dist_dyn));
     }
   }
 

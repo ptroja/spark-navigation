@@ -537,7 +537,7 @@ Wavefront::MainSetup()
   if(SetupPosition() < 0)
     return(-1);
 
-  if(!(this->plan = plan_alloc(this->robot_radius+this->safety_dist,
+  if(!(this->plan = new plan_t(this->robot_radius+this->safety_dist,
                                this->robot_radius+this->safety_dist,
                                this->max_radius,
                                this->dist_penalty,
@@ -581,12 +581,12 @@ void
 Wavefront::MainQuit()
 {
   if(this->plan) {
-    plan_free(this->plan);
+    delete(this->plan);
     this->plan = NULL;
   }
 
   if(this->offline_plan) {
-    plan_free(this->offline_plan);
+    delete(this->offline_plan);
     this->offline_plan = NULL;
   }
 
@@ -632,16 +632,16 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
 
   // If there is no offline_plan, create by duplicating plan
   if(!this->offline_plan)
-    this->offline_plan = plan_copy(this->plan);
+    this->offline_plan = new plan_t(*this->plan);
 
   // Compute path in offline plan
-  if(plan_do_global(this->offline_plan, s.px, s.py, g.px, g.py) < 0)
+  if(this->offline_plan->do_global(s.px, s.py, g.px, g.py) < 0)
   {
     puts("Wavefront: offline path computation failed");
   }
 
   // Extract waypoints along the path to the goal from the start position
-  plan_update_waypoints(this->offline_plan, s.px, s.py);
+  this->offline_plan->update_waypoints(s.px, s.py);
 
   // Fill in reply
   // - waypoints
@@ -655,9 +655,8 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
     {
       // Convert and copy waypoint
       player_point_2d_t w;
-      plan_convert_waypoint(this->offline_plan,
-                            this->offline_plan->waypoints[i],
-                            &w.px, &w.py);
+      this->offline_plan->convert_waypoint(this->offline_plan->waypoints[i],
+                                           &w.px, &w.py);
       reply->waypoints[i].px = w.px;
       reply->waypoints[i].py = w.py;
       reply->waypoints[i].pa = 0.0;
@@ -751,7 +750,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   }
 
   //printf("setting %d hit points\n", this->scan_points_count);
-  plan_set_obstacles(plan, this->scan_points.data(), this->scan_points_count);
+  plan->set_obstacles(this->scan_points.data(), this->scan_points_count);
 
   double t1 = get_time();
   //printf("ProcessLaserScan: %.6lf\n", t1-t0);
@@ -1075,15 +1074,15 @@ void Wavefront::Main()
       // compute costs to the new goal.  Try local plan first
       if(new_goal ||
          (this->plan->path_count == 0) ||
-         (plan_do_local(this->plan, this->localize.px,
-                         this->localize.py, this->scan_maxrange) < 0))
+         (this->plan->do_local(this->localize.px,
+                               this->localize.py, this->scan_maxrange) < 0))
       {
         if(!new_goal && (this->plan->path_count != 0))
           puts("Wavefront: local plan failed");
 
         // Create a global plan
-        if(plan_do_global(this->plan, this->localize.px, this->localize.py,
-                          this->target.px, this->target.py) < 0)
+        if(this->plan->do_global(this->localize.px, this->localize.py,
+                                 this->target.px, this->target.py) < 0)
         {
           if(!printed_warning)
           {
@@ -1146,7 +1145,7 @@ void Wavefront::Main()
       if(!this->velocity_control)
       {
         // extract waypoints along the path to the goal from the current position
-        plan_update_waypoints(this->plan, this->localize.px, this->localize.py);
+        this->plan->update_waypoints(this->localize.px, this->localize.py);
 
         if(this->plan->waypoint_count == 0)
         {
@@ -1176,9 +1175,8 @@ void Wavefront::Main()
           for(int i=0;i<this->plan->waypoint_count;i++)
           {
             player_point_2d_t w;
-            plan_convert_waypoint(this->plan,
-                                  this->plan->waypoints[i],
-                                  &w.px, &w.py);
+            this->plan->convert_waypoint(this->plan->waypoints[i],
+                                         &w.px, &w.py);
             this->waypoints.push_back(w);
           }
 
@@ -1219,9 +1217,9 @@ void Wavefront::Main()
 
           //printf("pose: (%.3lf,%.3lf,%.3lf)\n",
                  //this->localize.px, this->localize.py, RTOD(this->localize.pa));
-          if(plan_get_carrot(this->plan, &wx, &wy,
-                             this->localize.px, this->localize.py,
-                             maxd, distweight) < 0)
+          if(this->plan->get_carrot(&wx, &wy,
+                                    this->localize.px, this->localize.py,
+                                    maxd, distweight) < 0)
           {
             puts("Failed to find a carrot");
             //draw_cspace(this->plan, "debug.png");
@@ -1534,7 +1532,7 @@ Wavefront::GetMap(bool threaded)
   assert(this->plan->cells);
 
   // Reset the grid
-  plan_reset(this->plan);
+  this->plan->reset();
 
   // now, get the map data
   player_map_data_t data_req;
@@ -1594,12 +1592,12 @@ Wavefront::GetMap(bool threaded)
     }
   }
 
-  plan_init(this->plan);
-  plan_compute_cspace(this->plan);
+  this->plan->init();
+  this->plan->compute_cspace();
   //draw_cspace(this->plan,"cspace.png");
 
   if (this->offline_plan) {
-    plan_free(this->offline_plan);
+    delete this->offline_plan;
     this->offline_plan = NULL;
   }
   return(0);
@@ -1755,13 +1753,12 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
     {
       PLAYER_WARN("requesting new map");
 
-      if (this->plan) plan_free(this->plan);
-      this->plan = plan_alloc(this->robot_radius+this->safety_dist,
+      if (this->plan) delete this->plan;
+      this->plan = new plan_t(this->robot_radius+this->safety_dist,
                               this->robot_radius+this->safety_dist,
                               this->max_radius,
                               this->dist_penalty,
                               0.5);
-      assert(this->plan);
 
       // Fill in the map structure
 

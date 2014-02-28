@@ -40,19 +40,13 @@
 #else
   #include <sys/time.h>
 #endif
+
 static double get_time(void);
 
 #include "plan.h"
 
-// Plan queue stuff
-void plan_push(plan_t *plan, plan_cell_t *cell);
-plan_cell_t *plan_pop(plan_t *plan);
-int _plan_update_plan(plan_t *plan, double lx, double ly, double gx, double gy);
-int _plan_find_local_goal(plan_t *plan, double* gx, double* gy, double lx, double ly);
-
-
 int
-plan_do_global(plan_t *plan, double lx, double ly, double gx, double gy)
+plan_t::do_global(double lx, double ly, double gx, double gy)
 {
   plan_cell_t* cell;
   int li, lj;
@@ -61,34 +55,34 @@ plan_do_global(plan_t *plan, double lx, double ly, double gx, double gy)
   t0 = get_time();
 
   // Set bounds to look over the entire grid
-  plan_set_bounds(plan, 0, 0, plan->size_x - 1, plan->size_y - 1);
+  set_bounds(0, 0, size_x - 1, size_y - 1);
 
   // Reset plan costs
-  plan_reset(plan);
+  reset();
 
-  plan->path_count = 0;
-  if(_plan_update_plan(plan, lx, ly, gx, gy) < 0)
+  path_count = 0;
+  if(update_plan(lx, ly, gx, gy) < 0)
   {
     // no path
     return(-1);
   }
 
-  li = PLAN_GXWX(plan, lx);
-  lj = PLAN_GYWY(plan, ly);
+  li = PLAN_GXWX(this, lx);
+  lj = PLAN_GYWY(this, ly);
 
   // Cache the path
-  for(cell = plan->cells + PLAN_INDEX(plan,li,lj);
+  for(cell = cells + PLAN_INDEX(this,li,lj);
       cell;
       cell = cell->plan_next)
   {
-    if(plan->path_count >= plan->path_size)
+    if(path_count >= path_size)
     {
-      plan->path_size *= 2;
-      plan->path = (plan_cell_t**)realloc(plan->path,
-                                          plan->path_size * sizeof(plan_cell_t*));
-      assert(plan->path);
+      path_size *= 2;
+      path = (plan_cell_t**)realloc(path,
+                                    path_size * sizeof(plan_cell_t*));
+      assert(path);
     }
-    plan->path[plan->path_count++] = cell;
+    path[path_count++] = cell;
   }
 
   t1 = get_time();
@@ -99,7 +93,7 @@ plan_do_global(plan_t *plan, double lx, double ly, double gx, double gy)
 }
 
 int
-plan_do_local(plan_t *plan, double lx, double ly, double plan_halfwidth)
+plan_t::do_local(double lx, double ly, double plan_halfwidth)
 {
   double gx, gy;
   int li, lj;
@@ -111,17 +105,17 @@ plan_do_local(plan_t *plan, double lx, double ly, double plan_halfwidth)
   t0 = get_time();
 
   // Set bounds as directed
-  xmin = PLAN_GXWX(plan, lx - plan_halfwidth);
-  ymin = PLAN_GYWY(plan, ly - plan_halfwidth);
-  xmax = PLAN_GXWX(plan, lx + plan_halfwidth);
-  ymax = PLAN_GYWY(plan, ly + plan_halfwidth);
-  plan_set_bounds(plan, xmin, ymin, xmax, ymax);
+  xmin = PLAN_GXWX(this, lx - plan_halfwidth);
+  ymin = PLAN_GYWY(this, ly - plan_halfwidth);
+  xmax = PLAN_GXWX(this, lx + plan_halfwidth);
+  ymax = PLAN_GYWY(this, ly + plan_halfwidth);
+  set_bounds(xmin, ymin, xmax, ymax);
 
   // Reset plan costs (within the local patch)
-  plan_reset(plan);
+  reset();
 
   // Find a local goal to pursue
-  if(_plan_find_local_goal(plan, &gx, &gy, lx, ly) != 0)
+  if(find_local_goal(&gx, &gy, lx, ly) != 0)
   {
     //puts("no local goal");
     return(-1);
@@ -129,34 +123,34 @@ plan_do_local(plan_t *plan, double lx, double ly, double plan_halfwidth)
 
   //printf("local goal: %.3lf, %.3lf\n", gx, gy);
 
-  plan->lpath_count = 0;
-  if(_plan_update_plan(plan, lx, ly, gx, gy) != 0)
+  lpath_count = 0;
+  if(update_plan(lx, ly, gx, gy) != 0)
   {
     puts("local plan update failed");
     return(-1);
   }
 
-  li = PLAN_GXWX(plan, lx);
-  lj = PLAN_GYWY(plan, ly);
+  li = PLAN_GXWX(this, lx);
+  lj = PLAN_GYWY(this, ly);
 
   // Reset path marks (TODO: find a smarter place to do this)
-  cell = plan->cells;
-  for(i=0;i<plan->size_x*plan->size_y;i++,cell++)
+  cell = cells;
+  for(i=0;i<size_x*size_y;i++,cell++)
     cell->lpathmark = 0;
 
   // Cache the path
-  for(cell = plan->cells + PLAN_INDEX(plan,li,lj);
+  for(cell = cells + PLAN_INDEX(this,li,lj);
       cell;
       cell = cell->plan_next)
   {
-    if(plan->lpath_count >= plan->lpath_size)
+    if(lpath_count >= lpath_size)
     {
-      plan->lpath_size *= 2;
-      plan->lpath = (plan_cell_t**)realloc(plan->lpath,
-                                           plan->lpath_size * sizeof(plan_cell_t*));
-      assert(plan->lpath);
+      lpath_size *= 2;
+      lpath = (plan_cell_t**)realloc(lpath,
+                                     lpath_size * sizeof(plan_cell_t*));
+      assert(lpath);
     }
-    plan->lpath[plan->lpath_count++] = cell;
+    lpath[lpath_count++] = cell;
     cell->lpathmark = 1;
   }
 
@@ -169,7 +163,7 @@ plan_do_local(plan_t *plan, double lx, double ly, double plan_halfwidth)
 
 // Generate the plan
 int 
-_plan_update_plan(plan_t *plan, double lx, double ly, double gx, double gy)
+plan_t::update_plan(double lx, double ly, double gx, double gy)
 {
   int oi, oj, di, dj, ni, nj;
   int gi, gj, li,lj;
@@ -179,50 +173,50 @@ _plan_update_plan(plan_t *plan, double lx, double ly, double gx, double gy)
   float old_occ_dist;
 
   // Reset the queue
-  heap_reset(plan->heap);
+  heap_reset(heap);
 
   // Initialize the goal cell
-  gi = PLAN_GXWX(plan, gx);
-  gj = PLAN_GYWY(plan, gy);
+  gi = PLAN_GXWX(this, gx);
+  gj = PLAN_GYWY(this, gy);
 
   // Initialize the start cell
-  li = PLAN_GXWX(plan, lx);
-  lj = PLAN_GYWY(plan, ly);
+  li = PLAN_GXWX(this, lx);
+  lj = PLAN_GYWY(this, ly);
 
   //printf("planning from %d,%d to %d,%d\n", li,lj,gi,gj);
 
-  if(!PLAN_VALID_BOUNDS(plan, gi, gj))
+  if(!PLAN_VALID_BOUNDS(this, gi, gj))
   {
     puts("goal out of bounds");
     return(-1);
   }
   
-  if(!PLAN_VALID_BOUNDS(plan, li, lj))
+  if(!PLAN_VALID_BOUNDS(this, li, lj))
   {
     puts("start out of bounds");
     return(-1);
   }
 
   // Latch and clear the obstacle state for the cell I'm in
-  cell = plan->cells + PLAN_INDEX(plan, li, lj);
+  cell = cells + PLAN_INDEX(this, li, lj);
   old_occ_state = cell->occ_state_dyn;
   old_occ_dist = cell->occ_dist_dyn;
   cell->occ_state_dyn = -1;
-  cell->occ_dist_dyn = (float) plan->max_radius;
+  cell->occ_dist_dyn = (float) max_radius;
 
-  cell = plan->cells + PLAN_INDEX(plan, gi, gj);
+  cell = cells + PLAN_INDEX(this, gi, gj);
   cell->plan_cost = 0;
 
   // Are we done?
   if((li == gi) && (lj == gj))
     return(0);
   
-  plan_push(plan, cell);
+  push(cell);
 
   while (1)
   {
     float * p;
-    cell = plan_pop(plan);
+    cell = pop();
     if (cell == NULL)
       break;
 
@@ -231,10 +225,10 @@ _plan_update_plan(plan_t *plan, double lx, double ly, double gx, double gy)
 
     //printf("pop %d %d %f\n", cell->ci, cell->cj, cell->plan_cost);
 
-    p = plan->dist_kernel_3x3;
+    p = dist_kernel_3x3;
     for (dj = -1; dj <= +1; dj++)
     {
-      ncell = plan->cells + PLAN_INDEX(plan,oi-1,oj+dj);
+      ncell = cells + PLAN_INDEX(this,oi-1,oj+dj);
       for (di = -1; di <= +1; di++, p++, ncell++)
       {
         if (!di && !dj)
@@ -245,37 +239,37 @@ _plan_update_plan(plan_t *plan, double lx, double ly, double gx, double gy)
         ni = oi + di;
         nj = oj + dj;
 
-        if (!PLAN_VALID_BOUNDS(plan, ni, nj))
+        if (!PLAN_VALID_BOUNDS(this, ni, nj))
           continue;
 
         if(ncell->mark)
           continue;
 
-        if (ncell->occ_dist_dyn < plan->abs_min_radius)
+        if (ncell->occ_dist_dyn < abs_min_radius)
           continue;
 
         cost = cell->plan_cost;
         if(ncell->lpathmark)
-          cost += (float) ((*p) * plan->hysteresis_factor);
+          cost += (float) ((*p) * hysteresis_factor);
         else
           cost += *p;
 
-        if(ncell->occ_dist_dyn < plan->max_radius)
-          cost += (float) (plan->dist_penalty * (plan->max_radius - ncell->occ_dist_dyn));
+        if(ncell->occ_dist_dyn < max_radius)
+          cost += (float) (dist_penalty * (max_radius - ncell->occ_dist_dyn));
 
         if(cost < ncell->plan_cost)
         {
           ncell->plan_cost = cost;
           ncell->plan_next = cell;
 
-          plan_push(plan, ncell);
+          push(ncell);
         }
       }
     }
   }
 
   // Restore the obstacle state for the cell I'm in
-  cell = plan->cells + PLAN_INDEX(plan, li, lj);
+  cell = cells + PLAN_INDEX(this, li, lj);
   cell->occ_state_dyn = old_occ_state;
   cell->occ_dist_dyn = old_occ_dist;
 
@@ -289,8 +283,8 @@ _plan_update_plan(plan_t *plan, double lx, double ly, double gx, double gy)
 }
 
 int 
-_plan_find_local_goal(plan_t *plan, double* gx, double* gy, 
-                      double lx, double ly)
+plan_t::find_local_goal(double* gx, double* gy,
+                        double lx, double ly)
 {
   int c;
   int c_min;
@@ -300,23 +294,23 @@ _plan_find_local_goal(plan_t *plan, double* gx, double* gy,
   plan_cell_t* cell;
 
   // Must already have computed a global goal
-  if(plan->path_count == 0)
+  if(path_count == 0)
   {
     //puts("no global path");
     return(-1);
   }
 
-  li = PLAN_GXWX(plan, lx);
-  lj = PLAN_GYWY(plan, ly);
+  li = PLAN_GXWX(this, lx);
+  lj = PLAN_GYWY(this, ly);
 
-  assert(PLAN_VALID_BOUNDS(plan,li,lj));
+  assert(PLAN_VALID_BOUNDS(this,li,lj));
 
   // Find the closest place to jump on the global path
   squared_d_min = DBL_MAX;
   c_min = -1;
-  for(c=0;c<plan->path_count;c++)
+  for(c=0;c<path_count;c++)
   {
-    cell = plan->path[c];
+    cell = path[c];
     squared_d = ((cell->ci - li) * (cell->ci - li) + 
                  (cell->cj - lj) * (cell->cj - lj));
     if(squared_d < squared_d_min)
@@ -329,14 +323,14 @@ _plan_find_local_goal(plan_t *plan, double* gx, double* gy,
 
   // Follow the path to find the last cell that's inside the local planning
   // area
-  for(c=c_min; c<plan->path_count; c++)
+  for(c=c_min; c<path_count; c++)
   {
-    cell = plan->path[c];
+    cell = path[c];
     
     //printf("step %d: (%d,%d)\n", c, cell->ci, cell->cj);
 
-    if((cell->ci < plan->min_x) || (cell->ci > plan->max_x) ||
-       (cell->cj < plan->min_y) || (cell->cj > plan->max_y))
+    if((cell->ci < min_x) || (cell->ci > max_x) ||
+       (cell->cj < min_y) || (cell->cj > max_y))
     {
       // Did we move at least one cell along the path?
       if(c == c_min)
@@ -353,36 +347,34 @@ _plan_find_local_goal(plan_t *plan, double* gx, double* gy,
 
   assert(c > c_min);
 
-  cell = plan->path[c-1];
+  cell = path[c-1];
 
   //printf("ci: %d cj: %d\n", cell->ci, cell->cj);
-  *gx = PLAN_WXGX(plan, cell->ci);
-  *gy = PLAN_WYGY(plan, cell->cj);
+  *gx = PLAN_WXGX(this, cell->ci);
+  *gy = PLAN_WYGY(this, cell->cj);
   
   return(0);
 }
 
 // Push a plan location onto the queue
-void plan_push(plan_t *plan, plan_cell_t *cell)
+void plan_t::push(plan_cell_t *cell)
 {
   // Substract from max cost because the heap is set up to return the max
   // element.  This could of course be changed.
   assert(PLAN_MAX_COST-cell->plan_cost > 0);
   cell->mark = 1;
-  heap_insert(plan->heap, PLAN_MAX_COST - cell->plan_cost, cell);
-
-  return;
+  heap_insert(heap, PLAN_MAX_COST - cell->plan_cost, cell);
 }
 
 
 // Pop a plan location from the queue
-plan_cell_t *plan_pop(plan_t *plan)
+plan_cell_t *plan_t::pop()
 {
 
-  if(heap_empty(plan->heap))
+  if(heap_empty(heap))
     return(NULL);
   else
-    return((plan_cell_t *) heap_extract_max(plan->heap));
+    return((plan_cell_t *) heap_extract_max(heap));
 }
 
 double 

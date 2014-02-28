@@ -65,7 +65,7 @@ typedef struct _plan_cell_t
 
 
 // Planner info
-typedef struct
+struct plan_t
 {
   // Grid dimensions (number of cells)
   int size_x, size_y;
@@ -114,94 +114,107 @@ typedef struct
   // Waypoints extracted from global path
   size_t waypoint_count, waypoint_size;
   plan_cell_t **waypoints;
-} plan_t;
 
+  // Create a planner
+  plan_t(double abs_min_radius,
+         double des_min_radius,
+         double max_radius,
+         double dist_penalty,
+         double hysteresis_factor);
 
-// Create a planner
-plan_t *plan_alloc(double abs_min_radius, 
-                   double des_min_radius,
-                   double max_radius, 
-                   double dist_penalty, 
-                   double hysteresis_factor);
+  void compute_dist_kernel();
 
-void plan_compute_dist_kernel(plan_t* plan);
+  // Destroy a planner
+  ~plan_t();
 
-// Destroy a planner
-void plan_free(plan_t *plan);
+  // Copy a planner
+  plan_t( const plan_t &obj);
 
-// Copy a planner
-plan_t *plan_copy(plan_t *plan);
+  // Initialize the plan
+  void init();
 
-// Initialize the plan
-void plan_init(plan_t *plan);
+  // Reset the plan
+  void reset();
 
-// Reset the plan
-void plan_reset(plan_t *plan);
+  #if 0
+  // Load the occupancy values from an image file
+  int load_occ(const char *filename, double scale);
+  #endif
 
-#if 0
-// Load the occupancy values from an image file
-int plan_load_occ(plan_t *plan, const char *filename, double scale);
-#endif
+  void set_bounds(int min_x, int min_y, int max_x, int max_y);
 
-void plan_set_bounds(plan_t* plan, int min_x, int min_y, int max_x, int max_y);
+  void set_bbox(double padding, double min_size,
+                double x0, double y0, double x1, double y1);
 
-void plan_set_bbox(plan_t* plan, double padding, double min_size,
-                   double x0, double y0, double x1, double y1);
+  bool check_inbounds(double x, double y) const;
 
-bool plan_check_inbounds(plan_t* plan, double x, double y);
+  // Construct the configuration space from the occupancy grid.
+  //void plan_update_cspace(plan_t *plan, const char* cachefile);
+  void compute_cspace();
 
-// Construct the configuration space from the occupancy grid.
-//void plan_update_cspace(plan_t *plan, const char* cachefile);
-void plan_compute_cspace(plan_t *plan);
+  int do_global(double lx, double ly, double gx, double gy);
 
-int plan_do_global(plan_t *plan, double lx, double ly, double gx, double gy);
+  int do_local(double lx, double ly, double plan_halfwidth);
 
-int plan_do_local(plan_t *plan, double lx, double ly, double plan_halfwidth);
+  // Generate a path to the goal
+  void update_waypoints(double px, double py);
 
-// Generate a path to the goal
-void plan_update_waypoints(plan_t *plan, double px, double py);
+  // Get the ith waypoint; returns zero if there are no more waypoints
+  int get_waypoint(int i, double *px, double *py);
 
-// Get the ith waypoint; returns zero if there are no more waypoints
-int plan_get_waypoint(plan_t *plan, int i, double *px, double *py);
+  // Convert given waypoint cell to global x,y
+  void convert_waypoint(plan_cell_t *waypoint,
+                        double *px, double *py) const;
 
-// Convert given waypoint cell to global x,y
-void plan_convert_waypoint(plan_t* plan, plan_cell_t *waypoint, 
-                           double *px, double *py);
+  double get_carrot(double* px, double* py,
+                    double lx, double ly,
+                    double maxdist, double distweight);
 
-double plan_get_carrot(plan_t* plan, double* px, double* py, 
-                       double lx, double ly, 
-                       double maxdist, double distweight);
-int plan_compute_diffdrive_cmds(plan_t* plan, double* vx, double *va,
-                                int* rotate_dir,
-                                double lx, double ly, double la,
-                                double gx, double gy, double ga,
-                                double goal_d, double goal_a,
-                                double maxd, double dweight, 
-                                double tvmin, double tvmax, 
-                                double avmin, double avmax, 
-                                double amin, double amax);
-int plan_check_done(plan_t* plan, 
-                    double lx, double ly, double la,
-                    double gx, double gy, double ga,
-                    double goal_d, double goal_a);
+  int compute_diffdrive_cmds(double* vx, double *va,
+                             int* rotate_dir,
+                             double lx, double ly, double la,
+                             double gx, double gy, double ga,
+                             double goal_d, double goal_a,
+                             double maxd, double dweight,
+                             double tvmin, double tvmax,
+                             double avmin, double avmax,
+                             double amin, double amax);
 
-void plan_set_obstacles(plan_t* plan, double* obs, size_t num);
+  int check_done(double lx, double ly, double la,
+                 double gx, double gy, double ga,
+                 double goal_d, double goal_a);
 
-#if HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
-// Write the cspace occupancy distance values to a file, one per line.
-// Read them back in with plan_read_cspace().
-// Returns non-zero on error.
-int plan_write_cspace(plan_t *plan, const char* fname, unsigned int* hash);
+  void set_obstacles(double* obs, size_t num);
 
-// Read the cspace occupancy distance values from a file, one per line.
-// Write them in first with plan_read_cspace().
-// Returns non-zero on error.
-int plan_read_cspace(plan_t *plan, const char* fname, unsigned int* hash);
+  #if HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
+  // Write the cspace occupancy distance values to a file, one per line.
+  // Read them back in with plan_read_cspace().
+  // Returns non-zero on error.
+  int write_cspace(const char* fname, unsigned int* hash);
 
-// Compute and return the 16-bit MD5 hash of the map data in the given plan
-// object.
-void plan_md5(unsigned int* digest, plan_t* plan);
-#endif // HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
+  // Read the cspace occupancy distance values from a file, one per line.
+  // Write them in first with plan_read_cspace().
+  // Returns non-zero on error.
+  int read_cspace(const char* fname, unsigned int* hash);
+
+  // Compute and return the 16-bit MD5 hash of the map data in the given plan
+  // object.
+  void md5(unsigned int* digest) const;
+  #endif // HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
+
+private:
+  // Plan queue stuff
+  void push(plan_cell_t *cell);
+  plan_cell_t *pop();
+  int update_plan(double lx, double ly, double gx, double gy);
+  int find_local_goal(double* gx, double* gy, double lx, double ly);
+  double check_path(plan_cell_t* s, plan_cell_t* g) const;
+
+  // Test to see if once cell is reachable from another
+  int test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const;
+
+  int get_waypoint(int i, double *px, double *py) const;
+};
 
 /**************************************************************************
  * Plan manipulation macros

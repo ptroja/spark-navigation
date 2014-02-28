@@ -68,42 +68,107 @@ void draw_cspace(plan_t* plan, const char* fname);
 #endif
 
 // Create a planner
-plan_t *plan_alloc(double abs_min_radius, double des_min_radius,
-                   double max_radius, double dist_penalty,
-                   double hysteresis_factor)
+plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
+               double _max_radius, double _dist_penalty,
+               double _hysteresis_factor) :
+		abs_min_radius(_abs_min_radius),
+		des_min_radius(_des_min_radius),
+		max_radius(_max_radius),
+		dist_penalty(_dist_penalty),
+		hysteresis_factor(_hysteresis_factor),
+		heap(heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL)),
+		path_size(1000),
+		lpath_size(100),
+	 	waypoint_size(100),
+	 	min_x(0), min_y(0), max_x(0), max_y(0),
+	 	size_x(0), size_y(0),
+	 	origin_x(0), origin_y(0),
+	 	scale(0.0),
+	 	cells(NULL),
+	 	path_count(0), lpath_count(0), waypoint_count(0),
+	 	dist_kernel(NULL), dist_kernel_width(0)
 {
-  plan_t *plan = (plan_t *) calloc(1, sizeof(plan_t));
-
-  plan->abs_min_radius = abs_min_radius;
-  plan->des_min_radius = des_min_radius;
-
-  plan->max_radius = max_radius;
-  plan->dist_penalty = dist_penalty;
-  plan->hysteresis_factor = hysteresis_factor;
+  //plan_t *plan = (plan_t *) calloc(1, sizeof(plan_t));
   
-  plan->heap = heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL);
-  assert(plan->heap);
+  this->heap = heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL);
+  this->path = (plan_cell_t **) calloc(this->path_size, sizeof(path[0]));
+  this->lpath = (plan_cell_t **) calloc(this->lpath_size, sizeof(lpath[0]));
+  this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
 
-  plan->path_size = 1000;
-  plan->path = (plan_cell_t **) calloc(plan->path_size, sizeof(plan->path[0]));
+  assert(this->heap);
+  assert(this->path);
+  assert(this->lpath);
+  assert(this->waypoints);
+}
 
-  plan->lpath_size = 100;
-  plan->lpath = (plan_cell_t **) calloc(plan->lpath_size, sizeof(plan->lpath[0]));
+// Destroy a planner
+plan_t::~plan_t()
+{
+  if (cells)
+    free(cells);
+  heap_free(heap);
+  free(waypoints);
+  if(dist_kernel)
+    free(dist_kernel);
+}
 
-  plan->waypoint_size = 100;
-  plan->waypoints = (plan_cell_t **) calloc(plan->waypoint_size, sizeof(plan->waypoints[0]));
-  
-  return plan;
+// Copy the planner
+plan_t::plan_t(const plan_t & plan) :
+	abs_min_radius(plan.abs_min_radius),
+	des_min_radius(plan.des_min_radius),
+	max_radius(plan.max_radius),
+	dist_penalty(plan.dist_penalty),
+	hysteresis_factor(plan.hysteresis_factor),
+	heap(heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL)),
+	path_size(1000),
+	lpath_size(100),
+	waypoint_size(100),
+	min_x(0), min_y(0), max_x(0), max_y(0),
+	size_x(plan.size_x), size_y(plan.size_y),
+	origin_x(plan.origin_x), origin_y(plan.origin_y),
+	scale(plan.scale),
+	cells(NULL),
+	path_count(0), lpath_count(0), waypoint_count(0),
+	dist_kernel(NULL), dist_kernel_width(0)
+{
+  this->heap = heap_alloc(PLAN_DEFAULT_HEAP_SIZE, (heap_free_elt_fn_t)NULL);
+  this->path = (plan_cell_t **) calloc(this->path_size, sizeof(path[0]));
+  this->lpath = (plan_cell_t **) calloc(this->lpath_size, sizeof(lpath[0]));
+  this->waypoints = (plan_cell_t **) calloc(this->waypoint_size, sizeof(waypoints[0]));
+
+  assert(this->heap);
+  assert(this->path);
+  assert(this->lpath);
+  assert(this->waypoints);
+
+  // Now get the map data
+  // Allocate space for map cells
+  this->cells = (plan_cell_t*)malloc((this->size_x *
+                                      this->size_y *
+                                      sizeof(plan_cell_t)));
+  assert(this->cells);
+
+  // Do initialization
+  this->init();
+
+  // Copy the map data
+  for (int i = 0; i < this->size_x * this->size_y; ++i)
+  {
+    this->cells[i].occ_dist = plan.cells[i].occ_dist;
+	this->cells[i].occ_state = plan.cells[i].occ_state;
+	this->cells[i].occ_state_dyn = plan.cells[i].occ_state_dyn;
+	this->cells[i].occ_dist_dyn = plan.cells[i].occ_dist_dyn;
+  }
 }
 
 void
-plan_set_obstacles(plan_t* plan, double* obs, size_t num)
+plan_t::set_obstacles(double* obs, size_t num)
 {
   double t0 = get_time();
 
   // Start with static obstacle data
-  plan_cell_t* cell = plan->cells;
-  for(int j=0;j<plan->size_y*plan->size_x;j++,cell++)
+  plan_cell_t* cell = cells;
+  for(int j=0;j<size_y*size_x;j++,cell++)
   {
     cell->occ_state_dyn = cell->occ_state;
     cell->occ_dist_dyn = cell->occ_dist;
@@ -114,13 +179,13 @@ plan_set_obstacles(plan_t* plan, double* obs, size_t num)
   for(size_t i=0;i<num;i++)
   {
     // Convert to grid coords
-    int gx = PLAN_GXWX(plan, obs[2*i]);
-    int gy = PLAN_GYWY(plan, obs[2*i+1]);
+    int gx = PLAN_GXWX(this, obs[2*i]);
+    int gy = PLAN_GYWY(this, obs[2*i+1]);
 
-    if(!PLAN_VALID(plan,gx,gy))
+    if(!PLAN_VALID(this,gx,gy))
       continue;
 
-    cell = plan->cells + PLAN_INDEX(plan,gx,gy);
+    cell = cells + PLAN_INDEX(this,gx,gy);
 
     if(cell->mark)
       continue;
@@ -129,17 +194,17 @@ plan_set_obstacles(plan_t* plan, double* obs, size_t num)
     cell->occ_state_dyn = 1;
     cell->occ_dist_dyn = 0.0;
 
-    float * p = plan->dist_kernel;
-    for (int dj = -plan->dist_kernel_width/2;
-             dj <= plan->dist_kernel_width/2;
+    float * p = dist_kernel;
+    for (int dj = -dist_kernel_width/2;
+             dj <= dist_kernel_width/2;
              dj++)
     {
-      plan_cell_t * ncell = cell + -plan->dist_kernel_width/2 + dj*plan->size_x;
-      for (int di = -plan->dist_kernel_width/2;
-               di <= plan->dist_kernel_width/2;
+      plan_cell_t * ncell = cell + -dist_kernel_width/2 + dj*size_x;
+      for (int di = -dist_kernel_width/2;
+               di <= dist_kernel_width/2;
                di++, p++, ncell++)
       {
-        if(!PLAN_VALID_BOUNDS(plan,cell->ci+di,cell->cj+dj))            
+        if(!PLAN_VALID_BOUNDS(this,cell->ci+di,cell->cj+dj))
           continue;
 
         if(*p < ncell->occ_dist_dyn)
@@ -153,104 +218,45 @@ plan_set_obstacles(plan_t* plan, double* obs, size_t num)
 }
 
 void
-plan_compute_dist_kernel(plan_t* plan)
+plan_t::compute_dist_kernel()
 {
-  float* p;
-
   // Compute variable sized kernel, for use in propagating distance from
   // obstacles
-  plan->dist_kernel_width = 1 + 2 * (int)ceil(plan->max_radius / plan->scale);
-  plan->dist_kernel = (float*)realloc(plan->dist_kernel,
-                                      sizeof(float) * 
-                                      plan->dist_kernel_width *
-                                      plan->dist_kernel_width);
-  assert(plan->dist_kernel);
+  dist_kernel_width = 1 + 2 * (int)ceil(max_radius / scale);
+  dist_kernel = (float*)realloc(dist_kernel,
+                                sizeof(float) *
+                                  dist_kernel_width *
+                                  dist_kernel_width);
+  assert(dist_kernel);
 
-  p = plan->dist_kernel;
-  for(int j=-plan->dist_kernel_width/2;j<=plan->dist_kernel_width/2;j++)
+  float * p = dist_kernel;
+  for(int j=-dist_kernel_width/2;j<=dist_kernel_width/2;j++)
   {
-    for(int i=-plan->dist_kernel_width/2;i<=plan->dist_kernel_width/2;i++,p++)
+    for(int i=-dist_kernel_width/2;i<=dist_kernel_width/2;i++,p++)
     {
-      *p = (float) (sqrt(i*i+j*j) * plan->scale);
+      *p = (float) (sqrt(i*i+j*j) * scale);
     }
   }
   // also compute a 3x3 kernel, used when propagating distance from goal
-  p = plan->dist_kernel_3x3;
+  p = dist_kernel_3x3;
   for(int j=-1;j<=1;j++)
   {
     for(int i=-1;i<=1;i++,p++)
     {
-      *p = (float) (sqrt(i*i+j*j) * plan->scale);
+      *p = (float) (sqrt(i*i+j*j) * scale);
     }
   }
 }
 
-
-// Destroy a planner
-void plan_free(plan_t *plan)
-{
-  if (plan->cells)
-    free(plan->cells);
-  heap_free(plan->heap);
-  free(plan->waypoints);
-  if(plan->dist_kernel)
-    free(plan->dist_kernel);
-  free(plan);
-
-  return;
-}
-
-// Copy the planner
-plan_t *plan_copy(plan_t *plan)
-{
-  plan_t* ret_plan = plan_alloc(plan->abs_min_radius,
-                        plan->des_min_radius,
-                        plan->max_radius,
-                        plan->dist_penalty,
-                        plan->hysteresis_factor);
-
-  assert(ret_plan);
-
-  // Fill in the map structure
-  // First, get the map info
-  ret_plan->scale = plan->scale;
-  ret_plan->size_x = plan->size_x;
-  ret_plan->size_y = plan->size_y;
-  ret_plan->origin_x = plan->origin_x;
-  ret_plan->origin_y = plan->origin_y;
-
-  // Now get the map data
-  // Allocate space for map cells
-  ret_plan->cells = (plan_cell_t*)realloc(ret_plan->cells,
-                                            (ret_plan->size_x *
-                                             ret_plan->size_y *
-                                             sizeof(plan_cell_t)));
-  assert(ret_plan->cells);
-
-  // Do initialization
-  plan_init(ret_plan);
-
-  // Copy the map data
-  for (int i = 0; i < ret_plan->size_x * ret_plan->size_y; ++i)
-  {
-    ret_plan->cells[i].occ_dist = plan->cells[i].occ_dist;
-    ret_plan->cells[i].occ_state = plan->cells[i].occ_state;
-    ret_plan->cells[i].occ_state_dyn = plan->cells[i].occ_state_dyn;
-    ret_plan->cells[i].occ_dist_dyn = plan->cells[i].occ_dist_dyn;
-  }
-
-  return ret_plan;
-}
-
 // Initialize the plan
-void plan_init(plan_t *plan)
+void plan_t::init()
 {
-  printf("scale: %.3lf\n", plan->scale);
+  printf("scale: %.3lf\n", scale);
 
-  plan_cell_t *cell = plan->cells;
-  for (int j = 0; j < plan->size_y; j++)
+  plan_cell_t *cell = cells;
+  for (int j = 0; j < size_y; j++)
   {
-    for (int i = 0; i < plan->size_x; i++, cell++)
+    for (int i = 0; i < size_x; i++, cell++)
     {
       cell->ci = i;
       cell->cj = j;
@@ -258,55 +264,56 @@ void plan_init(plan_t *plan)
       if(cell->occ_state >= 0)
         cell->occ_dist_dyn = cell->occ_dist = 0.0;
       else
-        cell->occ_dist_dyn = cell->occ_dist = (float) (plan->max_radius);
+        cell->occ_dist_dyn = cell->occ_dist = (float) (max_radius);
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
       cell->lpathmark = 0;
     }
   }
-  plan->waypoint_count = 0;
+  waypoint_count = 0;
 
-  plan_compute_dist_kernel(plan);
+  compute_dist_kernel();
 
-  plan_set_bounds(plan, 0, 0, plan->size_x - 1, plan->size_y - 1);
+  set_bounds(0, 0, size_x - 1, size_y - 1);
 }
 
 
 // Reset the plan
-void plan_reset(plan_t *plan)
+void plan_t::reset()
 {
-  for (int j = plan->min_y; j <= plan->max_y; j++)
+  for (int j = min_y; j <= max_y; j++)
   {
-    for (int i = plan->min_x; i <= plan->max_x; i++)
+    for (int i = min_x; i <= max_x; i++)
     {
-      plan_cell_t *cell = plan->cells + PLAN_INDEX(plan,i,j);
+      plan_cell_t *cell = cells + PLAN_INDEX(this,i,j);
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
       cell->mark = 0;
     }
   }
-  plan->waypoint_count = 0;
+  waypoint_count = 0;
 }
 
 void
-plan_set_bounds(plan_t* plan, int min_x, int min_y, int max_x, int max_y)
+plan_t::set_bounds(int min_x, int min_y, int max_x, int max_y)
 {
+  // TODO: name clashes with member data?
   min_x = MAX(0,min_x);
-  min_x = MIN(plan->size_x-1, min_x);
+  min_x = MIN(size_x-1, min_x);
   min_y = MAX(0,min_y);
-  min_y = MIN(plan->size_y-1, min_y);
+  min_y = MIN(size_y-1, min_y);
   max_x = MAX(0,max_x);
-  max_x = MIN(plan->size_x-1, max_x);
+  max_x = MIN(size_x-1, max_x);
   max_y = MAX(0,max_y);
-  max_y = MIN(plan->size_y-1, max_y);
+  max_y = MIN(size_y-1, max_y);
 
   assert(min_x <= max_x);
   assert(min_y <= max_y);
 
-  plan->min_x = min_x;
-  plan->min_y = min_y;
-  plan->max_x = max_x;
-  plan->max_y = max_y;
+  this->min_x = min_x;
+  this->min_y = min_y;
+  this->max_x = max_x;
+  this->max_y = max_y;
 
   //printf("new bounds: (%d,%d) -> (%d,%d)\n",
          //plan->min_x, plan->min_y,
@@ -314,18 +321,18 @@ plan_set_bounds(plan_t* plan, int min_x, int min_y, int max_x, int max_y)
 }
 
 bool
-plan_check_inbounds(plan_t* plan, double x, double y)
+plan_t::check_inbounds(double x, double y) const
 {
-  int gx = PLAN_GXWX(plan, x);
-  int gy = PLAN_GYWY(plan, y);
+  int gx = PLAN_GXWX(this, x);
+  int gy = PLAN_GYWY(this, y);
 
-  return ((gx >= plan->min_x) && (gx <= plan->max_x) &&
-          (gy >= plan->min_y) && (gy <= plan->max_y));
+  return ((gx >= min_x) && (gx <= max_x) &&
+          (gy >= min_y) && (gy <= max_y));
 }
 
 void
-plan_set_bbox(plan_t* plan, double padding, double min_size,
-              double x0, double y0, double x1, double y1)
+plan_t::set_bbox(double padding, double min_size,
+                 double x0, double y0, double x1, double y1)
 {
   int gx0, gy0, gx1, gy1;
   int min_x, min_y, max_x, max_y;
@@ -334,10 +341,10 @@ plan_set_bbox(plan_t* plan, double padding, double min_size,
   int gmin_size;
   int gpadding;
 
-  gx0 = PLAN_GXWX(plan, x0);
-  gy0 = PLAN_GYWY(plan, y0);
-  gx1 = PLAN_GXWX(plan, x1);
-  gy1 = PLAN_GYWY(plan, y1);
+  gx0 = PLAN_GXWX(this, x0);
+  gy0 = PLAN_GYWY(this, y0);
+  gx1 = PLAN_GXWX(this, x1);
+  gy1 = PLAN_GYWY(this, y1);
 
   // Make a bounding box to include both points.
   min_x = MIN(gx0, gx1);
@@ -346,19 +353,19 @@ plan_set_bbox(plan_t* plan, double padding, double min_size,
   max_y = MAX(gy0, gy1);
 
   // Make sure the min_size is achievable
-  gmin_size = (int)ceil(min_size / plan->scale);
-  gmin_size = MIN(gmin_size, MIN(plan->size_x-1, plan->size_y-1));
+  gmin_size = (int)ceil(min_size / scale);
+  gmin_size = MIN(gmin_size, MIN(size_x-1, size_y-1));
 
   // Add padding
-  gpadding = (int)ceil(padding / plan->scale);
+  gpadding = (int)ceil(padding / scale);
   min_x -= gpadding / 2;
   min_x = MAX(min_x, 0);
   max_x += gpadding / 2;
-  max_x = MIN(max_x, plan->size_x - 1);
+  max_x = MIN(max_x, size_x - 1);
   min_y -= gpadding / 2;
   min_y = MAX(min_y, 0);
   max_y += gpadding / 2;
-  max_y = MIN(max_y, plan->size_y - 1);
+  max_y = MIN(max_y, size_y - 1);
 
   // Grow the box if necessary to achieve the min_size
   sx = max_x - min_x;
@@ -369,7 +376,7 @@ plan_set_bbox(plan_t* plan, double padding, double min_size,
     max_x += (int)ceil(dx / 2.0);
 
     min_x = MAX(min_x, 0);
-    max_x = MIN(max_x, plan->size_x-1);
+    max_x = MIN(max_x, size_x-1);
 
     sx = max_x - min_x;
   }
@@ -381,38 +388,38 @@ plan_set_bbox(plan_t* plan, double padding, double min_size,
     max_y += (int)ceil(dy / 2.0);
 
     min_y = MAX(min_y, 0);
-    max_y = MIN(max_y, plan->size_y-1);
+    max_y = MIN(max_y, size_y-1);
 
     sy = max_y - min_y;
   }
 
-  plan_set_bounds(plan, min_x, min_y, max_x, max_y);
+  set_bounds(min_x, min_y, max_x, max_y);
 }
 
 void
-plan_compute_cspace(plan_t* plan)
+plan_t::compute_cspace()
 {
   puts("Generating C-space....");
 
-  for (int j = plan->min_y; j <= plan->max_y; j++)
+  for (int j = min_y; j <= max_y; j++)
   {
-    plan_cell_t *cell = plan->cells + PLAN_INDEX(plan, 0, j);
-    for (int i = plan->min_x; i <= plan->max_x; i++, cell++)
+    plan_cell_t *cell = cells + PLAN_INDEX(this, 0, j);
+    for (int i = min_x; i <= max_x; i++, cell++)
     {
       if (cell->occ_state < 0)
         continue;
 
-      float *p = plan->dist_kernel;
-      for (int dj = -plan->dist_kernel_width/2;
-               dj <= plan->dist_kernel_width/2;
+      float *p = dist_kernel;
+      for (int dj = -dist_kernel_width/2;
+               dj <= dist_kernel_width/2;
                dj++)
       {
-        plan_cell_t *ncell = cell + -plan->dist_kernel_width/2 + dj*plan->size_x;
-        for (int di = -plan->dist_kernel_width/2;
-                 di <= plan->dist_kernel_width/2;
+        plan_cell_t *ncell = cell + -dist_kernel_width/2 + dj*size_x;
+        for (int di = -dist_kernel_width/2;
+                 di <= dist_kernel_width/2;
                  di++, p++, ncell++)
         {
-          if(!PLAN_VALID_BOUNDS(plan,i+di,j+dj))            
+          if(!PLAN_VALID_BOUNDS(this,i+di,j+dj))
             continue;
 
           if(*p < ncell->occ_dist)
