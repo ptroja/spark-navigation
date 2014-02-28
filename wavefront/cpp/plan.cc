@@ -99,18 +99,11 @@ plan_t *plan_alloc(double abs_min_radius, double des_min_radius,
 void
 plan_set_obstacles(plan_t* plan, double* obs, size_t num)
 {
-  size_t i;
-  int j;
-  int di,dj;
-  float* p;
-  plan_cell_t* cell, *ncell;
-  double t0,t1;
-
-  t0 = get_time();
+  double t0 = get_time();
 
   // Start with static obstacle data
-  cell = plan->cells;
-  for(j=0;j<plan->size_y*plan->size_x;j++,cell++)
+  plan_cell_t* cell = plan->cells;
+  for(int j=0;j<plan->size_y*plan->size_x;j++,cell++)
   {
     cell->occ_state_dyn = cell->occ_state;
     cell->occ_dist_dyn = cell->occ_dist;
@@ -118,7 +111,7 @@ plan_set_obstacles(plan_t* plan, double* obs, size_t num)
   }
 
   // Expand around the dynamic obstacle pts
-  for(i=0;i<num;i++)
+  for(size_t i=0;i<num;i++)
   {
     // Convert to grid coords
     int gx = PLAN_GXWX(plan, obs[2*i]);
@@ -136,15 +129,15 @@ plan_set_obstacles(plan_t* plan, double* obs, size_t num)
     cell->occ_state_dyn = 1;
     cell->occ_dist_dyn = 0.0;
 
-    p = plan->dist_kernel;
-    for (dj = -plan->dist_kernel_width/2; 
-         dj <= plan->dist_kernel_width/2; 
-         dj++)
+    float * p = plan->dist_kernel;
+    for (int dj = -plan->dist_kernel_width/2;
+             dj <= plan->dist_kernel_width/2;
+             dj++)
     {
-      ncell = cell + -plan->dist_kernel_width/2 + dj*plan->size_x;
-      for (di = -plan->dist_kernel_width/2;
-           di <= plan->dist_kernel_width/2; 
-           di++, p++, ncell++)
+      plan_cell_t * ncell = cell + -plan->dist_kernel_width/2 + dj*plan->size_x;
+      for (int di = -plan->dist_kernel_width/2;
+               di <= plan->dist_kernel_width/2;
+               di++, p++, ncell++)
       {
         if(!PLAN_VALID_BOUNDS(plan,cell->ci+di,cell->cj+dj))            
           continue;
@@ -155,14 +148,13 @@ plan_set_obstacles(plan_t* plan, double* obs, size_t num)
     }
   }
 
-  t1 = get_time();
+  double t1 = get_time();
   //printf("plan_set_obstacles: %.6lf\n", t1-t0);
 }
 
 void
 plan_compute_dist_kernel(plan_t* plan)
 {
-  int i,j;
   float* p;
 
   // Compute variable sized kernel, for use in propagating distance from
@@ -175,18 +167,18 @@ plan_compute_dist_kernel(plan_t* plan)
   assert(plan->dist_kernel);
 
   p = plan->dist_kernel;
-  for(j=-plan->dist_kernel_width/2;j<=plan->dist_kernel_width/2;j++)
+  for(int j=-plan->dist_kernel_width/2;j<=plan->dist_kernel_width/2;j++)
   {
-    for(i=-plan->dist_kernel_width/2;i<=plan->dist_kernel_width/2;i++,p++)
+    for(int i=-plan->dist_kernel_width/2;i<=plan->dist_kernel_width/2;i++,p++)
     {
       *p = (float) (sqrt(i*i+j*j) * plan->scale);
     }
   }
   // also compute a 3x3 kernel, used when propagating distance from goal
   p = plan->dist_kernel_3x3;
-  for(j=-1;j<=1;j++)
+  for(int j=-1;j<=1;j++)
   {
-    for(i=-1;i<=1;i++,p++)
+    for(int i=-1;i<=1;i++,p++)
     {
       *p = (float) (sqrt(i*i+j*j) * plan->scale);
     }
@@ -211,8 +203,6 @@ void plan_free(plan_t *plan)
 // Copy the planner
 plan_t *plan_copy(plan_t *plan)
 {
-  int i;
-
   plan_t* ret_plan = plan_alloc(plan->abs_min_radius,
                         plan->des_min_radius,
                         plan->max_radius,
@@ -241,7 +231,7 @@ plan_t *plan_copy(plan_t *plan)
   plan_init(ret_plan);
 
   // Copy the map data
-  for (i = 0; i < ret_plan->size_x * ret_plan->size_y; ++i)
+  for (int i = 0; i < ret_plan->size_x * ret_plan->size_y; ++i)
   {
     ret_plan->cells[i].occ_dist = plan->cells[i].occ_dist;
     ret_plan->cells[i].occ_state = plan->cells[i].occ_state;
@@ -255,11 +245,9 @@ plan_t *plan_copy(plan_t *plan)
 // Initialize the plan
 void plan_init(plan_t *plan)
 {
-  plan_cell_t *cell;
-
   printf("scale: %.3lf\n", plan->scale);
 
-  cell = plan->cells;
+  plan_cell_t *cell = plan->cells;
   for (int j = 0; j < plan->size_y; j++)
   {
     for (int i = 0; i < plan->size_x; i++, cell++)
@@ -325,17 +313,14 @@ plan_set_bounds(plan_t* plan, int min_x, int min_y, int max_x, int max_y)
          //plan->max_x, plan->max_y);
 }
 
-int
+bool
 plan_check_inbounds(plan_t* plan, double x, double y)
 {
   int gx = PLAN_GXWX(plan, x);
   int gy = PLAN_GYWY(plan, y);
 
-  if((gx >= plan->min_x) && (gx <= plan->max_x) &&
-     (gy >= plan->min_y) && (gy <= plan->max_y))
-    return(1);
-  else
-    return(0);
+  return ((gx >= plan->min_x) && (gx <= plan->max_x) &&
+          (gy >= plan->min_y) && (gy <= plan->max_y));
 }
 
 void

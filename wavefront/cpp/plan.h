@@ -152,7 +152,7 @@ void plan_set_bounds(plan_t* plan, int min_x, int min_y, int max_x, int max_y);
 void plan_set_bbox(plan_t* plan, double padding, double min_size,
                    double x0, double y0, double x1, double y1);
 
-int plan_check_inbounds(plan_t* plan, double x, double y);
+bool plan_check_inbounds(plan_t* plan, double x, double y);
 
 // Construct the configuration space from the occupancy grid.
 //void plan_update_cspace(plan_t *plan, const char* cachefile);
