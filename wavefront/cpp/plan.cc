@@ -224,7 +224,7 @@ plan_t::compute_dist_kernel()
   {
     for(int i=-dist_kernel_width/2;i<=dist_kernel_width/2;i++,p++)
     {
-      *p = (float) (sqrt(i*i+j*j) * scale);
+      *p = (float) (hypot(i,j) * scale);
     }
   }
   // also compute a 3x3 kernel, used when propagating distance from goal
@@ -233,7 +233,7 @@ plan_t::compute_dist_kernel()
   {
     for(int i=-1;i<=1;i++,p++)
     {
-      *p = (float) (sqrt(i*i+j*j) * scale);
+      *p = (float) (hypot(i,j) * scale);
     }
   }
 }

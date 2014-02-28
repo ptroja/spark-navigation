@@ -40,7 +40,7 @@ plan_check_done(plan_t* plan,
                 double goal_d, double goal_a)
 {
   double dt, da;
-  dt = sqrt((gx-lx)*(gx-lx) + (gy-ly)*(gy-ly));
+  dt = hypot(gx-lx,gy-ly);
   da = std::abs(_angle_diff(ga,la));
 
   if((dt < goal_d) && (da < goal_a))
@@ -74,7 +74,7 @@ plan_t::compute_diffdrive_cmds(double* vx, double *va,
   }
 
   // Are we on top of the goal?
-  d = sqrt((gx-lx)*(gx-lx)+(gy-ly)*(gy-ly));
+  d = hypot(gx-lx,gy-ly);
   //printf("d: %.3f\n", d);
   if(d < goal_d)
   {
@@ -101,7 +101,7 @@ plan_t::compute_diffdrive_cmds(double* vx, double *va,
     return(-1);
   }
 
-  d = sqrt((lx-cx)*(lx-cx) + (ly-cy)*(ly-cy));
+  d = hypot(lx-cx,ly-cy);
   b = atan2(cy - ly, cx - lx);
   a = amin + (d / maxd) * (amax-amin);
   //printf("a: %.3f\n", a*180.0/M_PI);
