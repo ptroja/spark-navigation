@@ -113,12 +113,10 @@ struct plan_t
   float dist_kernel_3x3[9];
   
   // Priority queue of cells to update
-  //heap_t* heap;
   std::priority_queue<plan_cell_t *> heap;
 
   // The global path
-  size_t path_count, path_size;
-  plan_cell_t **path;
+  std::vector<plan_cell_t *> path;
   
   // The local path (mainly for debugging)
   std::vector<plan_cell_t *> lpath;

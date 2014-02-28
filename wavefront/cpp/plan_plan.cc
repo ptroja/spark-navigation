@@ -49,7 +49,7 @@ plan_t::do_global(double lx, double ly, double gx, double gy)
   // Reset plan costs
   reset();
 
-  path_count = 0;
+  path.clear();
   if(update_plan(lx, ly, gx, gy) < 0)
   {
     // no path
@@ -65,14 +65,7 @@ plan_t::do_global(double lx, double ly, double gx, double gy)
                     cell;
                     cell = cell->plan_next)
   {
-    if(path_count >= path_size)
-    {
-      path_size *= 2;
-      path = (plan_cell_t**)realloc(path,
-                                    path_size * sizeof(plan_cell_t*));
-      assert(path);
-    }
-    path[path_count++] = cell;
+    path.push_back(cell);
   }
 
   t1 = get_time();
@@ -111,6 +104,7 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
 
   //printf("local goal: %.3lf, %.3lf\n", gx, gy);
 
+  lpath.clear();
   if(update_plan(lx, ly, gx, gy) != 0)
   {
     puts("local plan update failed");
@@ -125,7 +119,6 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
     cells[i].lpathmark = 0;
 
   // Cache the path
-  lpath.clear();
   for(plan_cell_t * cell = cells + PLAN_INDEX(this,li,lj);
                     cell;
                     cell = cell->plan_next)
@@ -273,7 +266,7 @@ plan_t::find_local_goal(double* gx, double* gy,
   plan_cell_t* cell;
 
   // Must already have computed a global goal
-  if(path_count == 0)
+  if(path.empty())
   {
     //puts("no global path");
     return(-1);
@@ -287,7 +280,7 @@ plan_t::find_local_goal(double* gx, double* gy,
   // Find the closest place to jump on the global path
   squared_d_min = DBL_MAX;
   int c_min = -1;
-  for(int c=0;c<path_count;c++)
+  for(int c=0;c<path.size();c++)
   {
     cell = path[c];
     squared_d = ((cell->ci - li) * (cell->ci - li) + 
@@ -303,7 +296,7 @@ plan_t::find_local_goal(double* gx, double* gy,
   // Follow the path to find the last cell that's inside the local planning
   // area
   int c;
-  for(c=c_min; c<path_count; c++)
+  for(c=c_min; c<path.size(); c++)
   {
     cell = path[c];
     

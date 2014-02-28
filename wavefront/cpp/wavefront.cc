@@ -1073,11 +1073,11 @@ void Wavefront::Main()
 
       // compute costs to the new goal.  Try local plan first
       if(new_goal ||
-         (this->plan->path_count == 0) ||
+         (this->plan->path.empty()) ||
          (this->plan->do_local(this->localize.px,
                                this->localize.py, this->scan_maxrange) < 0))
       {
-        if(!new_goal && (this->plan->path_count != 0))
+        if(!new_goal && (!this->plan->path.empty()))
           puts("Wavefront: local plan failed");
 
         // Create a global plan
@@ -1118,16 +1118,16 @@ void Wavefront::Main()
         delete [] line.points;
       }
 
-      if(this->graphics2d_id.interf && this->plan->path_count)
+      if(this->graphics2d_id.interf && !this->plan->path.empty())
       {
         player_graphics2d_cmd_polyline_t line;
-        line.points_count = this->plan->path_count;
+        line.points_count = this->plan->path.size();
         line.points = new player_point_2d_t[line.points_count];
         line.color.alpha = 0;
         line.color.red = 255;
         line.color.green = 0;
         line.color.blue = 0;
-        for(int i=0;i<this->plan->path_count;i++)
+        for(int i=0;i<this->plan->path.size();i++)
         {
           line.points[i].px = PLAN_WXGX(this->plan,this->plan->path[i]->ci);
           line.points[i].py = PLAN_WYGY(this->plan,this->plan->path[i]->cj);
@@ -1195,7 +1195,7 @@ void Wavefront::Main()
     if(this->velocity_control)
     {
       double t0 = get_time();
-      if(this->plan->path_count && !this->atgoal)
+      if(!this->plan->path.empty() && !this->atgoal)
       {
         // Check doneness
         double dist = hypot(this->localize.px - this->target.px,
