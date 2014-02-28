@@ -1568,14 +1568,13 @@ Wavefront::GetMap(bool threaded)
     }
 
     player_map_data_t* mapdata = (player_map_data_t*)msg->GetPayload();
-    plan_cell_t* cell;
 
     // copy the map data
     for(int j=0;j<sj;j++)
     {
       for(int i=0;i<si;i++)
       {
-        cell = this->plan->cells + PLAN_INDEX(this->plan,oi+i,oj+j);
+    	plan_cell_t * cell = this->plan->cells + PLAN_INDEX(this->plan,oi+i,oj+j);
         cell->occ_dist = this->plan->max_radius;
         if((cell->occ_state = mapdata->data[j*si + i]) >= 0)
           cell->occ_dist = 0;
