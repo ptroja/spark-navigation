@@ -31,7 +31,6 @@
   #include <libplayercommon/playercommon.h>
 #endif
 
-static double _plan_check_path(plan_t* plan, plan_cell_t* s, plan_cell_t* g);
 static double _angle_diff(double a, double b);
 
 int
@@ -155,7 +154,7 @@ plan_t::get_carrot(double* px, double* py,
         ncell = ncell->plan_next, d+=scale);
 
     // Check whether the straight-line path is clear
-    if((cost = check_path(cell, ncell)) < 0.0)
+    if((cost = check_path(*cell, *ncell)) < 0.0)
     {
       //printf("no path from (%d,%d) to (%d,%d)\n",
              //cell->ci, cell->cj, ncell->ci, ncell->cj);
@@ -181,7 +180,7 @@ plan_t::get_carrot(double* px, double* py,
 }
 
 double
-plan_t::check_path(plan_cell_t* s, plan_cell_t* g) const
+plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
 {
   // Bresenham raytracing
   int x0,x1,y0,y1;
@@ -192,11 +191,11 @@ plan_t::check_path(plan_cell_t* s, plan_cell_t* g) const
   int deltax, deltay, error, deltaerr;
   int obscost=0;
 
-  x0 = s->ci;
-  y0 = s->cj;
+  x0 = s.ci;
+  y0 = s.cj;
   
-  x1 = g->ci;
-  y1 = g->cj;
+  x1 = g.ci;
+  y1 = g.cj;
 
   if(abs(y1-y0) > abs(x1-x0))
     steep = 1;
@@ -299,4 +298,3 @@ _angle_diff(double a, double b)
   else
     return(d2);
 }
-

@@ -208,7 +208,7 @@ private:
   plan_cell_t *pop();
   int update_plan(double lx, double ly, double gx, double gy);
   int find_local_goal(double* gx, double* gy, double lx, double ly);
-  double check_path(plan_cell_t* s, plan_cell_t* g) const;
+  double check_path(const plan_cell_t & s, const plan_cell_t & g) const;
 
   // Test to see if once cell is reachable from another
   int test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const;
