@@ -219,13 +219,15 @@ private:
   void push(plan_cell_t *cell);
   plan_cell_t *pop();
   int update_plan(double lx, double ly, double gx, double gy);
-  int find_local_goal(double* gx, double* gy, double lx, double ly);
+  int find_local_goal(double* gx, double* gy, double lx, double ly) const;
   double check_path(const plan_cell_t & s, const plan_cell_t & g) const;
 
   // Test to see if once cell is reachable from another
   int test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const;
 
   int get_waypoint(int i, double *px, double *py) const;
+
+  static double get_time(void);
 };
 
 /**************************************************************************

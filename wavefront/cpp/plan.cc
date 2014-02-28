@@ -760,7 +760,7 @@ plan_md5(unsigned int* digest, plan_t* plan)
 #endif // if 0
 
 double 
-static get_time(void)
+plan_t::get_time(void)
 {
   struct timeval curr;
   gettimeofday(&curr,NULL);

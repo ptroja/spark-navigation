@@ -41,8 +41,6 @@
   #include <sys/time.h>
 #endif
 
-static double get_time(void);
-
 #include "plan.h"
 
 int
@@ -216,8 +214,8 @@ plan_t::update_plan(double lx, double ly, double gx, double gy)
 
   while (1)
   {
-    float * p;
     cell = pop();
+
     if (cell == NULL)
       break;
 
@@ -226,7 +224,7 @@ plan_t::update_plan(double lx, double ly, double gx, double gy)
 
     //printf("pop %d %d %f\n", cell->ci, cell->cj, cell->plan_cost);
 
-    p = dist_kernel_3x3;
+    float * p = dist_kernel_3x3;
     for (dj = -1; dj <= +1; dj++)
     {
       ncell = cells + PLAN_INDEX(this,oi-1,oj+dj);
@@ -285,7 +283,7 @@ plan_t::update_plan(double lx, double ly, double gx, double gy)
 
 int 
 plan_t::find_local_goal(double* gx, double* gy,
-                        double lx, double ly)
+                        double lx, double ly) const
 {
   int c;
   int c_min;
@@ -378,12 +376,4 @@ plan_cell_t *plan_t::pop()
 	heap.pop();
     return top;
   }
-}
-
-double 
-static get_time(void)
-{
-  struct timeval curr;
-  gettimeofday(&curr,NULL);
-  return(curr.tv_sec + curr.tv_usec / 1e6);
 }
