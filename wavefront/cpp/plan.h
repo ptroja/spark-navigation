@@ -189,10 +189,6 @@ struct plan_t
                              double avmin, double avmax,
                              double amin, double amax);
 
-  int check_done(double lx, double ly, double la,
-                 double gx, double gy, double ga,
-                 double goal_d, double goal_a);
-
   void set_obstacles(double* obs, size_t num);
 
   #if HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
@@ -223,6 +219,10 @@ private:
   int test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const;
 
   int get_waypoint(int i, double *px, double *py) const;
+
+  bool check_done(double lx, double ly, double la,
+                  double gx, double gy, double ga,
+                  double goal_d, double goal_a) const;
 
   static double get_time(void);
 };

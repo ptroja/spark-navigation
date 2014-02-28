@@ -33,20 +33,16 @@
 
 static double _angle_diff(double a, double b);
 
-int
-plan_check_done(plan_t* plan, 
-                double lx, double ly, double la,
-                double gx, double gy, double ga,
-                double goal_d, double goal_a)
+bool
+plan_t::check_done(double lx, double ly, double la,
+                   double gx, double gy, double ga,
+                   double goal_d, double goal_a) const
 {
   double dt, da;
   dt = hypot(gx-lx,gy-ly);
   da = std::abs(_angle_diff(ga,la));
 
-  if((dt < goal_d) && (da < goal_a))
-    return(1);
-  else
-    return(0);
+  return ((dt < goal_d) && (da < goal_a));
 }
 
 int
