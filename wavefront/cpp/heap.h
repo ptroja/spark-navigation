@@ -31,10 +31,6 @@
 #define HEAP_LEFT(i) (2*(i))
 #define HEAP_RIGHT(i) (2*(i)+1)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct heap;
 
 typedef void (*heap_free_elt_fn_t) (void* elt);
@@ -57,9 +53,5 @@ void heap_dump(heap_t* h);
 int heap_valid(heap_t* h);
 int heap_empty(heap_t* h);
 void heap_reset(heap_t* h);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

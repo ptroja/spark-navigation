@@ -33,10 +33,6 @@
 
 #include "heap.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define PLAN_DEFAULT_HEAP_SIZE 1000
 #define PLAN_MAX_COST 1e9
 
@@ -230,9 +226,5 @@ void plan_md5(unsigned int* digest, plan_t* plan);
 
 // Compute the cell index for the given plan coords.
 #define PLAN_INDEX(plan, i, j) ((i) + (j) * plan->size_x)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
