@@ -79,7 +79,7 @@ void plan_t::update_waypoints(double px, double py)
     {
       if(dist > 0.50)
       {
-        if(!test_reachable(cell, ncell->plan_next))
+        if(!test_reachable(*cell, *ncell->plan_next))
           break;
       }
       dist += scale;
@@ -122,23 +122,23 @@ void plan_t::convert_waypoint(plan_cell_t *waypoint, double *px, double *py) con
 }
 
 // Test to see if once cell is reachable from another.
-int plan_t::test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const
+int plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const
 {
   double theta;
   double sinth, costh;
   double i,j;
   int lasti, lastj;
 
-  theta = atan2((double)(cell_b->cj - cell_a->cj), 
-                (double)(cell_b->ci - cell_a->ci));
+  theta = atan2((double)(cell_b.cj - cell_a.cj),
+                (double)(cell_b.ci - cell_a.ci));
   sinth = sin(theta);
   costh = cos(theta);
 
   lasti = lastj = -1;
-  i = (double)cell_a->ci;
-  j = (double)cell_a->cj;
+  i = (double)cell_a.ci;
+  j = (double)cell_a.cj;
 
-  while((lasti != cell_b->ci) || (lastj != cell_b->cj))
+  while((lasti != cell_b.ci) || (lastj != cell_b.cj))
   {
     if((lasti != (int)floor(i)) || (lastj != (int)floor(j)))
     {
@@ -154,9 +154,9 @@ int plan_t::test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const
         return(0);
     }
     
-    if(lasti != cell_b->ci)
+    if(lasti != cell_b.ci)
       i += costh;
-    if(lastj != cell_b->cj)
+    if(lastj != cell_b.cj)
       j += sinth;
   }
   return(1);
