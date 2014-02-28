@@ -81,6 +81,9 @@ plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
 	 	cells(NULL),
 	 	dist_kernel(NULL), dist_kernel_width(0)
 {
+  path.reserve(1000);
+  lpath.reserve(100);
+  waypoints.reserve(100);
 }
 
 // Destroy a planner
@@ -106,6 +109,10 @@ plan_t::plan_t(const plan_t & plan) :
 	cells(NULL),
 	dist_kernel(NULL), dist_kernel_width(0)
 {
+  path.reserve(1000);
+  lpath.reserve(100);
+  waypoints.reserve(100);
+
   // Now get the map data
   // Allocate space for map cells
   this->cells = (plan_cell_t*)malloc((this->size_x *
