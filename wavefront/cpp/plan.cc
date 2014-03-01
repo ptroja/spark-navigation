@@ -92,7 +92,7 @@ plan_t::~plan_t()
   if (cells)
     free(cells);
   if(dist_kernel)
-    free(dist_kernel);
+    delete [] dist_kernel;
 }
 
 // Copy the planner
@@ -195,11 +195,9 @@ plan_t::compute_dist_kernel()
   // Compute variable sized kernel, for use in propagating distance from
   // obstacles
   dist_kernel_width = 1 + 2 * (int)ceil(max_radius / scale);
-  dist_kernel = (float*)realloc(dist_kernel,
-                                sizeof(float) *
-                                  dist_kernel_width *
-                                  dist_kernel_width);
-  assert(dist_kernel);
+
+  if(dist_kernel) delete [] dist_kernel;
+  dist_kernel = new float[dist_kernel_width*dist_kernel_width];
 
   float * p = dist_kernel;
   for(int j=-dist_kernel_width/2;j<=dist_kernel_width/2;j++)
