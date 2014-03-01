@@ -1041,8 +1041,8 @@ void Wavefront::Main()
       // goal or robot pose lie outside the bounds of the area we last
       // searched.
       if(this->new_map ||
-         !plan_check_inbounds(plan,this->localize.px,this->localize.py) ||
-          !plan_check_inbounds(plan,this->target.px,this->target.py))
+         !this->plan->check_inbounds(this->localize.px,this->localize.py) ||
+          !this->plan->inbounds(this->target.px,this->target.py))
       {
         // Unfortunately, this computation can take a while (e.g., 1-2
         // seconds).  So we'll stop the robot while it thinks.
@@ -1050,9 +1050,9 @@ void Wavefront::Main()
 
         // Set the bounds to search only an axis-aligned bounding box
         // around the robot and the goal.
-        plan_set_bbox(this->plan, 1.0, 3.0,
-                      this->localize.px, this->localize.py,
-                      this->target.px, this->target.py);
+        this->plan->set_bbox(1.0, 3.0,
+                             this->localize.px, this->localize.py,
+                             this->target.px, this->target.py);
 
         double t0 = get_time();
         plan_update_cspace(this->plan,this->cspace_fname);

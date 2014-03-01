@@ -79,51 +79,6 @@ namespace std {
 // Planner info
 struct plan_t
 {
-  // Grid dimensions (number of cells)
-  int size_x, size_y;
-
-  // Grid bounds (for limiting the search).
-  int min_x, min_y, max_x, max_y;
-
-  // Grid origin (real-world coords, in meters, of the lower-left grid
-  // cell)
-  double origin_x, origin_y;
-
-  // Grid scale (m/cell)
-  double scale;
-
-  // Effective robot radius
-  double des_min_radius, abs_min_radius;
-
-  // Max radius we will consider
-  double max_radius;
-
-  // Penalty factor for cells inside the max radius
-  double dist_penalty;
-  
-  // Cost multiplier for cells on the previous local path
-  double hysteresis_factor;
-
-  // The grid data
-  plan_cell_t *cells;
-
-  // Distance penalty kernel, pre-computed in plan_compute_dist_kernel();
-  float* dist_kernel;
-  int dist_kernel_width;
-  float dist_kernel_3x3[9];
-  
-  // Priority queue of cells to update
-  std::priority_queue<plan_cell_t *> heap;
-
-  // The global path
-  std::vector<plan_cell_t *> path;
-  
-  // The local path (mainly for debugging)
-  std::vector<plan_cell_t *> lpath;
-
-  // Waypoints extracted from global path
-  std::vector<plan_cell_t *> waypoints;
-
   // Create a planner
   plan_t(double abs_min_radius,
          double des_min_radius,
@@ -133,11 +88,11 @@ struct plan_t
 
   void compute_dist_kernel();
 
-  // Destroy a planner
-  ~plan_t();
-
   // Copy a planner
   plan_t( const plan_t &obj);
+
+  // Destroy a planner
+  ~plan_t();
 
   // Initialize the plan
   void init();
@@ -149,8 +104,6 @@ struct plan_t
   // Load the occupancy values from an image file
   int load_occ(const char *filename, double scale);
   #endif
-
-  void set_bounds(int min_x, int min_y, int max_x, int max_y);
 
   void set_bbox(double padding, double min_size,
                 double x0, double y0, double x1, double y1);
@@ -167,9 +120,6 @@ struct plan_t
 
   // Generate a path to the goal
   void update_waypoints(double px, double py);
-
-  // Get the ith waypoint; returns zero if there are no more waypoints
-  int get_waypoint(int i, double *px, double *py);
 
   // Convert given waypoint cell to global x,y
   void convert_waypoint(plan_cell_t *waypoint,
@@ -191,21 +141,46 @@ struct plan_t
 
   void set_obstacles(double* obs, size_t num);
 
-  #if HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
-  // Write the cspace occupancy distance values to a file, one per line.
-  // Read them back in with plan_read_cspace().
-  // Returns non-zero on error.
-  int write_cspace(const char* fname, unsigned int* hash);
+#if HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
+// Write the cspace occupancy distance values to a file, one per line.
+// Read them back in with plan_read_cspace().
+// Returns non-zero on error.
+int write_cspace(const char* fname, unsigned int* hash);
 
-  // Read the cspace occupancy distance values from a file, one per line.
-  // Write them in first with plan_read_cspace().
-  // Returns non-zero on error.
-  int read_cspace(const char* fname, unsigned int* hash);
+// Read the cspace occupancy distance values from a file, one per line.
+// Write them in first with plan_read_cspace().
+// Returns non-zero on error.
+int read_cspace(const char* fname, unsigned int* hash);
 
-  // Compute and return the 16-bit MD5 hash of the map data in the given plan
-  // object.
-  void md5(unsigned int* digest) const;
-  #endif // HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
+// Compute and return the 16-bit MD5 hash of the map data in the given plan
+// object.
+void md5(unsigned int* digest) const;
+#endif // HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
+
+  // Grid dimensions (number of cells)
+  int size_x, size_y;
+
+  // Grid origin (real-world coords, in meters, of the lower-left grid
+  // cell)
+  double origin_x, origin_y;
+
+  // Grid scale (m/cell)
+  double scale;
+
+  // Max radius we will consider
+  double max_radius;
+
+  // The grid data
+  plan_cell_t *cells;
+
+  // The global path
+  std::vector<plan_cell_t *> path;
+
+  // The local path (mainly for debugging)
+  std::vector<plan_cell_t *> lpath;
+
+  // Waypoints extracted from global path
+  std::vector<plan_cell_t *> waypoints;
 
 private:
   // Plan queue stuff
@@ -218,11 +193,34 @@ private:
   // Test to see if once cell is reachable from another
   int test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const;
 
+  // Get the ith waypoint; returns zero if there are no more waypoints
   int get_waypoint(int i, double *px, double *py) const;
 
   bool check_done(double lx, double ly, double la,
                   double gx, double gy, double ga,
                   double goal_d, double goal_a) const;
+
+  void set_bounds(int min_x, int min_y, int max_x, int max_y);
+
+  // Priority queue of cells to update
+  std::priority_queue<plan_cell_t *> heap;
+
+  // Distance penalty kernel, pre-computed in plan_compute_dist_kernel();
+  float* dist_kernel;
+  int dist_kernel_width;
+  float dist_kernel_3x3[9];
+
+  // Penalty factor for cells inside the max radius
+  double dist_penalty;
+
+  // Cost multiplier for cells on the previous local path
+  double hysteresis_factor;
+
+  // Grid bounds (for limiting the search).
+  int min_x, min_y, max_x, max_y;
+
+  // Effective robot radius
+  double des_min_radius, abs_min_radius;
 
   static double get_time(void);
 };
