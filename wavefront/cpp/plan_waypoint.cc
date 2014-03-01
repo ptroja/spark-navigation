@@ -40,11 +40,9 @@
 // Generate a path to the goal
 void plan_t::update_waypoints(double px, double py)
 {
-  double dist;
-  int ni, nj;
-  plan_cell_t *cell, *ncell;
-
   waypoints.clear();
+
+  int ni, nj;
 
   ni = PLAN_GXWX(this, px);
   nj = PLAN_GYWY(this, py);
@@ -53,7 +51,7 @@ void plan_t::update_waypoints(double px, double py)
   if(!PLAN_VALID(this,ni,nj))
     return;
 
-  cell = cells + PLAN_INDEX(this, ni, nj);
+  plan_cell_t *cell = cells + PLAN_INDEX(this, ni, nj);
 
   while (cell != NULL)
   {
@@ -67,7 +65,8 @@ void plan_t::update_waypoints(double px, double py)
 
     // Find the farthest cell in the path that is reachable from the
     // currrent cell.
-    dist = 0;
+    double dist = 0.0;
+    plan_cell_t *ncell;
     for(ncell = cell; ncell->plan_next != NULL; ncell = ncell->plan_next)
     {
       if(dist > 0.50)
@@ -95,7 +94,7 @@ void plan_t::update_waypoints(double px, double py)
 }
 
 
-// Get the ith waypoint; returns non-zero of there are no more waypoints
+// Get the ith waypoint; returns non-zero if there are no more waypoints
 int plan_t::get_waypoint(int i, double *px, double *py) const
 {
   if (i < 0 || i >= waypoints.size())
@@ -108,10 +107,10 @@ int plan_t::get_waypoint(int i, double *px, double *py) const
 }
 
 // Convert given waypoint cell to global x,y
-void plan_t::convert_waypoint(plan_cell_t *waypoint, double *px, double *py) const
+void plan_t::convert_waypoint(const plan_cell_t & waypoint, double *px, double *py) const
 {
-  *px = PLAN_WXGX(this, waypoint->ci);
-  *py = PLAN_WYGY(this, waypoint->cj);
+  *px = PLAN_WXGX(this, waypoint.ci);
+  *py = PLAN_WYGY(this, waypoint.cj);
 }
 
 // Test to see if once cell is reachable from another.

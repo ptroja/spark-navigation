@@ -655,8 +655,8 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
     {
       // Convert and copy waypoint
       player_point_2d_t w;
-      this->offline_plan->convert_waypoint(this->offline_plan->waypoints[i],
-                                           &w.px, &w.py);
+      this->offline_plan->convert_waypoint(*this->offline_plan->waypoints[i],
+                                            &w.px, &w.py);
       reply->waypoints[i].px = w.px;
       reply->waypoints[i].py = w.py;
       reply->waypoints[i].pa = 0.0;
@@ -1175,8 +1175,8 @@ void Wavefront::Main()
           for(int i=0;i<this->plan->waypoints.size();i++)
           {
             player_point_2d_t w;
-            this->plan->convert_waypoint(this->plan->waypoints[i],
-                                         &w.px, &w.py);
+            this->plan->convert_waypoint(*this->plan->waypoints[i],
+                                          &w.px, &w.py);
             this->waypoints.push_back(w);
           }
 

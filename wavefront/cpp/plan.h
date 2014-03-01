@@ -122,7 +122,7 @@ struct plan_t
   void update_waypoints(double px, double py);
 
   // Convert given waypoint cell to global x,y
-  void convert_waypoint(plan_cell_t *waypoint,
+  void convert_waypoint(const plan_cell_t & waypoint,
                         double *px, double *py) const;
 
   double get_carrot(double* px, double* py,
