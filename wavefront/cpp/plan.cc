@@ -45,6 +45,8 @@
 #include <cstring>
 #include <cerrno>
 
+#include <algorithm> // for max/min
+
 #include <libplayercommon/playercommon.h>
 
 #include "plan.h"
@@ -268,14 +270,14 @@ void
 plan_t::set_bounds(int min_x, int min_y, int max_x, int max_y)
 {
   // TODO: name clashes with member data?
-  min_x = MAX(0,min_x);
-  min_x = MIN(size_x-1, min_x);
-  min_y = MAX(0,min_y);
-  min_y = MIN(size_y-1, min_y);
-  max_x = MAX(0,max_x);
-  max_x = MIN(size_x-1, max_x);
-  max_y = MAX(0,max_y);
-  max_y = MIN(size_y-1, max_y);
+  min_x = std::max(0,min_x);
+  min_x = std::min(size_x-1, min_x);
+  min_y = std::max(0,min_y);
+  min_y = std::min(size_y-1, min_y);
+  max_x = std::max(0,max_x);
+  max_x = std::min(size_x-1, max_x);
+  max_y = std::max(0,max_y);
+  max_y = std::min(size_y-1, max_y);
 
   assert(min_x <= max_x);
   assert(min_y <= max_y);
@@ -317,25 +319,25 @@ plan_t::set_bbox(double padding, double min_size,
   gy1 = PLAN_GYWY(this, y1);
 
   // Make a bounding box to include both points.
-  min_x = MIN(gx0, gx1);
-  min_y = MIN(gy0, gy1);
-  max_x = MAX(gx0, gx1);
-  max_y = MAX(gy0, gy1);
+  min_x = std::min(gx0, gx1);
+  min_y = std::min(gy0, gy1);
+  max_x = std::max(gx0, gx1);
+  max_y = std::max(gy0, gy1);
 
   // Make sure the min_size is achievable
   gmin_size = (int)ceil(min_size / scale);
-  gmin_size = MIN(gmin_size, MIN(size_x-1, size_y-1));
+  gmin_size = std::min(gmin_size, std::min(size_x-1, size_y-1));
 
   // Add padding
   gpadding = (int)ceil(padding / scale);
   min_x -= gpadding / 2;
-  min_x = MAX(min_x, 0);
+  min_x = std::max(min_x, 0);
   max_x += gpadding / 2;
-  max_x = MIN(max_x, size_x - 1);
+  max_x = std::min(max_x, size_x - 1);
   min_y -= gpadding / 2;
-  min_y = MAX(min_y, 0);
+  min_y = std::max(min_y, 0);
   max_y += gpadding / 2;
-  max_y = MIN(max_y, size_y - 1);
+  max_y = std::min(max_y, size_y - 1);
 
   // Grow the box if necessary to achieve the min_size
   sx = max_x - min_x;
@@ -345,8 +347,8 @@ plan_t::set_bbox(double padding, double min_size,
     min_x -= (int)ceil(dx / 2.0);
     max_x += (int)ceil(dx / 2.0);
 
-    min_x = MAX(min_x, 0);
-    max_x = MIN(max_x, size_x-1);
+    min_x = std::max(min_x, 0);
+    max_x = std::min(max_x, size_x-1);
 
     sx = max_x - min_x;
   }
@@ -357,8 +359,8 @@ plan_t::set_bbox(double padding, double min_size,
     min_y -= (int)ceil(dy / 2.0);
     max_y += (int)ceil(dy / 2.0);
 
-    min_y = MAX(min_y, 0);
-    max_y = MIN(max_y, size_y-1);
+    min_y = std::max(min_y, 0);
+    max_y = std::min(max_y, size_y-1);
 
     sy = max_y - min_y;
   }
