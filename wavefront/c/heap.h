@@ -49,6 +49,13 @@ typedef struct heap
   double* A;
   void** data;
 } heap_t;
+/*@ type invariant h_len_is_nonnegative (heap_t h) =
+  @   h.len >= 0;
+  @ type invariant h_size_is_nonnegative (heap_t h) =
+  @   h.size >= 0;
+  @ type invariant h_size_is_nongreater_than_len (heap_t h) =
+  @   h.size <= h.len;
+  @*/   
 
 heap_t* heap_alloc(int size, heap_free_elt_fn_t free_fn);
 
@@ -99,6 +106,7 @@ int heap_empty(heap_t* h);
 
 /*@ requires \valid(h);
   @ assigns *h;
+  @ ensures h->len == 0;
  */
 void heap_reset(heap_t* h);
 
