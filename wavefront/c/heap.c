@@ -143,6 +143,8 @@ int
 heap_valid(heap_t* h)
 {
   int i;
+  /*@ loop assigns \nothing;
+    @*/
   for(i=1;i<h->len;i++)
   {
     if(h->A[HEAP_PARENT(i)] < h->A[i])
@@ -161,6 +163,17 @@ void
 heap_dump(heap_t* h)
 {
   int i;
+  /*@
+    @ loop invariant \valid(h);
+    @ loop invariant \separated(__fc_stdout,h);
+    @ loop invariant 0 <= i <= h->len;
+    @ loop invariant \valid((h->A)+(0..h->len-1));
+    @ for empty:
+    @   loop assigns \nothing;
+    @ for non_empty:
+    @   loop assigns *__fc_stdout,i;
+    @ loop variant h->len-i;
+    @*/
   for(i=0;i<h->len;i++)
     printf("%d: %f\n", i, h->A[i]);
 }
