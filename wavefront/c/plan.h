@@ -141,6 +141,9 @@ plan_t *plan_copy(plan_t *plan);
 void plan_init(plan_t *plan);
 
 // Reset the plan
+/*@ requires \valid(plan);
+  @ assigns *plan;
+ */
 void plan_reset(plan_t *plan);
 
 #if 0

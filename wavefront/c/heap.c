@@ -66,8 +66,9 @@ heap_heapify(heap_t* h, int i)
   int l, r;
   int largest;
   double tmp;
-  void* tmp_data;
+  double* tmp_data; // FIXME: void*
 
+  if (i < h->len/2) {
   l = HEAP_LEFT(i);
   r = HEAP_RIGHT(i);
 
@@ -88,6 +89,7 @@ heap_heapify(heap_t* h, int i)
     h->A[largest] = tmp;
     h->data[largest] = tmp_data;
     heap_heapify(h,largest);
+  }
   }
 }
 
@@ -143,7 +145,10 @@ int
 heap_valid(heap_t* h)
 {
   int i;
-  /*@ loop assigns \nothing;
+  /*@ loop invariant (h->len > 0 ==> (0 <= i <= h->len));
+    @ loop invariant (h->len == 0 ==> i == 1);
+    @ loop invariant \valid(h->A+(0..h->len-1));
+    @ loop assigns i;
     @*/
   for(i=1;i<h->len;i++)
   {
@@ -177,3 +182,4 @@ heap_dump(heap_t* h)
   for(i=0;i<h->len;i++)
     printf("%d: %f\n", i, h->A[i]);
 }
+

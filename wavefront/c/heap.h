@@ -47,14 +47,10 @@ typedef struct heap
   int size;
   heap_free_elt_fn_t free_fn;
   double* A;
-  void** data;
+  double** data; // FIXME: void**
 } heap_t;
-/*@ type invariant h_len_is_nonnegative (heap_t h) =
-  @   h.len >= 0;
-  @ type invariant h_size_is_nonnegative (heap_t h) =
-  @   h.size >= 0;
-  @ type invariant h_size_is_nongreater_than_len (heap_t h) =
-  @   h.size <= h.len;
+/*@ type invariant h_len_and_size (heap_t h) =
+  @   0 <= h.len <= h.size;
   @*/   
 
 heap_t* heap_alloc(int size, heap_free_elt_fn_t free_fn);
@@ -65,12 +61,22 @@ heap_t* heap_alloc(int size, heap_free_elt_fn_t free_fn);
 void heap_free(heap_t* h);
 
 /*@ requires \valid(h);
-  @ assigns *h;
+  @ requires 0 <= i;
+  @ requires h->len >= 0;
+  @ requires \valid(h->A+(0..h->len-1));
+  @ requires \valid(h->data+(0..h->len-1));
+  @ requires \forall int i;
+  @ 0 <= i <= h->len-1 ==>
+  @ \separated(h,h->A,h->data,h->data[i]);
  */
 void heap_heapify(heap_t* h, int i);
 
-/*@ requires \valid(h) && (h->len > 0);
-  @ assigns *h;
+/*@ requires \valid(h);
+  @ requires h->len > 0;
+  @ requires \valid(h->A+(0..h->len-1));
+  @ requires \valid(h->data+(0..h->len-1));
+  //@ ensures h->len == \old(h->len)-1;
+  //@ assigns ...;
  */
 void* heap_extract_max(heap_t* h);
 
@@ -95,6 +101,8 @@ void heap_insert(heap_t* h, double key, void* data);
 void heap_dump(heap_t* h);
 
 /*@ requires \valid(h);
+  @ requires h->len >= 0;
+  @ requires \valid((h->A)+(0..h->len-1));
   @ assigns \nothing;
  */
 int heap_valid(heap_t* h);

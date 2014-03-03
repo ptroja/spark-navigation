@@ -302,8 +302,14 @@ void plan_reset(plan_t *plan)
   int i, j;
   plan_cell_t *cell;
 
+  /*@ loop assigns *plan;
+    @ loop variant plan->max_y - j;
+    @*/
   for (j = plan->min_y; j <= plan->max_y; j++)
   {
+    /*@ loop assigns *plan;
+      @ loop variant plan->max_x - i;
+      @*/ 
     for (i = plan->min_x; i <= plan->max_x; i++)
     {
       cell = plan->cells + PLAN_INDEX(plan,i,j);
