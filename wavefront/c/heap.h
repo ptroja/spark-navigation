@@ -68,6 +68,7 @@ void heap_free(heap_t* h);
   @ requires \forall int i;
   @ 0 <= i <= h->len-1 ==>
   @ \separated(h,h->A,h->data,h->data[i]);
+  @ assigns h->A[0..h->len-1],h->data[0..h->len-1];
  */
 void heap_heapify(heap_t* h, int i);
 
@@ -75,13 +76,19 @@ void heap_heapify(heap_t* h, int i);
   @ requires h->len > 0;
   @ requires \valid(h->A+(0..h->len-1));
   @ requires \valid(h->data+(0..h->len-1));
-  //@ ensures h->len == \old(h->len)-1;
-  //@ assigns ...;
+  @ requires \forall int i;
+  @ 0 <= i <= h->len-1 ==>
+  @ \separated(h,h->A,h->data,h->data[i]);
+  @ ensures h->len == \old(h->len)-1;
+  @ assigns h->len,h->A[0..h->len-1],h->data[0..h->len-1];
  */
 void* heap_extract_max(heap_t* h);
 
 /*@ requires \valid(h);
+  @ requires \valid(h->A+(0..h->len-1));
+  @ requires \valid(h->data+(0..h->len-1));
   @ assigns *h;
+  // TODO
  */
 void heap_insert(heap_t* h, double key, void* data);
 
@@ -109,6 +116,7 @@ int heap_valid(heap_t* h);
 
 /*@ requires \valid(h);
   @ assigns \nothing;
+  @ ensures \result == 0 || \result == 1;
  */
 int heap_empty(heap_t* h);
 
