@@ -53,6 +53,11 @@ typedef struct heap
   @   0 <= h.len <= h.size;
   @*/   
 
+/*@ requires size > 0;
+  @ ensures \result->len == 0;
+  @ ensures \valid(\result);
+  @ ensures \separated(__fc_stdout,\result);
+ */
 heap_t* heap_alloc(int size, heap_free_elt_fn_t free_fn);
 
 /*@ requires \valid(h);
@@ -87,15 +92,18 @@ void* heap_extract_max(heap_t* h);
 /*@ requires \valid(h);
   @ requires \valid(h->A+(0..h->len-1));
   @ requires \valid(h->data+(0..h->len-1));
-  @ assigns *h;
-  // TODO
+  @ assigns h->len;
+  @ //assigns ...;
+  @ ensures h->len == \old(h->len)+1;
+  @ ensures \valid(h->A+(0..h->len-1));
+  @ ensures \valid(h->data+(0..h->len-1));
  */
 void heap_insert(heap_t* h, double key, void* data);
 
 /*@ requires \valid(h);
   @ requires \separated(__fc_stdout,h);
-  @ requires \valid((h->A)+(0..h->len-1));
   @ requires h->len >= 0;
+  @ requires \valid(h->A+(0..h->len-1));
   @ behavior empty:
   @   assumes (h->len == 0);
   @   assigns \nothing;

@@ -131,6 +131,8 @@ heap_insert(heap_t* h, double key, void* data)
   h->len++;
   i = h->len - 1;
 
+  /*@ loop variant i;
+   */
   while((i > 0) && (h->A[HEAP_PARENT(i)] < key))
   {
     h->A[i] = h->A[HEAP_PARENT(i)];
