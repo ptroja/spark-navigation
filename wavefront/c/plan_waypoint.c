@@ -104,7 +104,7 @@ void plan_update_waypoints(plan_t *plan, double px, double py)
 }
 
 
-// Get the ith waypoint; returns non-zero of there are no more waypoints
+// Get the ith waypoint; returns non-zero if there are no more waypoints
 int plan_get_waypoint(plan_t *plan, int i, double *px, double *py)
 {
   if (i < 0 || i >= plan->waypoint_count)

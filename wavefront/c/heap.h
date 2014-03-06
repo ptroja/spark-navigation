@@ -49,7 +49,7 @@ typedef struct heap
   double* A;
   double** data; // FIXME: void**
 } heap_t;
-/*@ type invariant h_len_and_size (heap_t h) =
+/*@ type invariant heap_len_and_size (heap_t h) =
   @   0 <= h.len <= h.size;
   @*/   
 

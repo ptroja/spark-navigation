@@ -120,7 +120,11 @@ typedef struct
   int waypoint_count, waypoint_size;
   plan_cell_t **waypoints;
 } plan_t;
-
+/*@ 
+  @ predicate is_valid(plan_t p) =
+  @   (0 <= p.min_x <= p.max_x < p.size_x) &&
+  @   (0 <= p.min_y <= p.max_y < p.size_y);
+  @*/   
 
 // Create a planner
 plan_t *plan_alloc(double abs_min_radius, 
@@ -142,6 +146,9 @@ void plan_init(plan_t *plan);
 
 // Reset the plan
 /*@ requires \valid(plan);
+  @ requires is_valid(*plan);
+  @ requires \valid(plan->cells+(0..plan->size_x*plan->size_y));
+  @ requires \separated(plan,plan->cells);
   @ assigns *plan;
  */
 void plan_reset(plan_t *plan);
@@ -151,8 +158,13 @@ void plan_reset(plan_t *plan);
 int plan_load_occ(plan_t *plan, const char *filename, double scale);
 #endif
 
+/*@ requires \valid(plan);
+  @ requires plan->size_x > 0 && plan->size_y > 0;
+ */
 void plan_set_bounds(plan_t* plan, int min_x, int min_y, int max_x, int max_y);
 
+/*@ requires \valid(plan);
+  */
 void plan_set_bbox(plan_t* plan, double padding, double min_size,
                    double x0, double y0, double x1, double y1);
 
@@ -164,6 +176,7 @@ void plan_compute_cspace(plan_t *plan);
 
 int plan_do_global(plan_t *plan, double lx, double ly, double gx, double gy);
 
+// Try to plan within a sensor range.
 int plan_do_local(plan_t *plan, double lx, double ly, double plan_halfwidth);
 
 // Generate a path to the goal

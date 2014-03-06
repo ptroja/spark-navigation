@@ -302,12 +302,19 @@ void plan_reset(plan_t *plan)
   int i, j;
   plan_cell_t *cell;
 
-  /*@ loop assigns *plan;
+  /*@ loop invariant plan->min_y <= j <= plan->max_y && is_valid(*plan) && \separated(plan,plan->cells);
+    @ loop invariant \valid(plan->cells+(0..plan->size_x*plan->size_y));
+    @ loop invariant \valid(plan);
+    @ loop assigns cell,*cell,j;
     @ loop variant plan->max_y - j;
     @*/
   for (j = plan->min_y; j <= plan->max_y; j++)
   {
-    /*@ loop assigns *plan;
+    /*@ loop invariant plan->min_x <= i <= plan->max_x && is_valid(*plan) && \separated(plan,plan->cells);
+      @ loop invariant plan->min_y <= j <= plan->max_y;
+      @ loop invariant \valid(plan->cells+(0..plan->size_x*plan->size_y));
+      @ loop invariant \valid(plan);
+      @ loop assigns cell, *cell, i;
       @ loop variant plan->max_x - i;
       @*/ 
     for (i = plan->min_x; i <= plan->max_x; i++)
