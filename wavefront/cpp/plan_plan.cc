@@ -78,14 +78,11 @@ plan_t::do_global(double lx, double ly, double gx, double gy)
 int
 plan_t::do_local(double lx, double ly, double plan_halfwidth)
 {
-  double gx, gy;
-  int li, lj;
-  int xmin,ymin,xmax,ymax;
-  double t0,t1;
-
-  t0 = get_time();
+  double t0 = get_time();
 
   // Set bounds as directed
+  int xmin,ymin,xmax,ymax;
+
   xmin = PLAN_GXWX(this, lx - plan_halfwidth);
   ymin = PLAN_GYWY(this, ly - plan_halfwidth);
   xmax = PLAN_GXWX(this, lx + plan_halfwidth);
@@ -96,6 +93,8 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
   reset();
 
   // Find a local goal to pursue
+  double gx, gy;
+
   if(find_local_goal(&gx, &gy, lx, ly) != 0)
   {
     //puts("no local goal");
@@ -111,6 +110,7 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
     return(-1);
   }
 
+  int li, lj;
   li = PLAN_GXWX(this, lx);
   lj = PLAN_GYWY(this, ly);
 
@@ -123,11 +123,11 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
                     cell;
                     cell = cell->plan_next)
   {
-	lpath.push_back(cell);
+    lpath.push_back(cell);
     cell->lpathmark = 1;
   }
 
-  t1 = get_time();
+  double t1 = get_time();
 
   //printf("computed local path: %.6lf\n", t1-t0);
   return(0);
@@ -260,9 +260,6 @@ int
 plan_t::find_local_goal(double* gx, double* gy,
                         double lx, double ly) const
 {
-  double squared_d;
-  double squared_d_min;
-  int li,lj;
   plan_cell_t* cell;
 
   // Must already have computed a global goal
@@ -272,18 +269,19 @@ plan_t::find_local_goal(double* gx, double* gy,
     return(-1);
   }
 
+  int li,lj;
   li = PLAN_GXWX(this, lx);
   lj = PLAN_GYWY(this, ly);
 
   assert(PLAN_VALID_BOUNDS(this,li,lj));
 
   // Find the closest place to jump on the global path
-  squared_d_min = DBL_MAX;
+  double squared_d_min = DBL_MAX;
   int c_min = -1;
   for(int c=0;c<path.size();c++)
   {
     cell = path[c];
-    squared_d = ((cell->ci - li) * (cell->ci - li) + 
+    double squared_d = ((cell->ci - li) * (cell->ci - li) + 
                  (cell->cj - lj) * (cell->cj - lj));
     if(squared_d < squared_d_min)
     {
@@ -339,15 +337,14 @@ void plan_t::push(plan_cell_t *cell)
   heap.push(cell);
 }
 
-
 // Pop a plan location from the queue
 plan_cell_t *plan_t::pop()
 {
-  if(heap.empty())
+  if(heap.empty()) {
     return(NULL);
-  else {
-	plan_cell_t * top = heap.top();
-	heap.pop();
+  } else {
+    plan_cell_t * top = heap.top();
+    heap.pop();
     return top;
   }
 }
