@@ -116,7 +116,7 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
 
   // Reset path marks (TODO: find a smarter place to do this)
   for(int i=0;i<size_x*size_y;i++)
-    cells[i].lpathmark = 0;
+    cells[i].lpathmark = false;
 
   // Cache the path
   for(plan_cell_t * cell = cells + PLAN_INDEX(this,li,lj);
@@ -124,7 +124,7 @@ plan_t::do_local(double lx, double ly, double plan_halfwidth)
                     cell = cell->plan_next)
   {
     lpath.push_back(cell);
-    cell->lpathmark = 1;
+    cell->lpathmark = true;
   }
 
   double t1 = get_time();
@@ -333,7 +333,7 @@ void plan_t::push(plan_cell_t *cell)
   // Substract from max cost because the heap is set up to return the max
   // element.  This could of course be changed.
   assert(PLAN_MAX_COST-cell->plan_cost > 0);
-  cell->mark = 1;
+  cell->mark = true;
   heap.push(cell);
 }
 

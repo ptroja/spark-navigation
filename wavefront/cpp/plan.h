@@ -54,9 +54,9 @@ typedef struct _plan_cell_t
   float plan_cost;
 
   // Mark used in dynamic programming
-  char mark;
-  // Mark used in path hysterisis
-  char lpathmark;
+  bool mark;
+  // Mark used in path hysteresis
+  bool lpathmark;
 
   // The next cell in the plan
   struct _plan_cell_t *plan_next;

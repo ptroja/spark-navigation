@@ -146,7 +146,7 @@ plan_t::set_obstacles(double* obs, size_t num)
   {
     cell->occ_state_dyn = cell->occ_state;
     cell->occ_dist_dyn = cell->occ_dist;
-    cell->mark = 0;
+    cell->mark = false;
   }
 
   // Expand around the dynamic obstacle pts
@@ -164,7 +164,7 @@ plan_t::set_obstacles(double* obs, size_t num)
     if(cell->mark)
       continue;
 
-    cell->mark = 1;
+    cell->mark = true;
     cell->occ_state_dyn = 1;
     cell->occ_dist_dyn = 0.0;
 
@@ -239,7 +239,7 @@ void plan_t::init()
         cell->occ_dist_dyn = cell->occ_dist = (float) (max_radius);
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
-      cell->lpathmark = 0;
+      cell->lpathmark = false;
     }
   }
   waypoints.clear();
@@ -260,7 +260,7 @@ void plan_t::reset()
       plan_cell_t *cell = cells + PLAN_INDEX(this,i,j);
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
-      cell->mark = 0;
+      cell->mark = false;
     }
   }
   waypoints.clear();
