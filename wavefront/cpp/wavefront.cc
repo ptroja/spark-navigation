@@ -1525,11 +1525,7 @@ int
 Wavefront::GetMap(bool threaded)
 {
   // allocate space for map cells
-  this->plan->cells = (plan_cell_t*)realloc(this->plan->cells,
-                                            (this->plan->size_x *
-                                             this->plan->size_y *
-                                             sizeof(plan_cell_t)));
-  assert(this->plan->cells);
+  this->plan->cells = new plan_cell_t[this->plan->size_x * this->plan->size_y];
 
   // Reset the grid
   this->plan->reset();

@@ -187,7 +187,7 @@ plan_t::update_plan(double lx, double ly, double gx, double gy)
   
   push(cell);
 
-  while (1)
+  while (true)
   {
     cell = pop();
 
@@ -205,7 +205,7 @@ plan_t::update_plan(double lx, double ly, double gx, double gy)
       ncell = cells + PLAN_INDEX(this,oi-1,oj+dj);
       for (di = -1; di <= +1; di++, p++, ncell++)
       {
-        if (!di && !dj)
+        if (di == 0 && dj == 0)
           continue;
         //if (di && dj)
           //continue;

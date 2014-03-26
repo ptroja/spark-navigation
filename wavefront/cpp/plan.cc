@@ -92,7 +92,7 @@ plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
 plan_t::~plan_t()
 {
   if (cells)
-    free(cells);
+    delete [] cells;
   if(dist_kernel)
     delete [] dist_kernel;
 }
@@ -117,10 +117,7 @@ plan_t::plan_t(const plan_t & plan) :
 
   // Now get the map data
   // Allocate space for map cells
-  this->cells = (plan_cell_t*)malloc((this->size_x *
-                                      this->size_y *
-                                      sizeof(plan_cell_t)));
-  assert(this->cells);
+  this->cells = new plan_cell_t[this->size_x * this->size_y];
 
   // Do initialization
   this->init();
