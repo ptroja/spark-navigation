@@ -233,10 +233,7 @@ void plan_t::init()
       cell->ci = i;
       cell->cj = j;
       cell->occ_state_dyn = cell->occ_state;
-      if(cell->occ_state >= 0)
-        cell->occ_dist_dyn = cell->occ_dist = 0.0;
-      else
-        cell->occ_dist_dyn = cell->occ_dist = (float) (max_radius);
+      cell->occ_dist_dyn = cell->occ_dist;
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
       cell->lpathmark = false;
