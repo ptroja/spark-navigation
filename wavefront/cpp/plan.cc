@@ -150,13 +150,13 @@ plan_t::set_obstacles(double* obs, size_t num)
   for(size_t i=0;i<num;i++)
   {
     // Convert to grid coords
-    int gx = PLAN_GXWX(obs[2*i]);
-    int gy = PLAN_GYWY(obs[2*i+1]);
+    int gx = GXWX(obs[2*i]);
+    int gy = GYWY(obs[2*i+1]);
 
-    if(!PLAN_VALID(gx,gy))
+    if(!VALID(gx,gy))
       continue;
 
-    cell = cells + PLAN_INDEX(gx,gy);
+    cell = cells + INDEX(gx,gy);
 
     if(cell->mark)
       continue;
@@ -175,7 +175,7 @@ plan_t::set_obstacles(double* obs, size_t num)
                di <= dist_kernel_width/2;
                di++, p++, ncell++)
       {
-        if(!PLAN_VALID_BOUNDS(cell->ci+di,cell->cj+dj))
+        if(!VALID_BOUNDS(cell->ci+di,cell->cj+dj))
           continue;
 
         if(*p < ncell->occ_dist_dyn)
@@ -251,7 +251,7 @@ void plan_t::reset()
   {
     for (int i = min_x; i <= max_x; i++)
     {
-      plan_cell_t *cell = cells + PLAN_INDEX(i,j);
+      plan_cell_t *cell = cells + INDEX(i,j);
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
       cell->mark = false;
@@ -289,8 +289,8 @@ plan_t::set_bounds(int min_x, int min_y, int max_x, int max_y)
 bool
 plan_t::check_inbounds(double x, double y) const
 {
-  int gx = PLAN_GXWX(x);
-  int gy = PLAN_GYWY(y);
+  int gx = GXWX(x);
+  int gy = GYWY(y);
 
   return ((gx >= min_x) && (gx <= max_x) &&
           (gy >= min_y) && (gy <= max_y));
@@ -307,10 +307,10 @@ plan_t::set_bbox(double padding, double min_size,
   int gmin_size;
   int gpadding;
 
-  gx0 = PLAN_GXWX(x0);
-  gy0 = PLAN_GYWY(y0);
-  gx1 = PLAN_GXWX(x1);
-  gy1 = PLAN_GYWY(y1);
+  gx0 = GXWX(x0);
+  gy0 = GYWY(y0);
+  gx1 = GXWX(x1);
+  gy1 = GYWY(y1);
 
   // Make a bounding box to include both points.
   min_x = std::min(gx0, gx1);
@@ -369,7 +369,7 @@ plan_t::compute_cspace()
 
   for (int j = min_y; j <= max_y; j++)
   {
-    plan_cell_t *cell = cells + PLAN_INDEX(0, j);
+    plan_cell_t *cell = cells + INDEX(0, j);
     for (int i = min_x; i <= max_x; i++, cell++)
     {
       if (cell->occ_state < 0)
@@ -385,7 +385,7 @@ plan_t::compute_cspace()
                  di <= dist_kernel_width/2;
                  di++, p++, ncell++)
         {
-          if(!PLAN_VALID_BOUNDS(i+di,j+dj))
+          if(!VALID_BOUNDS(i+di,j+dj))
             continue;
 
           if(*p < ncell->occ_dist)
@@ -418,13 +418,13 @@ draw_cspace(plan_t* plan, const char* fname)
     {
       paddr = p * 3;
       //if(plan->cells[PLAN_INDEX(i,j)].occ_state == 1)
-      if(plan->cells[PLAN_INDEX(i,j)].occ_dist < plan->abs_min_radius)
+      if(plan->cells[INDEX(i,j)].occ_dist < plan->abs_min_radius)
       {
         pixels[paddr] = 255;
         pixels[paddr+1] = 0;
         pixels[paddr+2] = 0;
       }
-      else if(plan->cells[PLAN_INDEX(i,j)].occ_dist < plan->max_radius)
+      else if(plan->cells[INDEX(i,j)].occ_dist < plan->max_radius)
       {
         pixels[paddr] = 0;
         pixels[paddr+1] = 0;
@@ -471,13 +471,13 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
     for(i=0;i<plan->size.x;i++,p++)
     {
       paddr = p * 3;
-      if(plan->cells[PLAN_INDEX(i,j)].occ_state == 1)
+      if(plan->cells[INDEX(i,j)].occ_state == 1)
       {
         pixels[paddr] = 255;
         pixels[paddr+1] = 0;
         pixels[paddr+2] = 0;
       }
-      else if(plan->cells[PLAN_INDEX(i,j)].occ_dist < plan->max_radius)
+      else if(plan->cells[INDEX(i,j)].occ_dist < plan->max_radius)
       {
         pixels[paddr] = 0;
         pixels[paddr+1] = 0;
@@ -510,7 +510,7 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
   {
     cell = plan->path[i];
     
-    paddr = 3*PLAN_INDEX(cell->ci,plan->size.y - cell->cj - 1);
+    paddr = 3*INDEX(cell->ci,plan->size.y - cell->cj - 1);
     pixels[paddr] = 0;
     pixels[paddr+1] = 255;
     pixels[paddr+2] = 0;
@@ -520,7 +520,7 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
   {
     cell = plan->lpath[i];
     
-    paddr = 3*PLAN_INDEX(cell->ci,plan->size.y - cell->cj - 1);
+    paddr = 3*INDEX(cell->ci,plan->size.y - cell->cj - 1);
     pixels[paddr] = 255;
     pixels[paddr+1] = 0;
     pixels[paddr+2] = 255;
@@ -632,7 +632,7 @@ plan_write_cspace(plan_t *plan, const char* fname, unsigned int* hash)
   {
     for(i = 0; i < plan->size.x; i++)
     {
-      cell = plan->cells + PLAN_INDEX(i, j);
+      cell = plan->cells + INDEX(i, j);
       fprintf(fp,"%.3f\n", cell->occ_dist);
     }
   }
@@ -702,7 +702,7 @@ plan_read_cspace(plan_t *plan, const char* fname, unsigned int* hash)
   {
     for(i = 0; i < plan->size.x; i++)
     {
-      cell = plan->cells + PLAN_INDEX(i, j);
+      cell = plan->cells + INDEX(i, j);
       if(fscanf(fp,"%f", &(cell->occ_dist)) < 1)
       {
         PLAYER_MSG3(2,"Failed to read c-space data for cell (%d,%d) from file %s",
@@ -745,34 +745,34 @@ plan_t::get_time(void)
 
 //#define PLAN_WXGX(plan, i) (((i) - plan->size_x / 2) * plan->scale)
 //#define PLAN_WYGY(plan, j) (((j) - plan->size_y / 2) * plan->scale)
-double plan_t::PLAN_WXGX(int i) const {
+double plan_t::WXGX(int i) const {
 	return (this->origin.x + (i) * this->scale);
 }
 
-double plan_t::PLAN_WYGY(int j) const {
+double plan_t::WYGY(int j) const {
 	return (this->origin.y + (j) * this->scale);
 }
 
 //#define PLAN_GXWX(plan, x) (floor((x) / plan->scale + 0.5) + plan->size_x / 2)
 //#define PLAN_GYWY(plan, y) (floor((y) / plan->scale + 0.5) + plan->size_y / 2)
 
-int plan_t::PLAN_GXWX(double x) const {
+int plan_t::GXWX(double x) const {
 	return (int)((x - this->origin.x) / this->scale + 0.5);
 }
 
-int plan_t::PLAN_GYWY(double y) const {
+int plan_t::GYWY(double y) const {
 	return (int)((y - this->origin.y) / this->scale + 0.5);
 }
 
-bool plan_t::PLAN_VALID(int i, int j) const {
+bool plan_t::VALID(int i, int j) const {
 	return (i >= 0) && (i < this->size.x) && (j >= 0) && (j < this->size.y);
 }
 
-bool plan_t::PLAN_VALID_BOUNDS(int i, int j) const {
+bool plan_t::VALID_BOUNDS(int i, int j) const {
 	return (i >= this->min_x) && (i <= this->max_x) && (j >= this->min_y) && (j <= this->max_y);
 }
 
-int plan_t::PLAN_INDEX(int i, int j) const
+int plan_t::INDEX(int i, int j) const
 {
 	return i + j * this->size.x;
 }

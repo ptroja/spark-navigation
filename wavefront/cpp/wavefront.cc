@@ -1109,8 +1109,8 @@ void Wavefront::Main()
         line.color.blue = 0;
         for(int i=0;i<this->plan->lpath.size();i++)
         {
-          line.points[i].px = this->plan->PLAN_WXGX(this->plan->lpath[i]->ci);
-          line.points[i].py = this->plan->PLAN_WYGY(this->plan->lpath[i]->cj);
+          line.points[i].px = this->plan->WXGX(this->plan->lpath[i]->ci);
+          line.points[i].py = this->plan->WYGY(this->plan->lpath[i]->cj);
         }
         this->graphics2d_dev->PutMsg(this->InQueue,
                                  PLAYER_MSGTYPE_CMD,
@@ -1130,8 +1130,8 @@ void Wavefront::Main()
         line.color.blue = 0;
         for(int i=0;i<this->plan->path.size();i++)
         {
-          line.points[i].px = this->plan->PLAN_WXGX(this->plan->path[i]->ci);
-          line.points[i].py = this->plan->PLAN_WYGY(this->plan->path[i]->cj);
+          line.points[i].px = this->plan->WXGX(this->plan->path[i]->ci);
+          line.points[i].py = this->plan->WYGY(this->plan->path[i]->cj);
         }
         this->graphics2d_dev->PutMsg(this->InQueue,
                                  PLAYER_MSGTYPE_CMD,
@@ -1572,7 +1572,7 @@ Wavefront::GetMap(bool threaded)
     {
       for(int i=0;i<si;i++)
       {
-    	plan_cell_t * cell = this->plan->cells + plan->PLAN_INDEX(oi+i,oj+j);
+    	plan_cell_t * cell = this->plan->cells + plan->INDEX(oi+i,oj+j);
     	cell->occ_state = mapdata->data[j*si + i];
     	cell->occ_dist = (cell->occ_state >= 0) ? 0.0 : this->plan->max_radius;
       }

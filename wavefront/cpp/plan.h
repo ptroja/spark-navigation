@@ -230,22 +230,22 @@ private:
   static double get_time(void);
 
   // Convert from world coords to plan coords
-  int PLAN_GXWX(double x) const;
-  int PLAN_GYWY(double y) const;
+  int GXWX(double x) const;
+  int GYWY(double y) const;
 
   // Test to see if the given plan coords lie within the absolute plan bounds.
-  bool PLAN_VALID(int i, int j) const;
+  bool VALID(int i, int j) const;
 
   // Test to see if the given plan coords lie within the user-specified plan bounds
-  bool PLAN_VALID_BOUNDS(int i, int j) const;
+  bool VALID_BOUNDS(int i, int j) const;
 
 public:
   // Convert from plan index to world coords
-  double PLAN_WXGX(int i) const;
-  double PLAN_WYGY(int j) const;
+  double WXGX(int i) const;
+  double WYGY(int j) const;
 
   // Compute the cell index for the given plan coords.
-  int PLAN_INDEX(int i, int j) const;
+  int INDEX(int i, int j) const;
 };
 
 /**************************************************************************

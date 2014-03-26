@@ -57,11 +57,11 @@ plan_t::do_global(const pos2d<double> & l, const pos2d<double> & g)
   }
 
   int li, lj;
-  li = PLAN_GXWX(l.x);
-  lj = PLAN_GYWY(l.y);
+  li = GXWX(l.x);
+  lj = GYWY(l.y);
 
   // Cache the path
-  for(plan_cell_t * cell = cells + PLAN_INDEX(li,lj);
+  for(plan_cell_t * cell = cells + INDEX(li,lj);
                     cell;
                     cell = cell->plan_next)
   {
@@ -83,10 +83,10 @@ plan_t::do_local(const pos2d<double> & l, double plan_halfwidth)
   // Set bounds as directed
   int xmin,ymin,xmax,ymax;
 
-  xmin = PLAN_GXWX(l.x - plan_halfwidth);
-  ymin = PLAN_GYWY(l.y - plan_halfwidth);
-  xmax = PLAN_GXWX(l.x + plan_halfwidth);
-  ymax = PLAN_GYWY(l.y + plan_halfwidth);
+  xmin = GXWX(l.x - plan_halfwidth);
+  ymin = GYWY(l.y - plan_halfwidth);
+  xmax = GXWX(l.x + plan_halfwidth);
+  ymax = GYWY(l.y + plan_halfwidth);
   set_bounds(xmin, ymin, xmax, ymax);
 
   // Reset plan costs (within the local patch)
@@ -111,15 +111,15 @@ plan_t::do_local(const pos2d<double> & l, double plan_halfwidth)
   }
 
   int li, lj;
-  li = PLAN_GXWX(l.x);
-  lj = PLAN_GYWY(l.y);
+  li = GXWX(l.x);
+  lj = GYWY(l.y);
 
   // Reset path marks (TODO: find a smarter place to do this)
   for(int i=0;i<size.x*size.y;i++)
     cells[i].lpathmark = false;
 
   // Cache the path
-  for(plan_cell_t * cell = cells + PLAN_INDEX(li,lj);
+  for(plan_cell_t * cell = cells + INDEX(li,lj);
                     cell;
                     cell = cell->plan_next)
   {
@@ -150,35 +150,35 @@ plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
   while(!heap.empty()) heap.pop();
 
   // Initialize the goal cell
-  gi = PLAN_GXWX(g.x);
-  gj = PLAN_GYWY(g.y);
+  gi = GXWX(g.x);
+  gj = GYWY(g.y);
 
   // Initialize the start cell
-  li = PLAN_GXWX(l.x);
-  lj = PLAN_GYWY(l.y);
+  li = GXWX(l.x);
+  lj = GYWY(l.y);
 
   //printf("planning from %d,%d to %d,%d\n", li,lj,gi,gj);
 
-  if(!PLAN_VALID_BOUNDS(gi, gj))
+  if(!VALID_BOUNDS(gi, gj))
   {
     puts("goal out of bounds");
     return(-1);
   }
   
-  if(!PLAN_VALID_BOUNDS(li, lj))
+  if(!VALID_BOUNDS(li, lj))
   {
     puts("start out of bounds");
     return(-1);
   }
 
   // Latch and clear the obstacle state for the cell I'm in
-  cell = cells + PLAN_INDEX(li, lj);
+  cell = cells + INDEX(li, lj);
   old_occ_state = cell->occ_state_dyn;
   old_occ_dist = cell->occ_dist_dyn;
   cell->occ_state_dyn = -1;
   cell->occ_dist_dyn = (float) max_radius;
 
-  cell = cells + PLAN_INDEX(gi, gj);
+  cell = cells + INDEX(gi, gj);
   cell->plan_cost = 0;
 
   // Are we done?
@@ -202,7 +202,7 @@ plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
     float * p = dist_kernel_3x3;
     for (dj = -1; dj <= +1; dj++)
     {
-      ncell = cells + PLAN_INDEX(oi-1,oj+dj);
+      ncell = cells + INDEX(oi-1,oj+dj);
       for (di = -1; di <= +1; di++, p++, ncell++)
       {
         if (di == 0 && dj == 0)
@@ -213,7 +213,7 @@ plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
         ni = oi + di;
         nj = oj + dj;
 
-        if (!PLAN_VALID_BOUNDS(ni, nj))
+        if (!VALID_BOUNDS(ni, nj))
           continue;
 
         if(ncell->mark)
@@ -243,7 +243,7 @@ plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
   }
 
   // Restore the obstacle state for the cell I'm in
-  cell = cells + PLAN_INDEX(li, lj);
+  cell = cells + INDEX(li, lj);
   cell->occ_state_dyn = old_occ_state;
   cell->occ_dist_dyn = old_occ_dist;
 
@@ -268,10 +268,10 @@ plan_t::find_local_goal(pos2d<double> * g,
   }
 
   int li,lj;
-  li = PLAN_GXWX(l.x);
-  lj = PLAN_GYWY(l.y);
+  li = GXWX(l.x);
+  lj = GYWY(l.y);
 
-  assert(PLAN_VALID_BOUNDS(li,lj));
+  assert(VALID_BOUNDS(li,lj));
 
   // Find the closest place to jump on the global path
   double squared_d_min = DBL_MAX;
@@ -319,8 +319,8 @@ plan_t::find_local_goal(pos2d<double> * g,
   plan_cell_t* cell = path[c-1];
 
   //printf("ci: %d cj: %d\n", cell->ci, cell->cj);
-  g->x = PLAN_WXGX(cell->ci);
-  g->y = PLAN_WYGY(cell->cj);
+  g->x = WXGX(cell->ci);
+  g->y = WYGY(cell->cj);
   
   return(0);
 }

@@ -127,13 +127,13 @@ plan_t::get_carrot(double* px, double* py,
   char old_occ_state;
   float old_occ_dist;
 
-  li = PLAN_GXWX(lx);
-  lj = PLAN_GYWY(ly);
+  li = GXWX(lx);
+  lj = GYWY(ly);
 
-  cell = cells + PLAN_INDEX(li,lj);
+  cell = cells + INDEX(li,lj);
 
   // Latch and clear the obstacle state for the cell I'm in
-  cell = cells + PLAN_INDEX(li, lj);
+  cell = cells + INDEX(li, lj);
   old_occ_state = cell->occ_state_dyn;
   old_occ_dist = cell->occ_dist_dyn;
   cell->occ_state_dyn = -1;
@@ -162,13 +162,13 @@ plan_t::get_carrot(double* px, double* py,
     if((bestcost < 0.0) || (cost < bestcost))
     {
       bestcost = cost;
-      *px = PLAN_WXGX(ncell->ci);
-      *py = PLAN_WYGY(ncell->cj);
+      *px = WXGX(ncell->ci);
+      *py = WYGY(ncell->cj);
     }
   }
  
   // Restore the obstacle state for the cell I'm in
-  cell = cells + PLAN_INDEX(li, lj);
+  cell = cells + INDEX(li, lj);
   cell->occ_state_dyn = old_occ_state;
   cell->occ_dist_dyn = old_occ_dist;
 
@@ -228,21 +228,21 @@ plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
 
   if(steep)
   {
-    if(cells[PLAN_INDEX(y,x)].occ_dist_dyn < abs_min_radius)
+    if(cells[INDEX(y,x)].occ_dist_dyn < abs_min_radius)
       return -1;
-    else if(cells[PLAN_INDEX(y,x)].occ_dist_dyn < max_radius)
+    else if(cells[INDEX(y,x)].occ_dist_dyn < max_radius)
       obscost += (int) (dist_penalty *
               (max_radius -
-               cells[PLAN_INDEX(y,x)].occ_dist_dyn));
+               cells[INDEX(y,x)].occ_dist_dyn));
   }
   else
   {
-    if(cells[PLAN_INDEX(x,y)].occ_dist_dyn < abs_min_radius)
+    if(cells[INDEX(x,y)].occ_dist_dyn < abs_min_radius)
       return -1;
-    else if(cells[PLAN_INDEX(x,y)].occ_dist_dyn < max_radius)
+    else if(cells[INDEX(x,y)].occ_dist_dyn < max_radius)
       obscost += (int) (dist_penalty *
               (max_radius -
-               cells[PLAN_INDEX(x,y)].occ_dist_dyn));
+               cells[INDEX(x,y)].occ_dist_dyn));
   }
 
   while(x != (x1 + xstep * 1))
@@ -257,21 +257,21 @@ plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
 
     if(steep)
     {
-      if(cells[PLAN_INDEX(y,x)].occ_dist_dyn < abs_min_radius)
+      if(cells[INDEX(y,x)].occ_dist_dyn < abs_min_radius)
         return -1;
-      else if(cells[PLAN_INDEX(y,x)].occ_dist_dyn < max_radius)
+      else if(cells[INDEX(y,x)].occ_dist_dyn < max_radius)
         obscost += (int) (dist_penalty *
                 (max_radius -
-                 cells[PLAN_INDEX(y,x)].occ_dist_dyn));
+                 cells[INDEX(y,x)].occ_dist_dyn));
     }
     else
     {
-      if(cells[PLAN_INDEX(x,y)].occ_dist_dyn < abs_min_radius)
+      if(cells[INDEX(x,y)].occ_dist_dyn < abs_min_radius)
         return -1;
-      else if(cells[PLAN_INDEX(x,y)].occ_dist_dyn < max_radius)
+      else if(cells[INDEX(x,y)].occ_dist_dyn < max_radius)
         obscost += (int) (dist_penalty *
                 (max_radius -
-                 cells[PLAN_INDEX(x,y)].occ_dist_dyn));
+                 cells[INDEX(x,y)].occ_dist_dyn));
     }
   }
 
