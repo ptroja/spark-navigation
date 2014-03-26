@@ -260,8 +260,6 @@ int
 plan_t::find_local_goal(double* gx, double* gy,
                         double lx, double ly) const
 {
-  plan_cell_t* cell;
-
   // Must already have computed a global goal
   if(path.empty())
   {
@@ -280,7 +278,7 @@ plan_t::find_local_goal(double* gx, double* gy,
   int c_min = -1;
   for(int c=0;c<path.size();c++)
   {
-    cell = path[c];
+	plan_cell_t* cell = path[c];
     double squared_d = ((cell->ci - li) * (cell->ci - li) + 
                  (cell->cj - lj) * (cell->cj - lj));
     if(squared_d < squared_d_min)
@@ -296,7 +294,7 @@ plan_t::find_local_goal(double* gx, double* gy,
   int c;
   for(c=c_min; c<path.size(); c++)
   {
-    cell = path[c];
+	plan_cell_t* cell = path[c];
     
     //printf("step %d: (%d,%d)\n", c, cell->ci, cell->cj);
 
@@ -318,7 +316,7 @@ plan_t::find_local_goal(double* gx, double* gy,
 
   assert(c > c_min);
 
-  cell = path[c-1];
+  plan_cell_t* cell = path[c-1];
 
   //printf("ci: %d cj: %d\n", cell->ci, cell->cj);
   *gx = PLAN_WXGX(this, cell->ci);
