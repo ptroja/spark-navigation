@@ -77,12 +77,12 @@ plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
 		dist_penalty(_dist_penalty),
 		hysteresis_factor(_hysteresis_factor),
 	 	min_x(0), min_y(0), max_x(0), max_y(0),
-	 	size_x(0), size_y(0),
-	 	origin_x(0), origin_y(0),
 	 	scale(0.0),
 	 	cells(NULL),
 	 	dist_kernel(NULL), dist_kernel_width(0)
 {
+  size.x = 0; size.y = 0;
+  origin.x = 0; origin.y = 0;
   path.reserve(1000);
   lpath.reserve(100);
   waypoints.reserve(100);
@@ -105,8 +105,8 @@ plan_t::plan_t(const plan_t & plan) :
 	dist_penalty(plan.dist_penalty),
 	hysteresis_factor(plan.hysteresis_factor),
 	min_x(0), min_y(0), max_x(0), max_y(0),
-	size_x(plan.size_x), size_y(plan.size_y),
-	origin_x(plan.origin_x), origin_y(plan.origin_y),
+	size(plan.size),
+	origin(plan.origin),
 	scale(plan.scale),
 	cells(NULL),
 	dist_kernel(NULL), dist_kernel_width(0)
@@ -117,13 +117,13 @@ plan_t::plan_t(const plan_t & plan) :
 
   // Now get the map data
   // Allocate space for map cells
-  this->cells = new plan_cell_t[this->size_x * this->size_y];
+  this->cells = new plan_cell_t[this->size.x * this->size.y];
 
   // Do initialization
   this->init();
 
   // Copy the map data
-  for (int i = 0; i < this->size_x * this->size_y; ++i)
+  for (int i = 0; i < this->size.x * this->size.y; ++i)
   {
     this->cells[i].occ_dist = plan.cells[i].occ_dist;
 	this->cells[i].occ_state = plan.cells[i].occ_state;
@@ -139,7 +139,7 @@ plan_t::set_obstacles(double* obs, size_t num)
 
   // Start with static obstacle data
   plan_cell_t* cell = cells;
-  for(int j=0;j<size_y*size_x;j++,cell++)
+  for(int j=0;j<size.y*size.x;j++,cell++)
   {
     cell->occ_state_dyn = cell->occ_state;
     cell->occ_dist_dyn = cell->occ_dist;
@@ -150,13 +150,13 @@ plan_t::set_obstacles(double* obs, size_t num)
   for(size_t i=0;i<num;i++)
   {
     // Convert to grid coords
-    int gx = PLAN_GXWX(this, obs[2*i]);
-    int gy = PLAN_GYWY(this, obs[2*i+1]);
+    int gx = PLAN_GXWX(obs[2*i]);
+    int gy = PLAN_GYWY(obs[2*i+1]);
 
-    if(!PLAN_VALID(this,gx,gy))
+    if(!PLAN_VALID(gx,gy))
       continue;
 
-    cell = cells + PLAN_INDEX(this,gx,gy);
+    cell = cells + PLAN_INDEX(gx,gy);
 
     if(cell->mark)
       continue;
@@ -170,12 +170,12 @@ plan_t::set_obstacles(double* obs, size_t num)
              dj <= dist_kernel_width/2;
              dj++)
     {
-      plan_cell_t * ncell = cell + -dist_kernel_width/2 + dj*size_x;
+      plan_cell_t * ncell = cell + -dist_kernel_width/2 + dj*size.x;
       for (int di = -dist_kernel_width/2;
                di <= dist_kernel_width/2;
                di++, p++, ncell++)
       {
-        if(!PLAN_VALID_BOUNDS(this,cell->ci+di,cell->cj+dj))
+        if(!PLAN_VALID_BOUNDS(cell->ci+di,cell->cj+dj))
           continue;
 
         if(*p < ncell->occ_dist_dyn)
@@ -223,9 +223,9 @@ void plan_t::init()
   printf("scale: %.3lf\n", scale);
 
   plan_cell_t *cell = cells;
-  for (int j = 0; j < size_y; j++)
+  for (int j = 0; j < size.y; j++)
   {
-    for (int i = 0; i < size_x; i++, cell++)
+    for (int i = 0; i < size.x; i++, cell++)
     {
       cell->ci = i;
       cell->cj = j;
@@ -240,7 +240,7 @@ void plan_t::init()
 
   compute_dist_kernel();
 
-  set_bounds(0, 0, size_x - 1, size_y - 1);
+  set_bounds(0, 0, size.x - 1, size.y - 1);
 }
 
 
@@ -251,7 +251,7 @@ void plan_t::reset()
   {
     for (int i = min_x; i <= max_x; i++)
     {
-      plan_cell_t *cell = cells + PLAN_INDEX(this,i,j);
+      plan_cell_t *cell = cells + PLAN_INDEX(i,j);
       cell->plan_cost = PLAN_MAX_COST;
       cell->plan_next = NULL;
       cell->mark = false;
@@ -265,13 +265,13 @@ plan_t::set_bounds(int min_x, int min_y, int max_x, int max_y)
 {
   // TODO: name clashes with member data?
   min_x = std::max(0,min_x);
-  min_x = std::min(size_x-1, min_x);
+  min_x = std::min(size.x-1, min_x);
   min_y = std::max(0,min_y);
-  min_y = std::min(size_y-1, min_y);
+  min_y = std::min(size.y-1, min_y);
   max_x = std::max(0,max_x);
-  max_x = std::min(size_x-1, max_x);
+  max_x = std::min(size.x-1, max_x);
   max_y = std::max(0,max_y);
-  max_y = std::min(size_y-1, max_y);
+  max_y = std::min(size.y-1, max_y);
 
   assert(min_x <= max_x);
   assert(min_y <= max_y);
@@ -289,8 +289,8 @@ plan_t::set_bounds(int min_x, int min_y, int max_x, int max_y)
 bool
 plan_t::check_inbounds(double x, double y) const
 {
-  int gx = PLAN_GXWX(this, x);
-  int gy = PLAN_GYWY(this, y);
+  int gx = PLAN_GXWX(x);
+  int gy = PLAN_GYWY(y);
 
   return ((gx >= min_x) && (gx <= max_x) &&
           (gy >= min_y) && (gy <= max_y));
@@ -307,10 +307,10 @@ plan_t::set_bbox(double padding, double min_size,
   int gmin_size;
   int gpadding;
 
-  gx0 = PLAN_GXWX(this, x0);
-  gy0 = PLAN_GYWY(this, y0);
-  gx1 = PLAN_GXWX(this, x1);
-  gy1 = PLAN_GYWY(this, y1);
+  gx0 = PLAN_GXWX(x0);
+  gy0 = PLAN_GYWY(y0);
+  gx1 = PLAN_GXWX(x1);
+  gy1 = PLAN_GYWY(y1);
 
   // Make a bounding box to include both points.
   min_x = std::min(gx0, gx1);
@@ -320,18 +320,18 @@ plan_t::set_bbox(double padding, double min_size,
 
   // Make sure the min_size is achievable
   gmin_size = (int)ceil(min_size / scale);
-  gmin_size = std::min(gmin_size, std::min(size_x-1, size_y-1));
+  gmin_size = std::min(gmin_size, std::min(size.x-1, size.y-1));
 
   // Add padding
   gpadding = (int)ceil(padding / scale);
   min_x -= gpadding / 2;
   min_x = std::max(min_x, 0);
   max_x += gpadding / 2;
-  max_x = std::min(max_x, size_x - 1);
+  max_x = std::min(max_x, size.x - 1);
   min_y -= gpadding / 2;
   min_y = std::max(min_y, 0);
   max_y += gpadding / 2;
-  max_y = std::min(max_y, size_y - 1);
+  max_y = std::min(max_y, size.y - 1);
 
   // Grow the box if necessary to achieve the min_size
   sx = max_x - min_x;
@@ -342,7 +342,7 @@ plan_t::set_bbox(double padding, double min_size,
     max_x += (int)ceil(dx / 2.0);
 
     min_x = std::max(min_x, 0);
-    max_x = std::min(max_x, size_x-1);
+    max_x = std::min(max_x, size.x-1);
 
     sx = max_x - min_x;
   }
@@ -354,7 +354,7 @@ plan_t::set_bbox(double padding, double min_size,
     max_y += (int)ceil(dy / 2.0);
 
     min_y = std::max(min_y, 0);
-    max_y = std::min(max_y, size_y-1);
+    max_y = std::min(max_y, size.y-1);
 
     sy = max_y - min_y;
   }
@@ -369,7 +369,7 @@ plan_t::compute_cspace()
 
   for (int j = min_y; j <= max_y; j++)
   {
-    plan_cell_t *cell = cells + PLAN_INDEX(this, 0, j);
+    plan_cell_t *cell = cells + PLAN_INDEX(0, j);
     for (int i = min_x; i <= max_x; i++, cell++)
     {
       if (cell->occ_state < 0)
@@ -380,12 +380,12 @@ plan_t::compute_cspace()
                dj <= dist_kernel_width/2;
                dj++)
       {
-        plan_cell_t *ncell = cell + -dist_kernel_width/2 + dj*size_x;
+        plan_cell_t *ncell = cell + -dist_kernel_width/2 + dj*size.x;
         for (int di = -dist_kernel_width/2;
                  di <= dist_kernel_width/2;
                  di++, p++, ncell++)
         {
-          if(!PLAN_VALID_BOUNDS(this,i+di,j+dj))
+          if(!PLAN_VALID_BOUNDS(i+di,j+dj))
             continue;
 
           if(*p < ncell->occ_dist)
@@ -409,22 +409,22 @@ draw_cspace(plan_t* plan, const char* fname)
   int paddr;
   int i, j;
 
-  pixels = (guchar*)malloc(sizeof(guchar)*plan->size_x*plan->size_y*3);
+  pixels = (guchar*)malloc(sizeof(guchar)*plan->size.x*plan->size.y*3);
 
   p=0;
-  for(j=plan->size_y-1;j>=0;j--)
+  for(j=plan->size.y-1;j>=0;j--)
   {
-    for(i=0;i<plan->size_x;i++,p++)
+    for(i=0;i<plan->size.x;i++,p++)
     {
       paddr = p * 3;
-      //if(plan->cells[PLAN_INDEX(plan,i,j)].occ_state == 1)
-      if(plan->cells[PLAN_INDEX(plan,i,j)].occ_dist < plan->abs_min_radius)
+      //if(plan->cells[PLAN_INDEX(i,j)].occ_state == 1)
+      if(plan->cells[PLAN_INDEX(i,j)].occ_dist < plan->abs_min_radius)
       {
         pixels[paddr] = 255;
         pixels[paddr+1] = 0;
         pixels[paddr+2] = 0;
       }
-      else if(plan->cells[PLAN_INDEX(plan,i,j)].occ_dist < plan->max_radius)
+      else if(plan->cells[PLAN_INDEX(i,j)].occ_dist < plan->max_radius)
       {
         pixels[paddr] = 0;
         pixels[paddr+1] = 0;
@@ -442,9 +442,9 @@ draw_cspace(plan_t* plan, const char* fname)
   pixbuf = gdk_pixbuf_new_from_data(pixels, 
                                     GDK_COLORSPACE_RGB,
                                     0,8,
-                                    plan->size_x,
-                                    plan->size_y,
-                                    plan->size_x * 3,
+                                    plan->size.x,
+                                    plan->size.y,
+                                    plan->size.x * 3,
                                     NULL, NULL);
 
   gdk_pixbuf_save(pixbuf,fname,"png",&error,NULL);
@@ -463,21 +463,21 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
   int i, j;
   plan_cell_t* cell;
 
-  pixels = (guchar*)malloc(sizeof(guchar)*plan->size_x*plan->size_y*3);
+  pixels = (guchar*)malloc(sizeof(guchar)*plan->size.x*plan->size.y*3);
 
   p=0;
-  for(j=plan->size_y-1;j>=0;j--)
+  for(j=plan->size.y-1;j>=0;j--)
   {
-    for(i=0;i<plan->size_x;i++,p++)
+    for(i=0;i<plan->size.x;i++,p++)
     {
       paddr = p * 3;
-      if(plan->cells[PLAN_INDEX(plan,i,j)].occ_state == 1)
+      if(plan->cells[PLAN_INDEX(i,j)].occ_state == 1)
       {
         pixels[paddr] = 255;
         pixels[paddr+1] = 0;
         pixels[paddr+2] = 0;
       }
-      else if(plan->cells[PLAN_INDEX(plan,i,j)].occ_dist < plan->max_radius)
+      else if(plan->cells[PLAN_INDEX(i,j)].occ_dist < plan->max_radius)
       {
         pixels[paddr] = 0;
         pixels[paddr+1] = 0;
@@ -490,7 +490,7 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
         pixels[paddr+2] = 255;
       }
       /*
-         if((7*plan->cells[PLAN_INDEX(plan,i,j)].plan_cost) > 255)
+         if((7*plan->cells[PLAN_INDEX(i,j)].plan_cost) > 255)
          {
          pixels[paddr] = 0;
          pixels[paddr+1] = 0;
@@ -498,7 +498,7 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
          }
          else
          {
-         pixels[paddr] = 255 - 7*plan->cells[PLAN_INDEX(plan,i,j)].plan_cost;
+         pixels[paddr] = 255 - 7*plan->cells[PLAN_INDEX(i,j)].plan_cost;
          pixels[paddr+1] = 0;
          pixels[paddr+2] = 0;
          }
@@ -510,7 +510,7 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
   {
     cell = plan->path[i];
     
-    paddr = 3*PLAN_INDEX(plan,cell->ci,plan->size_y - cell->cj - 1);
+    paddr = 3*PLAN_INDEX(cell->ci,plan->size.y - cell->cj - 1);
     pixels[paddr] = 0;
     pixels[paddr+1] = 255;
     pixels[paddr+2] = 0;
@@ -520,7 +520,7 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
   {
     cell = plan->lpath[i];
     
-    paddr = 3*PLAN_INDEX(plan,cell->ci,plan->size_y - cell->cj - 1);
+    paddr = 3*PLAN_INDEX(cell->ci,plan->size.y - cell->cj - 1);
     pixels[paddr] = 255;
     pixels[paddr+1] = 0;
     pixels[paddr+2] = 255;
@@ -536,7 +536,7 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
       for(i=-3;i<=3;i++)
       {
         ci = cell->ci + i;
-        paddr = 3*PLAN_INDEX(plan,ci,plan->size_y - cj - 1);
+        paddr = 3*PLAN_INDEX(ci,plan->size.y - cj - 1);
         pixels[paddr] = 255;
         pixels[paddr+1] = 0;
         pixels[paddr+2] = 255;
@@ -548,9 +548,9 @@ draw_path(plan_t* plan, double lx, double ly, const char* fname)
   pixbuf = gdk_pixbuf_new_from_data(pixels, 
                                     GDK_COLORSPACE_RGB,
                                     0,8,
-                                    plan->size_x,
-                                    plan->size_y,
-                                    plan->size_x * 3,
+                                    plan->size.x,
+                                    plan->size.y,
+                                    plan->size.x * 3,
                                     NULL, NULL);
   
   gdk_pixbuf_save(pixbuf,fname,"png",&error,NULL);
@@ -621,18 +621,18 @@ plan_write_cspace(plan_t *plan, const char* fname, unsigned int* hash)
     return(-1);
   }
 
-  fprintf(fp,"%d\n%d\n", plan->size_x, plan->size_y);
-  fprintf(fp,"%.3lf\n%.3lf\n", plan->origin_x, plan->origin_y);
+  fprintf(fp,"%d\n%d\n", plan->size.x, plan->size.y);
+  fprintf(fp,"%.3lf\n%.3lf\n", plan->origin.x, plan->origin.y);
   fprintf(fp,"%.3lf\n%.3lf\n", plan->scale,plan->max_radius);
   for(i=0;i<HASH_LEN;i++)
     fprintf(fp,"%08X", hash[i]);
   fprintf(fp,"\n");
 
-  for(j = 0; j < plan->size_y; j++)
+  for(j = 0; j < plan->size.y; j++)
   {
-    for(i = 0; i < plan->size_x; i++)
+    for(i = 0; i < plan->size.x; i++)
     {
-      cell = plan->cells + PLAN_INDEX(plan, i, j);
+      cell = plan->cells + PLAN_INDEX(i, j);
       fprintf(fp,"%.3f\n", cell->occ_dist);
     }
   }
@@ -650,8 +650,8 @@ plan_read_cspace(plan_t *plan, const char* fname, unsigned int* hash)
   plan_cell_t* cell;
   int i,j;
   FILE* fp;
-  int size_x, size_y;
-  double origin_x, origin_y;
+  int size.x, size.y;
+  double origin.x, origin.y;
   double scale, max_radius;
   unsigned int cached_hash[HASH_LEN];
 
@@ -662,10 +662,10 @@ plan_read_cspace(plan_t *plan, const char* fname, unsigned int* hash)
   }
   
   /* Read out the metadata */
-  if((fscanf(fp,"%d", &size_x) < 1) ||
-     (fscanf(fp,"%d", &size_y) < 1) ||
-     (fscanf(fp,"%lf", &origin_x) < 1) ||
-     (fscanf(fp,"%lf", &origin_y) < 1) ||
+  if((fscanf(fp,"%d", &size.x) < 1) ||
+     (fscanf(fp,"%d", &size.y) < 1) ||
+     (fscanf(fp,"%lf", &origin.x) < 1) ||
+     (fscanf(fp,"%lf", &origin.y) < 1) ||
      (fscanf(fp,"%lf", &scale) < 1) ||
      (fscanf(fp,"%lf", &max_radius) < 1))
   {
@@ -685,10 +685,10 @@ plan_read_cspace(plan_t *plan, const char* fname, unsigned int* hash)
   }
 
   /* Verify that metadata matches */
-  if((size_x != plan->size_x) ||
-     (size_y != plan->size_y) ||
-     (fabs(origin_x - plan->origin_x) > 1e-3) ||
-     (fabs(origin_y - plan->origin_y) > 1e-3) ||
+  if((size.x != plan->size.x) ||
+     (size.y != plan->size.y) ||
+     (fabs(origin.x - plan->origin.x) > 1e-3) ||
+     (fabs(origin.y - plan->origin.y) > 1e-3) ||
      (fabs(scale - plan->scale) > 1e-3) ||
      (fabs(max_radius - plan->max_radius) > 1e-3) ||
      memcmp(cached_hash, hash, sizeof(unsigned int) * HASH_LEN))
@@ -698,11 +698,11 @@ plan_read_cspace(plan_t *plan, const char* fname, unsigned int* hash)
     return(-1);
   }
 
-  for(j = 0; j < plan->size_y; j++)
+  for(j = 0; j < plan->size.y; j++)
   {
-    for(i = 0; i < plan->size_x; i++)
+    for(i = 0; i < plan->size.x; i++)
     {
-      cell = plan->cells + PLAN_INDEX(plan, i, j);
+      cell = plan->cells + PLAN_INDEX(i, j);
       if(fscanf(fp,"%f", &(cell->occ_dist)) < 1)
       {
         PLAYER_MSG3(2,"Failed to read c-space data for cell (%d,%d) from file %s",
@@ -727,7 +727,7 @@ plan_md5(unsigned int* digest, plan_t* plan)
   MD5_Init(&c);
 
   MD5_Update(&c,(const unsigned char*)plan->cells,
-             (plan->size_x*plan->size_y)*sizeof(plan_cell_t));
+             (plan->size.x*plan->size.y)*sizeof(plan_cell_t));
 
   MD5_Final((unsigned char*)digest,&c);
 }
@@ -741,4 +741,38 @@ plan_t::get_time(void)
   struct timeval curr;
   gettimeofday(&curr,NULL);
   return(curr.tv_sec + curr.tv_usec / 1e6);
+}
+
+//#define PLAN_WXGX(plan, i) (((i) - plan->size_x / 2) * plan->scale)
+//#define PLAN_WYGY(plan, j) (((j) - plan->size_y / 2) * plan->scale)
+double plan_t::PLAN_WXGX(int i) const {
+	return (this->origin.x + (i) * this->scale);
+}
+
+double plan_t::PLAN_WYGY(int j) const {
+	return (this->origin.y + (j) * this->scale);
+}
+
+//#define PLAN_GXWX(plan, x) (floor((x) / plan->scale + 0.5) + plan->size_x / 2)
+//#define PLAN_GYWY(plan, y) (floor((y) / plan->scale + 0.5) + plan->size_y / 2)
+
+int plan_t::PLAN_GXWX(double x) const {
+	return (int)((x - this->origin.x) / this->scale + 0.5);
+}
+
+int plan_t::PLAN_GYWY(double y) const {
+	return (int)((y - this->origin.y) / this->scale + 0.5);
+}
+
+bool plan_t::PLAN_VALID(int i, int j) const {
+	return (i >= 0) && (i < this->size.x) && (j >= 0) && (j < this->size.y);
+}
+
+bool plan_t::PLAN_VALID_BOUNDS(int i, int j) const {
+	return (i >= this->min_x) && (i <= this->max_x) && (j >= this->min_y) && (j <= this->max_y);
+}
+
+int plan_t::PLAN_INDEX(int i, int j) const
+{
+	return i + j * this->size.x;
 }

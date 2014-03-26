@@ -38,20 +38,20 @@
 #include "plan.h"
 
 // Generate a path to the goal
-void plan_t::update_waypoints(double px, double py)
+void plan_t::update_waypoints(const pos2d<double> & p)
 {
   waypoints.clear();
 
   int ni, nj;
 
-  ni = PLAN_GXWX(this, px);
-  nj = PLAN_GYWY(this, py);
+  ni = PLAN_GXWX(p.x);
+  nj = PLAN_GYWY(p.y);
 
   // Can't plan a path if we're off the map
-  if(!PLAN_VALID(this,ni,nj))
+  if(!PLAN_VALID(ni,nj))
     return;
 
-  plan_cell_t *cell = cells + PLAN_INDEX(this, ni, nj);
+  plan_cell_t *cell = cells + PLAN_INDEX(ni, nj);
 
   while (cell != NULL)
   {
@@ -100,8 +100,8 @@ int plan_t::get_waypoint(int i, double *px, double *py) const
   if (i < 0 || i >= waypoints.size())
     return 0;
 
-  *px = PLAN_WXGX(this, waypoints[i]->ci);
-  *py = PLAN_WYGY(this, waypoints[i]->cj);
+  *px = PLAN_WXGX(waypoints[i]->ci);
+  *py = PLAN_WYGY(waypoints[i]->cj);
 
   return 1;
 }
@@ -109,8 +109,8 @@ int plan_t::get_waypoint(int i, double *px, double *py) const
 // Convert given waypoint cell to global x,y
 void plan_t::convert_waypoint(const plan_cell_t & waypoint, double *px, double *py) const
 {
-  *px = PLAN_WXGX(this, waypoint.ci);
-  *py = PLAN_WYGY(this, waypoint.cj);
+  *px = PLAN_WXGX(waypoint.ci);
+  *py = PLAN_WYGY(waypoint.cj);
 }
 
 // Test to see if once cell is reachable from another.
@@ -136,12 +136,12 @@ int plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_
     {
       lasti = (int)floor(i);
       lastj = (int)floor(j);
-      if(!PLAN_VALID(this,lasti,lastj))
+      if(!PLAN_VALID(lasti,lastj))
       {
         //PLAYER_WARN("stepped off the map!");
         return(0);
       }
-      if(cells[PLAN_INDEX(this,lasti,lastj)].occ_dist <
+      if(cells[PLAN_INDEX(lasti,lastj)].occ_dist <
          abs_min_radius)
         return(0);
     }
@@ -183,7 +183,7 @@ int plan_t::test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const
       for (i = ai; i < bi; i++)
       {
         j = PLAN_GYWY(plan, oy + (i - ai) * dy);
-        if (PLAN_VALID(plan, i, j))
+        if (plan->PLAN_VALID(i, j))
         {
           cell = plan->cells + PLAN_INDEX(plan, i, j);
           if (cell->occ_dist < plan->abs_min_radius)
@@ -196,7 +196,7 @@ int plan_t::test_reachable(plan_cell_t *cell_a, plan_cell_t *cell_b) const
       for (i = ai; i > bi; i--)
       {
         j = PLAN_GYWY(plan, oy + (i - ai) * dy);
-        if (PLAN_VALID(plan, i, j))
+        if (plan->PLAN_VALID(i, j))
         {
           cell = plan->cells + PLAN_INDEX(plan, i, j);
           if (cell->occ_dist < plan->abs_min_radius)

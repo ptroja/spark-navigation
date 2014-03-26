@@ -76,6 +76,11 @@ namespace std {
 	};
 }
 
+template <typename T>
+struct pos2d {
+	T x, y;
+};
+
 // Planner info
 struct plan_t
 {
@@ -114,12 +119,12 @@ struct plan_t
   //void plan_update_cspace(plan_t *plan, const char* cachefile);
   void compute_cspace();
 
-  int do_global(double lx, double ly, double gx, double gy);
+  int do_global(const pos2d<double> & l, const pos2d<double> & g);
 
-  int do_local(double lx, double ly, double plan_halfwidth);
+  int do_local(const pos2d<double> & l, double plan_halfwidth);
 
   // Generate a path to the goal
-  void update_waypoints(double px, double py);
+  void update_waypoints(const pos2d<double> & p);
 
   // Convert given waypoint cell to global x,y
   void convert_waypoint(const plan_cell_t & waypoint,
@@ -158,11 +163,10 @@ void md5(unsigned int* digest) const;
 #endif // HAVE_OPENSSL_MD5_H && HAVE_LIBCRYPTO
 
   // Grid dimensions (number of cells)
-  int size_x, size_y;
+  pos2d<int> size;
 
-  // Grid origin (real-world coords, in meters, of the lower-left grid
-  // cell)
-  double origin_x, origin_y;
+  // Grid origin (real-world coords, in meters, of the lower-left grid cell)
+  pos2d<double> origin;
 
   // Grid scale (m/cell)
   double scale;
@@ -183,8 +187,8 @@ void md5(unsigned int* digest) const;
   std::vector<plan_cell_t *> waypoints;
 
 private:
-  int update_plan(double lx, double ly, double gx, double gy);
-  int find_local_goal(double* gx, double* gy, double lx, double ly) const;
+  int update_plan(const pos2d<double> & l, const pos2d<double> & g);
+  int find_local_goal(pos2d<double> * g, const pos2d<double> & l) const;
   double check_path(const plan_cell_t & s, const plan_cell_t & g) const;
 
   // Test to see if once cell is reachable from another
@@ -216,38 +220,36 @@ private:
 
   // Cost multiplier for cells on the previous local path
   double hysteresis_factor;
-
+public:
   // Grid bounds (for limiting the search).
   int min_x, min_y, max_x, max_y;
-
+private:
   // Effective robot radius
   double des_min_radius, abs_min_radius;
 
   static double get_time(void);
+
+  // Convert from world coords to plan coords
+  int PLAN_GXWX(double x) const;
+  int PLAN_GYWY(double y) const;
+
+  // Test to see if the given plan coords lie within the absolute plan bounds.
+  bool PLAN_VALID(int i, int j) const;
+
+  // Test to see if the given plan coords lie within the user-specified plan bounds
+  bool PLAN_VALID_BOUNDS(int i, int j) const;
+
+public:
+  // Convert from plan index to world coords
+  double PLAN_WXGX(int i) const;
+  double PLAN_WYGY(int j) const;
+
+  // Compute the cell index for the given plan coords.
+  int PLAN_INDEX(int i, int j) const;
 };
 
 /**************************************************************************
  * Plan manipulation macros
  **************************************************************************/
-
-// Convert from plan index to world coords
-//#define PLAN_WXGX(plan, i) (((i) - plan->size_x / 2) * plan->scale)
-//#define PLAN_WYGY(plan, j) (((j) - plan->size_y / 2) * plan->scale)
-#define PLAN_WXGX(plan, i) ((plan)->origin_x + (i) * (plan)->scale)
-#define PLAN_WYGY(plan, j) ((plan)->origin_y + (j) * (plan)->scale)
-
-// Convert from world coords to plan coords
-//#define PLAN_GXWX(plan, x) (floor((x) / plan->scale + 0.5) + plan->size_x / 2)
-//#define PLAN_GYWY(plan, y) (floor((y) / plan->scale + 0.5) + plan->size_y / 2)
-#define PLAN_GXWX(plan, x) ((int)(((x) - (plan)->origin_x) / (plan)->scale + 0.5))
-#define PLAN_GYWY(plan, y) ((int)(((y) - (plan)->origin_y) / (plan)->scale + 0.5))
-
-// Test to see if the given plan coords lie within the absolute plan bounds.
-#define PLAN_VALID(plan, i, j) ((i >= 0) && (i < plan->size_x) && (j >= 0) && (j < plan->size_y))
-// Test to see if the given plan coords lie within the user-specified plan bounds
-#define PLAN_VALID_BOUNDS(plan, i, j) ((i >= plan->min_x) && (i <= plan->max_x) && (j >= plan->min_y) && (j <= plan->max_y))
-
-// Compute the cell index for the given plan coords.
-#define PLAN_INDEX(plan, i, j) ((i) + (j) * plan->size_x)
 
 #endif

@@ -635,13 +635,14 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
     this->offline_plan = new plan_t(*this->plan);
 
   // Compute path in offline plan
-  if(this->offline_plan->do_global(s.px, s.py, g.px, g.py) < 0)
+  const pos2d<double> start = { s.px, s.py }, goal = { g.px, g. py };
+  if(this->offline_plan->do_global(start, goal) < 0)
   {
     puts("Wavefront: offline path computation failed");
   }
 
   // Extract waypoints along the path to the goal from the start position
-  this->offline_plan->update_waypoints(s.px, s.py);
+  this->offline_plan->update_waypoints(start);
 
   // Fill in reply
   // - waypoints
@@ -798,10 +799,10 @@ Wavefront::ProcessMapInfo(const player_map_info_t & info)
   // Got new map info pushed to us.  We'll save this info and get the new
   // map.
   this->plan->scale = info.scale;
-  this->plan->size_x = info.width;
-  this->plan->size_y = info.height;
-  this->plan->origin_x = info.origin.px;
-  this->plan->origin_y = info.origin.py;
+  this->plan->size.x = info.width;
+  this->plan->size.y = info.height;
+  this->plan->origin.x = info.origin.px;
+  this->plan->origin.y = info.origin.py;
 
   // Now get the map data, possibly in separate tiles.
   if(this->GetMap(true) < 0)
@@ -1072,17 +1073,17 @@ void Wavefront::Main()
       double t0 = get_time();
 
       // compute costs to the new goal.  Try local plan first
+      const pos2d<double> l = { localize.px, localize.py };
       if(new_goal ||
          (this->plan->path.empty()) ||
-         (this->plan->do_local(this->localize.px,
-                               this->localize.py, this->scan_maxrange) < 0))
+         (this->plan->do_local(l, this->scan_maxrange) < 0))
       {
         if(!new_goal && (!this->plan->path.empty()))
           puts("Wavefront: local plan failed");
 
         // Create a global plan
-        if(this->plan->do_global(this->localize.px, this->localize.py,
-                                 this->target.px, this->target.py) < 0)
+        const pos2d<double> g = { target.px, target.py };
+        if(this->plan->do_global(l, g) < 0)
         {
           if(!printed_warning)
           {
@@ -1108,8 +1109,8 @@ void Wavefront::Main()
         line.color.blue = 0;
         for(int i=0;i<this->plan->lpath.size();i++)
         {
-          line.points[i].px = PLAN_WXGX(this->plan,this->plan->lpath[i]->ci);
-          line.points[i].py = PLAN_WYGY(this->plan,this->plan->lpath[i]->cj);
+          line.points[i].px = this->plan->PLAN_WXGX(this->plan->lpath[i]->ci);
+          line.points[i].py = this->plan->PLAN_WYGY(this->plan->lpath[i]->cj);
         }
         this->graphics2d_dev->PutMsg(this->InQueue,
                                  PLAYER_MSGTYPE_CMD,
@@ -1129,8 +1130,8 @@ void Wavefront::Main()
         line.color.blue = 0;
         for(int i=0;i<this->plan->path.size();i++)
         {
-          line.points[i].px = PLAN_WXGX(this->plan,this->plan->path[i]->ci);
-          line.points[i].py = PLAN_WYGY(this->plan,this->plan->path[i]->cj);
+          line.points[i].px = this->plan->PLAN_WXGX(this->plan->path[i]->ci);
+          line.points[i].py = this->plan->PLAN_WYGY(this->plan->path[i]->cj);
         }
         this->graphics2d_dev->PutMsg(this->InQueue,
                                  PLAYER_MSGTYPE_CMD,
@@ -1145,7 +1146,8 @@ void Wavefront::Main()
       if(!this->velocity_control)
       {
         // extract waypoints along the path to the goal from the current position
-        this->plan->update_waypoints(this->localize.px, this->localize.py);
+    	const pos2d<double> l = { localize.px, localize.py };
+        this->plan->update_waypoints(l);
 
         if(this->plan->waypoints.empty())
         {
@@ -1525,7 +1527,7 @@ int
 Wavefront::GetMap(bool threaded)
 {
   // allocate space for map cells
-  this->plan->cells = new plan_cell_t[this->plan->size_x * this->plan->size_y];
+  this->plan->cells = new plan_cell_t[this->plan->size.x * this->plan->size.y];
 
   // Reset the grid
   this->plan->reset();
@@ -1540,10 +1542,10 @@ Wavefront::GetMap(bool threaded)
   // Grab 640x640 tiles
   sy = sx = 640;
   oi = oj = 0;
-  while((oi < this->plan->size_x) && (oj < this->plan->size_y))
+  while((oi < this->plan->size.x) && (oj < this->plan->size.y))
   {
-    si = MIN(sx, this->plan->size_x - oi);
-    sj = MIN(sy, this->plan->size_y - oj);
+    si = MIN(sx, this->plan->size.x - oi);
+    sj = MIN(sy, this->plan->size.y - oj);
 
     data_req.col = oi;
     data_req.row = oj;
@@ -1570,7 +1572,7 @@ Wavefront::GetMap(bool threaded)
     {
       for(int i=0;i<si;i++)
       {
-    	plan_cell_t * cell = this->plan->cells + PLAN_INDEX(this->plan,oi+i,oj+j);
+    	plan_cell_t * cell = this->plan->cells + plan->PLAN_INDEX(oi+i,oj+j);
     	cell->occ_state = mapdata->data[j*si + i];
     	cell->occ_dist = (cell->occ_state >= 0) ? 0.0 : this->plan->max_radius;
       }
@@ -1579,7 +1581,7 @@ Wavefront::GetMap(bool threaded)
     delete msg;
 
     oi += si;
-    if(oi >= this->plan->size_x)
+    if(oi >= this->plan->size.x)
     {
       oi = 0;
       oj += sj;
@@ -1608,10 +1610,10 @@ Wavefront::GetMapInfo(bool threaded)
   {
     PLAYER_WARN("failed to get map info");
     this->plan->scale = 0.1;
-    this->plan->size_x = 0;
-    this->plan->size_y = 0;
-    this->plan->origin_x = 0.0;
-    this->plan->origin_y = 0.0;
+    this->plan->size.x = 0;
+    this->plan->size.y = 0;
+    this->plan->origin.x = 0.0;
+    this->plan->origin.y = 0.0;
     return(-1);
   }
 
@@ -1619,10 +1621,10 @@ Wavefront::GetMapInfo(bool threaded)
 
   // copy in the map info
   this->plan->scale = info->scale;
-  this->plan->size_x = info->width;
-  this->plan->size_y = info->height;
-  this->plan->origin_x = info->origin.px;
-  this->plan->origin_y = info->origin.py;
+  this->plan->size.x = info->width;
+  this->plan->size.y = info->height;
+  this->plan->origin.x = info->origin.px;
+  this->plan->origin.y = info->origin.py;
 
   delete msg;
   return(0);
