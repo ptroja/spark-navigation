@@ -28,10 +28,7 @@
  * CVS: $Id: plan_waypoint.c 9120 2013-01-07 00:18:52Z jpgr87 $
 **************************************************************************/
 
-#include <cassert>
 #include <cmath>
-#include <cstdlib>
-#include <cstdio>
 
 #include <libplayercommon/playercommon.h>
 
@@ -64,7 +61,7 @@ void plan_t::update_waypoints(const pos2d<double> & p)
     }
 
     // Find the farthest cell in the path that is reachable from the
-    // currrent cell.
+    // current cell.
     double dist = 0.0;
     plan_cell_t *ncell;
     for(ncell = cell; ncell->plan_next != NULL; ncell = ncell->plan_next)
@@ -94,16 +91,16 @@ void plan_t::update_waypoints(const pos2d<double> & p)
 }
 
 
-// Get the ith waypoint; returns non-zero if there are no more waypoints
-int plan_t::get_waypoint(int i, double *px, double *py) const
+// Get the i-th waypoint; returns false if there are no more waypoints
+bool plan_t::get_waypoint(waypoints_t::size_type i, double *px, double *py) const
 {
-  if (i < 0 || i >= waypoints.size())
-    return 0;
+  if (i >= waypoints.size())
+    return false;
 
   *px = WXGX(waypoints[i]->ci);
   *py = WYGY(waypoints[i]->cj);
 
-  return 1;
+  return true;
 }
 
 // Convert given waypoint cell to global x,y
@@ -113,8 +110,8 @@ void plan_t::convert_waypoint(const plan_cell_t & waypoint, double *px, double *
   *py = WYGY(waypoint.cj);
 }
 
-// Test to see if once cell is reachable from another.
-int plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const
+// See if once cell is reachable from another.
+bool plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const
 {
   double theta;
   double sinth, costh;
@@ -123,6 +120,7 @@ int plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_
 
   theta = atan2((double)(cell_b.cj - cell_a.cj),
                 (double)(cell_b.ci - cell_a.ci));
+  // FIXME: use GNU sincos if available
   sinth = sin(theta);
   costh = cos(theta);
 
@@ -139,11 +137,11 @@ int plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_
       if(!VALID(lasti,lastj))
       {
         //PLAYER_WARN("stepped off the map!");
-        return(0);
+        return false;
       }
       if(cells[INDEX(lasti,lastj)].occ_dist <
          abs_min_radius)
-        return(0);
+        return false;
     }
     
     if(lasti != cell_b.ci)
@@ -151,7 +149,7 @@ int plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_
     if(lastj != cell_b.cj)
       j += sinth;
   }
-  return(1);
+  return true;
 }
 
 #if 0

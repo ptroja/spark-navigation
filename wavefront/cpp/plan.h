@@ -184,18 +184,21 @@ void md5(unsigned int* digest) const;
   std::vector<plan_cell_t *> lpath;
 
   // Waypoints extracted from global path
-  std::vector<plan_cell_t *> waypoints;
+  typedef std::vector<plan_cell_t *> waypoints_t;
+  waypoints_t waypoints;
 
 private:
   int update_plan(const pos2d<double> & l, const pos2d<double> & g);
   int find_local_goal(pos2d<double> * g, const pos2d<double> & l) const;
+
+  // FIXME: return int?
   double check_path(const plan_cell_t & s, const plan_cell_t & g) const;
 
   // Test to see if once cell is reachable from another
-  int test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const;
+  bool test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const;
 
-  // Get the ith waypoint; returns zero if there are no more waypoints
-  int get_waypoint(int i, double *px, double *py) const;
+  // Get the ith waypoint; returns false if there are no more waypoints
+  bool get_waypoint(waypoints_t::size_type i, double *px, double *py) const;
 
   bool check_done(double lx, double ly, double la,
                   double gx, double gy, double ga,

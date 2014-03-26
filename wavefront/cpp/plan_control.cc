@@ -25,6 +25,8 @@
 #include <cmath>
 #include <cassert>
 
+#include <algorithm>
+
 #include "plan.h"
 
 #if !defined (M_PI)
@@ -39,6 +41,7 @@ plan_t::check_done(double lx, double ly, double la,
                    double goal_d, double goal_a) const
 {
   double dt, da;
+
   dt = hypot(gx-lx,gy-ly);
   da = std::abs(_angle_diff(ga,la));
 
@@ -56,9 +59,6 @@ plan_t::compute_diffdrive_cmds(double* vx, double *va,
                                double avmin, double avmax,
                                double amin, double amax)
 {
-  double cx, cy;
-  double d,b,a,ad;
-  
   //puts("*******plan_compute_diffdrive_cmds************");
   
   // Are we at the goal?
@@ -68,6 +68,9 @@ plan_t::compute_diffdrive_cmds(double* vx, double *va,
     *va = 0.0;
     return(0);
   }
+
+  double cx, cy;
+  double d,b,a,ad;
 
   // Are we on top of the goal?
   d = hypot(gx-lx,gy-ly);
@@ -133,7 +136,7 @@ plan_t::get_carrot(double* px, double* py,
   cell = cells + INDEX(li,lj);
 
   // Latch and clear the obstacle state for the cell I'm in
-  cell = cells + INDEX(li, lj);
+  cell = cells + INDEX(li,lj);
   old_occ_state = cell->occ_state_dyn;
   old_occ_dist = cell->occ_dist_dyn;
   cell->occ_state_dyn = -1;
@@ -182,8 +185,6 @@ plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
   int x0,x1,y0,y1;
   int x,y;
   int xstep, ystep;
-  char steep;
-  int tmp;
   int deltax, deltay, error, deltaerr;
   int obscost=0;
 
@@ -193,20 +194,12 @@ plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
   x1 = g.ci;
   y1 = g.cj;
 
-  if(abs(y1-y0) > abs(x1-x0))
-    steep = 1;
-  else
-    steep = 0;
+  const bool steep = (abs(y1-y0) > abs(x1-x0));
 
   if(steep)
   {
-    tmp = x0;
-    x0 = y0;
-    y0 = tmp;
-
-    tmp = x1;
-    x1 = y1;
-    y1 = tmp;
+    std::swap(x0,y0);
+    std::swap(x1,y1);
   }
 
   deltax = abs(x1-x0);
@@ -217,14 +210,8 @@ plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
   x = x0;
   y = y0;
 
-  if(x0 < x1)
-    xstep = 1;
-  else
-    xstep = -1;
-  if(y0 < y1)
-    ystep = 1;
-  else
-    ystep = -1;
+  xstep = (x0 < x1) ? 1 : -1;
+  ystep = (y0 < y1) ? 1 : -1;
 
   if(steep)
   {
