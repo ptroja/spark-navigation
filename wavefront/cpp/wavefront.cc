@@ -1543,7 +1543,7 @@ Wavefront::GetMap(bool threaded)
 
   // Grab 640x640 tiles
   sy = sx = 640;
-  oi=oj=0;
+  oi = oj = 0;
   while((oi < this->plan->size_x) && (oj < this->plan->size_y))
   {
     si = MIN(sx, this->plan->size_x - oi);
@@ -1575,9 +1575,8 @@ Wavefront::GetMap(bool threaded)
       for(int i=0;i<si;i++)
       {
     	plan_cell_t * cell = this->plan->cells + PLAN_INDEX(this->plan,oi+i,oj+j);
-        cell->occ_dist = this->plan->max_radius;
-        if((cell->occ_state = mapdata->data[j*si + i]) >= 0)
-          cell->occ_dist = 0;
+    	cell->occ_state = mapdata->data[j*si + i];
+    	cell->occ_dist = (cell->occ_state >= 0) ? 0.0 : this->plan->max_radius;
       }
     }
 
