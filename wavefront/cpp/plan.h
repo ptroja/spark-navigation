@@ -183,9 +183,6 @@ void md5(unsigned int* digest) const;
   std::vector<plan_cell_t *> waypoints;
 
 private:
-  // Plan queue stuff
-  void push(plan_cell_t *cell);
-  plan_cell_t *pop();
   int update_plan(double lx, double ly, double gx, double gy);
   int find_local_goal(double* gx, double* gy, double lx, double ly) const;
   double check_path(const plan_cell_t & s, const plan_cell_t & g) const;
@@ -204,6 +201,10 @@ private:
 
   // Priority queue of cells to update
   std::priority_queue<plan_cell_t *> heap;
+
+  // Plan queue stuff
+  void push(plan_cell_t *cell);
+  plan_cell_t *pop();
 
   // Distance penalty kernel, pre-computed in plan_compute_dist_kernel();
   float* dist_kernel;
