@@ -86,7 +86,6 @@ struct plan_t
 {
   // Create a planner
   plan_t(double abs_min_radius,
-         double des_min_radius,
          double max_radius,
          double dist_penalty,
          double hysteresis_factor);
@@ -228,7 +227,7 @@ public:
   int min_x, min_y, max_x, max_y;
 private:
   // Effective robot radius
-  double des_min_radius, abs_min_radius;
+  double abs_min_radius;
 
   static double get_time(void);
 

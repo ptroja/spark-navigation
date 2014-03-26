@@ -68,11 +68,10 @@ void draw_cspace(plan_t* plan, const char* fname);
 #endif
 
 // Create a planner
-plan_t::plan_t(double _abs_min_radius, double _des_min_radius,
+plan_t::plan_t(double _abs_min_radius,
                double _max_radius, double _dist_penalty,
                double _hysteresis_factor) :
 		abs_min_radius(_abs_min_radius),
-		des_min_radius(_des_min_radius),
 		max_radius(_max_radius),
 		dist_penalty(_dist_penalty),
 		hysteresis_factor(_hysteresis_factor),
@@ -100,7 +99,6 @@ plan_t::~plan_t()
 // Copy the planner
 plan_t::plan_t(const plan_t & plan) :
 	abs_min_radius(plan.abs_min_radius),
-	des_min_radius(plan.des_min_radius),
 	max_radius(plan.max_radius),
 	dist_penalty(plan.dist_penalty),
 	hysteresis_factor(plan.hysteresis_factor),

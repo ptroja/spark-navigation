@@ -538,7 +538,6 @@ Wavefront::MainSetup()
     return(-1);
 
   if(!(this->plan = new plan_t(this->robot_radius+this->safety_dist,
-                               this->robot_radius+this->safety_dist,
                                this->max_radius,
                                this->dist_penalty,
                                0.5)))
@@ -1751,7 +1750,6 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
 
       if (this->plan) delete this->plan;
       this->plan = new plan_t(this->robot_radius+this->safety_dist,
-                              this->robot_radius+this->safety_dist,
                               this->max_radius,
                               this->dist_penalty,
                               0.5);
