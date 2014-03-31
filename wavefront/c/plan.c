@@ -302,27 +302,35 @@ void plan_reset(plan_t *plan)
   int i, j;
   plan_cell_t *cell;
 
-  /*@ loop invariant plan->min_y <= j <= plan->max_y && is_valid(*plan) && \separated(plan,plan->cells);
-    @ loop invariant \valid(plan->cells+(0..plan->size_x*plan->size_y));
-    @ loop invariant \valid(plan);
+  /*@ loop invariant plan->min_y <= j <= plan->max_y &&
+    @                is_valid(*plan) &&
+    @                \separated(plan,plan->cells) &&
+    @                \valid(plan->cells+(0..plan->size_x*plan->size_y)) &&
+    @                \valid(plan);
     @ loop assigns cell,*cell,j;
     @ loop variant plan->max_y - j;
     @*/
   for (j = plan->min_y; j <= plan->max_y; j++)
   {
-    /*@ loop invariant plan->min_x <= i <= plan->max_x && is_valid(*plan) && \separated(plan,plan->cells);
-      @ loop invariant plan->min_y <= j <= plan->max_y;
-      @ loop invariant \valid(plan->cells+(0..plan->size_x*plan->size_y));
-      @ loop invariant \valid(plan);
-      @ loop assigns cell, *cell, i;
+    /*@ loop invariant plan->min_x <= i <= plan->max_x &&
+      @                is_valid(*plan) &&
+      @                \separated(plan,plan->cells) &&
+      @                plan->min_y <= j <= plan->max_y &&
+      @                \valid(plan->cells+(0..plan->size_x*plan->size_y)) &&
+      @                \valid(plan);
+      @ loop assigns i, cell;
       @ loop variant plan->max_x - i;
       @*/ 
     for (i = plan->min_x; i <= plan->max_x; i++)
     {
       cell = plan->cells + PLAN_INDEX(plan,i,j);
-      cell->plan_cost = PLAN_MAX_COST;
-      cell->plan_next = NULL;
-      cell->mark = 0;
+      /*@ assert 0 <= i < plan->size_x; */
+      /*@ assert 0 <= j < plan->size_y; */
+      /*@ assert i + j*plan->size_x < plan->size_x*plan->size_y; */
+      /*@ assert \valid(cell); */
+      //cell->plan_cost = PLAN_MAX_COST;
+      //cell->plan_next = NULL;
+      //cell->mark = 0;
     }
   }
   plan->waypoint_count = 0;

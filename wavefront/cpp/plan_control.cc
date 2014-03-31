@@ -33,8 +33,6 @@
   #include <libplayercommon/playercommon.h>
 #endif
 
-static double _angle_diff(double a, double b);
-
 bool
 plan_t::check_done(double lx, double ly, double la,
                    double gx, double gy, double ga,
@@ -43,7 +41,7 @@ plan_t::check_done(double lx, double ly, double la,
   double dt, da;
 
   dt = hypot(gx-lx,gy-ly);
-  da = std::abs(_angle_diff(ga,la));
+  da = std::abs(angle_diff(ga,la));
 
   return ((dt < goal_d) && (da < goal_a));
 }
@@ -77,7 +75,7 @@ plan_t::compute_diffdrive_cmds(double* vx, double *va,
   //printf("d: %.3f\n", d);
   if(d < goal_d)
   {
-    ad = _angle_diff(ga,la);
+    ad = angle_diff(ga,la);
     if(!*rotate_dir)
     {
       if(ad < 0)
@@ -104,7 +102,7 @@ plan_t::compute_diffdrive_cmds(double* vx, double *va,
   b = atan2(cy - ly, cx - lx);
   a = amin + (d / maxd) * (amax-amin);
   //printf("a: %.3f\n", a*180.0/M_PI);
-  ad = _angle_diff(b,la);
+  ad = angle_diff(b,la);
   //printf("ad: %.3f\n", ad*180.0/M_PI);
 
   if(fabs(ad) > a)
@@ -265,9 +263,17 @@ plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
   return(obscost);
 }
 
-#define ANG_NORM(a) atan2(sin((a)),cos((a)))
-static double
-_angle_diff(double a, double b)
+
+double plan_t::ANG_NORM(double a) {
+    a = fmod(a + M_PI,2.0*M_PI);
+    if (a < 0)
+      return a + M_PI;
+    else
+      return a - M_PI;
+}
+
+double
+plan_t::angle_diff(double a, double b)
 {
   double d1, d2;
   a = ANG_NORM(a);

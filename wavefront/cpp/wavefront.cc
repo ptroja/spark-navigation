@@ -224,7 +224,6 @@ driver
 #include <libplayerinterface/functiontable.h>
 #include "plan.h"
 
-static double get_time(void);
 //extern "C" { void draw_cspace(plan_t* plan, const char* fname); }
 
 // TODO: monitor localize timestamps, and slow or stop robot accordingly
@@ -342,7 +341,6 @@ class Wavefront : public ThreadedDriver
     int ShutdownLaser();
     int ShutdownMap();
     int ShutdownGraphics2d();
-    static double angle_diff(double a, double b);
 
     void ProcessCommand(const player_planner_cmd_t & cmd);
     void ProcessLaserScan(player_laser_data_scanpose_t* data);
@@ -611,7 +609,7 @@ Wavefront::ProcessCommand(const player_planner_cmd_t & cmd)
 #if 0
   if((std::abs(new_x - this->target.px) > eps) ||
      (std::abs(new_y - this->target.py) > eps) ||
-     (std::abs(this->angle_diff(new_a,this->target.pa)) > eps))
+     (std::abs(plan_t::angle_diff(new_a,this->target.pa)) > eps))
   {
 #endif
     this->target = new_goal;
@@ -635,7 +633,7 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
 
   // Compute path in offline plan
   const pos2d<double> start = { s.px, s.py }, goal = { g.px, g. py };
-  if(this->offline_plan->do_global(start, goal) < 0)
+  if(this->offline_plan->do_global(start, goal) == false)
   {
     puts("Wavefront: offline path computation failed");
   }
@@ -680,7 +678,7 @@ Wavefront::ComputeOfflineWaypoints(player_planner_waypoints_req_t* req, player_p
 void
 Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
 {
-  double t0 = get_time();
+  double t0 = plan_t::get_time();
 
   // free up the old scan, if we're replacing one
   if(this->scans_idx < this->scans_count)
@@ -752,7 +750,7 @@ Wavefront::ProcessLaserScan(player_laser_data_scanpose_t* data)
   //printf("setting %d hit points\n", this->scan_points_count);
   plan->set_obstacles(this->scan_points.data(), this->scan_points_count);
 
-  double t1 = get_time();
+  double t1 = plan_t::get_time();
   //printf("ProcessLaserScan: %.6lf\n", t1-t0);
 
   if(this->graphics2d_id.interf)
@@ -899,7 +897,7 @@ Wavefront::LocalizeToPosition(player_pose2d_t * p,
   double offset_x, offset_y, offset_a;
   double lx_rot, ly_rot;
 
-  offset_a = this->angle_diff(this->position.pa,this->localize.pa);
+  offset_a = plan_t::angle_diff(this->position.pa,this->localize.pa);
   lx_rot = this->localize.px * cos(offset_a) - this->localize.py * sin(offset_a);
   ly_rot = this->localize.px * sin(offset_a) + this->localize.py * cos(offset_a);
 
@@ -945,7 +943,7 @@ void
 Wavefront::Sleep(double loopstart)
 {
   //GlobalTime->GetTimeDouble(&currt);
-  double currt = get_time();
+  double currt = plan_t::get_time();
 
   //printf("cycle: %.6lf\n", currt-loopstart);
 
@@ -979,7 +977,7 @@ void Wavefront::Main()
   for(;;)
   {
     //GlobalTime->GetTimeDouble(&t);
-    double t = get_time();
+    double t = plan_t::get_time();
 
     pthread_testcancel();
 
@@ -1054,9 +1052,9 @@ void Wavefront::Main()
                              this->localize.px, this->localize.py,
                              this->target.px, this->target.py);
 
-        double t0 = get_time();
+        double t0 = plan_t::get_time();
         plan_update_cspace(this->plan,this->cspace_fname);
-        double t1 = get_time();
+        double t1 = plan_t::get_time();
         printf("time to update: %f\n", t1 - t0);
         this->new_map = false;
       }
@@ -1069,20 +1067,20 @@ void Wavefront::Main()
                                  NULL,0,NULL);
       }
 
-      double t0 = get_time();
+      double t0 = plan_t::get_time();
 
       // compute costs to the new goal.  Try local plan first
       const pos2d<double> l = { localize.px, localize.py };
       if(new_goal ||
          (this->plan->path.empty()) ||
-         (this->plan->do_local(l, this->scan_maxrange) < 0))
+         (this->plan->do_local(l, this->scan_maxrange) == false))
       {
         if(!new_goal && (!this->plan->path.empty()))
           puts("Wavefront: local plan failed");
 
         // Create a global plan
         const pos2d<double> g = { target.px, target.py };
-        if(this->plan->do_global(l, g) < 0)
+        if(this->plan->do_global(l, g) == false)
         {
           if(!printed_warning)
           {
@@ -1139,7 +1137,7 @@ void Wavefront::Main()
         delete [] line.points;
       }
 
-      double t1 = get_time();
+      double t1 = plan_t::get_time();
       //printf("planning: %.6lf\n", t1-t0);
 
       if(!this->velocity_control)
@@ -1195,13 +1193,13 @@ void Wavefront::Main()
 
     if(this->velocity_control)
     {
-      double t0 = get_time();
+      double t0 = plan_t::get_time();
       if(!this->plan->path.empty() && !this->atgoal)
       {
         // Check doneness
         double dist = hypot(this->localize.px - this->target.px,
                             this->localize.py - this->target.py);
-        double angle = std::abs(this->angle_diff(this->target.pa,this->localize.pa));
+        double angle = std::abs(plan_t::angle_diff(this->target.pa,this->localize.pa));
         if((dist < this->dist_eps) && (angle < this->ang_eps))
         {
           this->StopPosition();
@@ -1267,7 +1265,7 @@ void Wavefront::Main()
 
             double av,tv;
             double a = this->amin + (d / maxd) * (this->amax-this->amin);
-            double ad = angle_diff(b, this->localize.pa);
+            double ad = plan_t::angle_diff(b, this->localize.pa);
 
             // Are we on top of the goal?
             if(goald < this->dist_eps)
@@ -1308,7 +1306,7 @@ void Wavefront::Main()
       else
         this->StopPosition();
 
-      double t1 = get_time();
+      double t1 = plan_t::get_time();
       //printf("control: %.6lf\n", t1-t0);
     }
     else // !velocity_control
@@ -1321,7 +1319,7 @@ void Wavefront::Main()
       // when making small adjustments to achieve a desired heading (i.e., the
       // robot gets there and VFH stops, but here we don't realize we're done
       // because the localization heading hasn't changed sufficiently).
-      double angle = std::abs(this->angle_diff(this->waypoint_odom.pa,this->position.pa));
+      double angle = std::abs(plan_t::angle_diff(this->waypoint_odom.pa,this->position.pa));
       if(going_for_target && dist < this->dist_eps && angle < this->ang_eps)
       {
         // we're at the final target, so stop
@@ -1348,7 +1346,7 @@ void Wavefront::Main()
         // because the localization heading hasn't changed sufficiently).
         if(this->new_goal ||
            (rotate_waypoint &&
-            (std::abs(this->angle_diff(this->waypoint_odom.pa,this->position.pa))
+            (std::abs(plan_t::angle_diff(this->waypoint_odom.pa,this->position.pa))
              < M_PI/4.0)) ||
            (!rotate_waypoint && (dist < this->dist_eps)))
         {
@@ -1374,7 +1372,7 @@ void Wavefront::Main()
             angle = atan2(this->waypoint.py - this->localize.py,
                           this->waypoint.px - this->localize.px);
             if((dist > this->dist_eps) &&
-               std::abs(this->angle_diff(angle,this->localize.pa)) > M_PI/4.0)
+               std::abs(plan_t::angle_diff(angle,this->localize.pa)) > M_PI/4.0)
             {
               this->waypoint.px = this->localize.px;
               this->waypoint.py = this->localize.py;
@@ -1526,6 +1524,7 @@ int
 Wavefront::GetMap(bool threaded)
 {
   // allocate space for map cells
+  if (this->plan->cells) delete [] this->plan->cells;
   this->plan->cells = new plan_cell_t[this->plan->size.x * this->plan->size.y];
 
   // Reset the grid
@@ -1616,7 +1615,7 @@ Wavefront::GetMapInfo(bool threaded)
     return(-1);
   }
 
-  player_map_info_t* info = (player_map_info_t*)msg->GetPayload();
+  player_map_info_t* info = (player_map_info_t*) msg->GetPayload();
 
   // copy in the map info
   this->plan->scale = info->scale;
@@ -1892,29 +1891,4 @@ Wavefront::ProcessMessage(QueuePointer & resp_queue,
   }
   else
     return(-1);
-}
-
-// computes the signed minimum difference between the two angles.
-double
-Wavefront::angle_diff(double a, double b)
-{
-  double d1, d2;
-  a = NORMALIZE(a);
-  b = NORMALIZE(b);
-  d1 = a-b;
-  d2 = 2*M_PI - std::abs(d1);
-  if(d1 > 0)
-    d2 *= -1.0;
-  if(std::abs(d1) < std::abs(d2))
-    return(d1);
-  else
-    return(d2);
-}
-
-double
-static get_time(void)
-{
-  struct timeval curr;
-  gettimeofday(&curr,NULL);
-  return(curr.tv_sec + curr.tv_usec / 1e6);
 }

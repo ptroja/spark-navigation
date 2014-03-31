@@ -122,8 +122,8 @@ typedef struct
 } plan_t;
 /*@ 
   @ predicate is_valid(plan_t p) =
-  @   (0 <= p.min_x <= p.max_x < p.size_x) &&
-  @   (0 <= p.min_y <= p.max_y < p.size_y);
+  @   (0 <= p.min_x <= p.max_x < p.size_x < 1000) &&
+  @   (0 <= p.min_y <= p.max_y < p.size_y < 1000);
   @*/   
 
 // Create a planner

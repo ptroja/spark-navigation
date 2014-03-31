@@ -118,9 +118,11 @@ struct plan_t
   //void plan_update_cspace(plan_t *plan, const char* cachefile);
   void compute_cspace();
 
-  int do_global(const pos2d<double> & l, const pos2d<double> & g);
+  // Return true if succeeded.
+  bool do_global(const pos2d<double> & l, const pos2d<double> & g);
 
-  int do_local(const pos2d<double> & l, double plan_halfwidth);
+  // Return true if succeeded.
+  bool do_local(const pos2d<double> & l, double plan_halfwidth);
 
   // Generate a path to the goal
   void update_waypoints(const pos2d<double> & p);
@@ -187,7 +189,7 @@ void md5(unsigned int* digest) const;
   waypoints_t waypoints;
 
 private:
-  int update_plan(const pos2d<double> & l, const pos2d<double> & g);
+  bool update_plan(const pos2d<double> & l, const pos2d<double> & g);
   int find_local_goal(pos2d<double> * g, const pos2d<double> & l) const;
 
   // FIXME: return int?
@@ -229,8 +231,6 @@ private:
   // Effective robot radius
   double abs_min_radius;
 
-  static double get_time(void);
-
   // Convert from world coords to plan coords
   int GXWX(double x) const;
   int GYWY(double y) const;
@@ -241,6 +241,8 @@ private:
   // Test to see if the given plan coords lie within the user-specified plan bounds
   bool VALID_BOUNDS(int i, int j) const;
 
+  static double ANG_NORM(double a);
+
 public:
   // Convert from plan index to world coords
   double WXGX(int i) const;
@@ -248,6 +250,11 @@ public:
 
   // Compute the cell index for the given plan coords.
   int INDEX(int i, int j) const;
+
+  // computes the signed minimum difference between the two angles.
+  static double angle_diff(double a, double b);
+
+  static double get_time(void);
 };
 
 /**************************************************************************

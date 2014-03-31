@@ -36,7 +36,7 @@
 
 #include "plan.h"
 
-int
+bool
 plan_t::do_global(const pos2d<double> & l, const pos2d<double> & g)
 {
   double t0,t1;
@@ -50,10 +50,10 @@ plan_t::do_global(const pos2d<double> & l, const pos2d<double> & g)
   reset();
 
   path.clear();
-  if(update_plan(l, g) < 0)
+  if(update_plan(l, g) == false)
   {
     // no path
-    return(-1);
+    return false;
   }
 
   int li, lj;
@@ -72,10 +72,10 @@ plan_t::do_global(const pos2d<double> & l, const pos2d<double> & g)
 
   //printf("computed global path: %.6lf\n", t1-t0);
 
-  return(0);
+  return true;
 }
 
-int
+bool
 plan_t::do_local(const pos2d<double> & l, double plan_halfwidth)
 {
   double t0 = get_time();
@@ -98,16 +98,16 @@ plan_t::do_local(const pos2d<double> & l, double plan_halfwidth)
   if(find_local_goal(&g, l) != 0)
   {
     //puts("no local goal");
-    return(-1);
+    return false;
   }
 
   //printf("local goal: %.3lf, %.3lf\n", gx, gy);
 
   lpath.clear();
-  if(update_plan(l, g) != 0)
+  if(update_plan(l, g) == false)
   {
     puts("local plan update failed");
-    return(-1);
+    return false;
   }
 
   int li, lj;
@@ -115,7 +115,7 @@ plan_t::do_local(const pos2d<double> & l, double plan_halfwidth)
   lj = GYWY(l.y);
 
   // Reset path marks (TODO: find a smarter place to do this)
-  for(int i=0;i<size.x*size.y;i++)
+  for(int i = 0; i < size.x * size.y; i++)
     cells[i].lpathmark = false;
 
   // Cache the path
@@ -130,88 +130,81 @@ plan_t::do_local(const pos2d<double> & l, double plan_halfwidth)
   double t1 = get_time();
 
   //printf("computed local path: %.6lf\n", t1-t0);
-  return(0);
+  return true;
 }
 
 
 // Generate the plan
-int 
+bool
 plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
 {
-  int oi, oj, di, dj, ni, nj;
-  int gi, gj, li,lj;
-  float cost;
-  plan_cell_t *cell, *ncell;
-  char old_occ_state;
-  float old_occ_dist;
-
   // Reset the queue
   // TODO: use C++11 swap with empty heap.
   while(!heap.empty()) heap.pop();
 
-  // Initialize the goal cell
-  gi = GXWX(g.x);
-  gj = GYWY(g.y);
-
-  // Initialize the start cell
-  li = GXWX(l.x);
-  lj = GYWY(l.y);
-
   //printf("planning from %d,%d to %d,%d\n", li,lj,gi,gj);
+
+  // Initialize the goal cell
+  const int gi = GXWX(g.x);
+  const int gj = GYWY(g.y);
 
   if(!VALID_BOUNDS(gi, gj))
   {
     puts("goal out of bounds");
-    return(-1);
+    return false;
   }
   
+  // Initialize the start cell
+  const int li = GXWX(l.x);
+  const int lj = GYWY(l.y);
+
   if(!VALID_BOUNDS(li, lj))
   {
     puts("start out of bounds");
-    return(-1);
+    return false;
   }
 
   // Latch and clear the obstacle state for the cell I'm in
-  cell = cells + INDEX(li, lj);
-  old_occ_state = cell->occ_state_dyn;
-  old_occ_dist = cell->occ_dist_dyn;
-  cell->occ_state_dyn = -1;
-  cell->occ_dist_dyn = (float) max_radius;
+  plan_cell_t * start_cell = cells + INDEX(li, lj);
+  char old_occ_state = start_cell->occ_state_dyn;
+  float old_occ_dist = start_cell->occ_dist_dyn;
+  start_cell->occ_state_dyn = -1;
+  start_cell->occ_dist_dyn = (float) max_radius;
 
-  cell = cells + INDEX(gi, gj);
-  cell->plan_cost = 0;
+  plan_cell_t * goal_cell = cells + INDEX(gi, gj);
+  goal_cell->plan_cost = 0;
 
   // Are we done?
   if((li == gi) && (lj == gj))
-    return(0);
-  
-  push(cell);
+    return true;
+
+  push(goal_cell);
 
   while (true)
   {
-    cell = pop();
+	plan_cell_t * cell = pop();
 
     if (cell == NULL)
       break;
 
-    oi = cell->ci;
-    oj = cell->cj;
+    const int oi = cell->ci;
+    const int oj = cell->cj;
 
     //printf("pop %d %d %f\n", cell->ci, cell->cj, cell->plan_cost);
 
     float * p = dist_kernel_3x3;
-    for (dj = -1; dj <= +1; dj++)
+    for (int dj = -1; dj <= +1; dj++)
     {
-      ncell = cells + INDEX(oi-1,oj+dj);
-      for (di = -1; di <= +1; di++, p++, ncell++)
+      plan_cell_t * ncell = cells + INDEX(oi-1,oj+dj);
+      for (int di = -1; di <= +1; di++, p++, ncell++)
       {
         if (di == 0 && dj == 0)
           continue;
         //if (di && dj)
           //continue;
         
-        ni = oi + di;
-        nj = oj + dj;
+        const int ni = oi + di;
+        const int nj = oj + dj;
 
         if (!VALID_BOUNDS(ni, nj))
           continue;
@@ -222,7 +215,7 @@ plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
         if (ncell->occ_dist_dyn < abs_min_radius)
           continue;
 
-        cost = cell->plan_cost;
+        float cost = cell->plan_cost;
         if(ncell->lpathmark)
           cost += (float) ((*p) * hysteresis_factor);
         else
@@ -243,17 +236,12 @@ plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
   }
 
   // Restore the obstacle state for the cell I'm in
-  cell = cells + INDEX(li, lj);
-  cell->occ_state_dyn = old_occ_state;
-  cell->occ_dist_dyn = old_occ_dist;
+  start_cell = cells + INDEX(li, lj);
+  start_cell->occ_state_dyn = old_occ_state;
+  start_cell->occ_dist_dyn = old_occ_dist;
 
-  if(!cell->plan_next)
-  {
-    //puts("never found start");
-    return(-1);
-  }
-  else
-    return(0);
+  //puts("start was found");
+  return (start_cell->plan_next);
 }
 
 int 

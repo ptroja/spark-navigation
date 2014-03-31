@@ -120,7 +120,7 @@ bool plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell
 
   theta = atan2((double)(cell_b.cj - cell_a.cj),
                 (double)(cell_b.ci - cell_a.ci));
-  // FIXME: use GNU sincos if available
+  // FIXME: use sincos where available
   sinth = sin(theta);
   costh = cos(theta);
 

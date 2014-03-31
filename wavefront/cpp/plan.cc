@@ -117,7 +117,7 @@ plan_t::plan_t(const plan_t & plan) :
   // Allocate space for map cells
   this->cells = new plan_cell_t[this->size.x * this->size.y];
 
-  // Do initialization
+  // Do initialisation
   this->init();
 
   // Copy the map data
@@ -363,7 +363,9 @@ plan_t::set_bbox(double padding, double min_size,
 void
 plan_t::compute_cspace()
 {
-  puts("Generating C-space....");
+  puts("Generating C-space...");
+
+  // FIXME: this should iterate across size_x/y and not min_x/y..max_x/y (?).
 
   for (int j = min_y; j <= max_y; j++)
   {
