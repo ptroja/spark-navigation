@@ -1,0 +1,10 @@
+project Default is
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-g", "-O2");
+   end Compiler;
+
+   for Source_Files use ("heap_package.adb", "heap_package.ads", "planner.adb", "planner.ads", "priority_queue.adb", "priority_queue.ads");
+
+end Default;
+

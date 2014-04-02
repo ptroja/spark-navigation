@@ -1,6 +1,4 @@
-with Ada.Containers.Vectors;
-with Ada.Containers.Unbounded_Priority_Queues;
-with Ada.Containers.Synchronized_Queue_Interfaces;
+with Ada.Containers.Formal_Vectors;
 
 package Planner is
 
@@ -10,6 +8,18 @@ package Planner is
    type Cell_Index is
       record
          i, j : Integer;
+      end record;
+
+   type Option is (O_NONE, O_SOME);
+
+   type Cell_Ptr (Opt : Option := O_NONE) is
+      record
+         case Opt is
+            when O_NONE =>
+               null;
+            when O_SOME =>
+                 C : Cell_Index;
+         end case;
       end record;
 
    type Cell is
@@ -35,33 +45,24 @@ package Planner is
          Lpathmark : Boolean;
 
          -- The next cell in the plan
-         plan_next : Cell_Index;
+         plan_next : Cell_Ptr;
 
       end record;
 
-   function Cell_Eq (Left, Right : Cell) return Boolean is (False);
+   function Cell_Index_Eq (Left, Right : Cell_Index) return Boolean is (False);
 
    type Fixed_Dist_Kernel is array (-1 .. +1, -1 .. +1) of Float;
    type Variable_Dist_Kernel is array (Integer range <>, Integer range <>) of Float;
 
-   type Cell_Grid is array (Positive range <>, Positive range <>) of Cell;
+   type Cell_Grid is array (Natural range <>, Natural range <>) of Cell;
 
-   package Plan_Paths is new Ada.Containers.Vectors(Index_Type   => Natural,
-                                               Element_Type => Cell,
-                                               "="          => Cell_Eq);
+   subtype Cell_Count is Natural range 0 .. 1_000_000;
+
+   package Plan_Paths is new Ada.Containers.Formal_Vectors(Index_Type   => Cell_Count,
+                                                           Element_Type => Cell_Index,
+                                                           "="          => Cell_Index_Eq);
 
    subtype Plan_Path is Plan_Paths.Vector;
-
-   function Get_Priority(Element : Cell) return Float
-   is (Element.Plan_Cost);
-
-   function Before (Left, Right : Float) return Boolean renames "<";
-
-   package Cell_Queues is
-     new Ada.Containers.Synchronized_Queue_Interfaces(Element_Type => Cell);
-   package Cell_Priority_Queues is
-     new Ada.Containers.Unbounded_Priority_Queues(Queue_Interfaces => Cell_Queues,
-                                                  Queue_Priority   => Float);
 
    -- Grid dimensions (number of cells)
    type Plan (Last_X, Last_Y : Positive;
@@ -81,16 +82,16 @@ package Planner is
          cells : Cell_Grid (0 .. Last_X, 0 .. Last_Y);
 
          -- The global path
-         path : Plan_Path;
+         path : Plan_Path(Number_Of_Cells);
 
          -- The local path (mainly for debugging)
-         lpath : Plan_Path;
+         lpath : Plan_Path(Number_Of_Cells);
 
          -- Waypoints extracted from global path
-         waypoints : Plan_Path;
+         waypoints : Plan_Path(Number_Of_Cells);
 
          -- Priority queue of cells to update
-         heap : Cell_Priority_Queues.Queue;
+         --heap : Cell_Priority_Queues.Queue;
 
          -- Distance penalty kernel, pre-computed in plan_compute_dist_kernel();
          dist_kernel : Variable_Dist_Kernel(kernel_index_min .. kernel_index_max,
@@ -142,15 +143,26 @@ package Planner is
    --void plan_update_cspace(plan_t *plan, const char* cachefile);
    procedure compute_cspace(This : in out Plan);
 
-   type Status is (Success, Error);
+   type Status is (Success, Failure);
 
-   function do_global(This : in out Plan;
+   procedure do_global(This : in out Plan;
+                       lx, ly : Float;
+                       gx, gy : Float;
+                       Result : out Status);
+
+   procedure do_local(This : in out Plan;
                       lx, ly : Float;
-                      gx, gy : Float) return Status;
+                      plan_halfwidth : Float;
+                      Result : out Status);
 
-   function do_local(This : in out Plan;
-                     lx, ly : Float;
-                     plan_halfwidth : Float) return Status;
+   procedure update_plan(This : in out Plan;
+                         lx, ly, gx, gy : Float;
+                         Result : out Status);
+
+   procedure find_local_goal(This : in out Plan;
+                             gx, gy : out Float;
+                             lx, ly : Float;
+                             Result : out Status);
 
    -- Generate a path to the goal
    procedure update_waypoints(This : in out Plan;

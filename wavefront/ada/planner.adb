@@ -1,4 +1,7 @@
 with Ada.Numerics.Elementary_Functions;
+use Ada.Numerics.Elementary_Functions;
+
+with Priority_Queue;
 
 package body Planner is
 
@@ -47,9 +50,24 @@ package body Planner is
 
    procedure Init (This : in out Plan) is
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "Init unimplemented");
-      raise Program_Error;
+      --printf("scale: %.3lf\n", scale);
+
+      for j in This.cells'Range(2) loop
+         for i in This.cells'Range(1) loop
+            This.cells(i,j).C := (i => i, j => j);
+            This.cells(i,j).occ_state_dyn := This.cells(i,j).occ_state;
+            This.cells(i,j).occ_dist_dyn := This.cells(i,j).occ_dist;
+            This.cells(i,j).plan_cost := MAX_COST;
+            This.cells(i,j).plan_next := (Opt => O_NONE);
+            This.cells(i,j).lpathmark := false;
+         end loop;
+      end loop;
+
+      Plan_Paths.Clear(This.waypoints);
+
+      compute_dist_kernel(This);
+
+      set_bounds(This, 0, 0, This.Last_X, This.Last_Y);
    end Init;
 
    -----------
@@ -61,7 +79,7 @@ package body Planner is
       for j in Integer range This.min_y .. This.max_y loop
          for i in Integer range This.min_x .. This.max_x loop
             This.cells(i,j).plan_cost := MAX_COST;
-            This.cells(i,j).plan_next := (i => -1, j => -1);
+            This.cells(i,j).plan_next := (Opt => O_NONE);
             This.cells(i,j).mark := false;
          end loop;
       end loop;
@@ -184,39 +202,322 @@ package body Planner is
 
    end compute_cspace;
 
+   procedure update_plan(This : in out Plan;
+                         lx, ly, gx, gy : Float;
+                         Result : out Status)
+   is
+      -- Initialize the goal cell
+      gi : constant Integer := GXWX(This, gx);
+      gj : constant Integer := GYWY(This, gy);
+
+      -- Initialize the start cell
+      -- FIXME: this may be not needed, can be done after the first 'return'.
+      li : constant Integer := GXWX(This, lx);
+      lj : constant Integer := GYWY(This, ly);
+
+      old_occ_state : Occupancy;
+      old_occ_dist : Float;
+
+      function Priority_Of(Element : Cell_Index) return Float is (This.cells(Element.i,Element.j).Plan_Cost);
+
+      package Cell_Priority_Queue is new Priority_Queue(Element_Type  => Cell_Index,
+                                                        Priority_Type => Float,
+                                                        Priority_Of => Priority_Of,
+                                                        ">" => ">");
+
+      heap : Cell_Priority_Queue.Queue_Type(100);
+
+      procedure Push(This : Plan; Queue : in out Cell_Priority_Queue.Queue_Type; Element : Cell_Index);
+
+      procedure Pop(Queue : in out Cell_Priority_Queue.Queue_Type; Element : out Cell_Ptr);
+
+      procedure Push(This : Plan; Queue : in out Cell_Priority_Queue.Queue_Type; Element : Cell_Index) is
+      begin
+         Cell_Priority_Queue.Enqueue(Queue, Element);
+      end;
+
+      procedure Pop(Queue : in out Cell_Priority_Queue.Queue_Type;  Element : out Cell_Ptr) is
+      begin
+         if Cell_Priority_Queue.Empty(Queue) then
+            Element := (Opt => O_NONE);
+         else
+            declare
+               Top : Cell_Index;
+            begin
+               Cell_Priority_Queue.Dequeue(Queue, Top);
+               Element := (Opt => O_SOME, C => Top);
+            end;
+         end if;
+      end;
+
+   begin
+      -- Reset the queue
+      -- TODO: use C++11 swap with empty heap.
+      -- while(!heap.empty()) heap.pop();
+
+      --printf("planning from %d,%d to %d,%d\n", li,lj,gi,gj);
+
+      if not VALID_BOUNDS(This, gi, gj) then
+         --puts("goal out of bounds");
+         Result := Failure;
+         return;
+      end if;
+
+      if not VALID_BOUNDS(This, li, lj) then
+         --puts("start out of bounds");
+         Result := Failure;
+         return;
+      end if;
+
+      -- Latch and clear the obstacle state for the cell I'm in
+      old_occ_state := This.cells(li,lj).Occ_State_Dyn;
+      old_occ_dist := This.cells(li,lj).Occ_Dist_Dyn;
+
+      This.cells(li,lj).Occ_State_Dyn := Free;
+      This.cells(li,lj).Occ_Dist_Dyn := This.Max_Radius;
+
+      This.cells(gi,gj).Plan_Cost := 0.0;
+
+      -- Are we done?
+      if li = gi and then lj = gj then
+         result := Success;
+         return;
+      end if;
+
+      This.cells(gi,gj).Mark := True;
+      push(This, heap, (i => gi, j => gj));
+
+      loop
+         declare
+            cell : Cell_Ptr;
+         begin
+
+            Pop(heap, cell);
+
+            if cell.Opt = O_NONE then
+               exit;
+            end if;
+
+            --printf("pop %d %d %f\n", cell->ci, cell->cj, cell->plan_cost);
+
+            for dj in Integer range -1 .. +1 loop
+               for di in Integer range -1 .. +1 loop
+
+                  declare
+                     ni : constant Integer := cell.C.i + di;
+                     nj : constant Integer := cell.C.j + dj;
+                  begin
+                     if (di = 0 and then dj = 0) or else
+                       (not VALID_BOUNDS(This, ni, nj)) or else
+                       This.cells(ni,nj).Mark or else
+                       This.cells(ni,nj).Occ_Dist_Dyn < This.Abs_Min_Radius then
+                        null;
+                     else
+                        declare
+                           cost : Float := This.cells(cell.C.i,cell.C.j).Plan_Cost;
+                        begin
+                           if This.cells(ni,nj).Lpathmark then
+                              cost := cost + This.Dist_Kernel_3x3(di,dj) * This.hysteresis_factor;
+                           else
+                              cost := cost + This.Dist_Kernel_3x3(di,dj);
+                           end if;
+
+                           if This.cells(ni,nj).Occ_Dist_Dyn < This.max_radius then
+                              cost := cost + This.dist_penalty * (This.max_radius - This.cells(ni,nj).Occ_Dist_Dyn);
+                           end if;
+
+                           if cost < This.cells(ni,nj).Plan_Cost then
+                              This.cells(ni,nj).plan_cost := cost;
+                              This.cells(ni,nj).plan_next := cell;
+
+                              This.cells(ni,nj).Mark := True;
+                              push(This, heap, (i => ni, j => nj));
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end loop;
+            end loop;
+         end;
+      end loop;
+
+      -- Restore the obstacle state for the cell I'm in
+      This.cells(li,lj).occ_state_dyn := old_occ_state;
+      This.cells(li,lj).occ_dist_dyn := old_occ_dist;
+
+      --puts("start was found");
+      Result := (if This.cells(li,lj).plan_next.Opt = O_SOME
+                 then Success
+                 else Failure);
+   end;
+
+   procedure find_local_goal(This : in out Plan;
+                             gx, gy : out Float;
+                             lx, ly : Float;
+                             Result : out Status)
+   is
+   begin
+      --  Generated stub: replace with real body!
+      pragma Compile_Time_Warning (Standard.True, "find_local_goal unimplemented");
+      raise Program_Error;
+      find_local_goal (This, gx, gy, lx, ly, Result);
+   end;
+
    ---------------
    -- do_global --
    ---------------
 
-   function do_global
+   procedure do_global
      (This : in out Plan;
       lx, ly : Float;
-      gx, gy : Float)
-      return Status
+      gx, gy : Float;
+      Result : out Status)
    is
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "do_global unimplemented");
-      raise Program_Error;
-      return do_global (This, lx, ly, gx, gy);
+      -- Set bounds to look over the entire grid
+      set_bounds(This, 0, 0, This.Last_X, This.Last_Y);
+
+      -- Reset plan costs
+      reset(This);
+
+      Plan_Paths.Clear(This.path);
+
+      update_plan(This, lx, ly, gx, gy, Result);
+      if Result = Failure then
+         return;
+      end if;
+
+      declare
+         li : constant Integer := GXWX(This, lx);
+         lj : constant Integer := GYWY(This, ly);
+
+         cell : Cell_Ptr := (Opt => O_SOME, C => (i => li, j => lj));
+      begin
+
+         -- Cache the path
+         while cell.Opt = O_SOME loop
+            Plan_Paths.Append(This.path, cell.C);
+            cell := This.cells(cell.C.i,cell.C.j).plan_next;
+         end loop;
+      end;
+
+      Result := Success;
    end do_global;
 
    --------------
    -- do_local --
    --------------
 
-   function do_local
+   procedure do_local
      (This : in out Plan;
       lx, ly : Float;
-      plan_halfwidth : Float)
-      return Status
+      plan_halfwidth : Float;
+      Result : out Status)
    is
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "do_local unimplemented");
-      raise Program_Error;
-      return do_local (This, lx, ly, plan_halfwidth);
+      declare
+         -- Set bounds as directed
+         xmin : constant Integer := GXWX(This, lx - plan_halfwidth);
+         ymin : constant Integer := GYWY(This, ly - plan_halfwidth);
+         xmax : constant Integer := GXWX(This, lx + plan_halfwidth);
+         ymax : constant Integer := GYWY(This, ly + plan_halfwidth);
+      begin
+         set_bounds(This, xmin, ymin, xmax, ymax);
+      end;
+
+      -- Reset plan costs (within the local patch)
+      reset(This);
+
+      declare
+         -- Find a local goal to pursue
+         gx, gy : Float;
+      begin
+
+         find_local_goal(This, gx, gy, lx, ly, Result);
+         if Result = Failure then
+            -- puts("no local goal");
+            return;
+         end if;
+
+         -- printf("local goal: %.3lf, %.3lf\n", gx, gy);
+
+         Plan_Paths.Clear(This.lpath);
+
+         update_plan(This, lx, ly, gx, gy, Result);
+         if Result = Failure then
+            return;
+         end if;
+      end;
+
+      -- Reset path marks (TODO: find a smarter place to do this)
+      for j in This.cells'Range(2) loop
+         for i in This.cells'Range(1) loop
+            This.cells(i,j).Lpathmark := False;
+         end loop;
+      end loop;
+
+      declare
+         li : constant Integer := GXWX(This, lx);
+         lj : constant Integer := GYWY(This, ly);
+         cell : Cell_Ptr := (Opt => O_SOME, C => (i => li, j => lj));
+      begin
+
+         -- Cache the path
+         while cell.Opt = O_SOME loop
+            This.cells(cell.C.i,cell.C.j).Lpathmark := true;
+            Plan_Paths.Append(This.lpath,cell.C);
+
+            cell := This.cells(cell.C.i,cell.C.j).plan_next;
+         end loop;
+      end;
+
+      -- printf("computed local path: %.6lf\n", t1-t0);
+      Result := Success;
    end do_local;
+
+   function VALID(This : Plan; I, J : Integer) return Boolean is
+   begin
+      return
+        i in 0 .. this.Last_X and then
+        j in 0 .. this.Last_Y;
+   end;
+
+   -- See if once cell is reachable from another.
+   function test_reachable(This : Plan; A, B : Cell_Index) return Boolean is
+      theta : constant Float := Arctan(Float(B.j - A.j),
+                                       Float(B.i - A.i));
+
+      -- FIXME: use sincos where available
+      sinth : constant Float := Sin(Theta);
+      costh : constant Float := Cos(Theta);
+
+      i : Float := Float(A.i);
+      j : Float := Float(A.j);
+
+      lasti : Integer := A.i;
+      lastj : Integer := A.j;
+   begin
+
+      while not (lasti = B.i and then lastj = B.j) loop
+         if lasti /= Integer(Float'Floor(i)) or else lastj /= Integer(Float'Floor(j)) then
+            lasti := Integer(Float'Floor(i));
+            lastj := Integer(Float'Floor(j));
+            if (not VALID(This,lasti,lastj)) or else -- stepped out of map
+              This.cells(lasti,lastj).occ_dist < This.abs_min_radius then
+               return false;
+            end if;
+         end if;
+
+         if lasti /= B.i then
+            i := i + costh;
+         end if;
+         if lastj /= B.j then
+            j := j + sinth;
+         end if;
+      end loop;
+
+      return true;
+   end;
 
    ----------------------
    -- update_waypoints --
@@ -226,10 +527,60 @@ package body Planner is
      (This : in out Plan;
       px, py : Float)
    is
+      ni : constant Integer := GXWX(This, px);
+      nj : constant Integer := GYWY(This, py);
+
+      Cell : Cell_Ptr;
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "update_waypoints unimplemented");
-      raise Program_Error;
+
+      Plan_Paths.Clear(This.waypoints);
+
+      -- Can't plan a path if we're off the map
+      if not VALID(This,ni,nj) then
+         return;
+      end if;
+
+      cell := (Opt => O_SOME, C => (i => ni, j => nj));
+
+      while Cell.Opt /= O_NONE loop
+
+         Plan_Paths.Append(This.waypoints, cell.C);
+
+         if This.cells(cell.C.i,cell.C.j).plan_next.Opt = O_NONE then
+            -- done
+            exit;
+         end if;
+
+         -- Find the farthest cell in the path that is reachable from the
+         -- current cell.
+         declare
+            dist : Float := 0.0;
+            ncell : Cell_Ptr := Cell;
+         begin
+            while This.cells(ncell.C.i,ncell.C.j).plan_next.Opt /= O_NONE loop
+               if dist > 0.50 then
+                  if not test_reachable(This, cell.C, This.cells(ncell.C.i,ncell.C.j).plan_next.C) then
+                     exit;
+                  end if;
+               end if;
+               dist := dist + This.scale;
+
+               ncell := This.cells(ncell.C.i,ncell.C.j).plan_next;
+            end loop;
+
+            if ncell = cell then
+               exit;
+            end if;
+
+            cell := ncell;
+         end;
+      end loop;
+
+      if cell.Opt = O_SOME and then This.cells(cell.C.i,cell.C.j).Plan_Cost > 0.0 then
+         -- no path
+         Plan_Paths.Clear(This.waypoints);
+      end if;
+
    end update_waypoints;
 
    ----------------------
@@ -306,13 +657,13 @@ package body Planner is
                         min_x, min_y, max_x, max_y : Integer)
    is
    begin
+      pragma Assert (min_x <= max_x);
+      pragma Assert (min_y <= max_y);
+
       This.min_x := Integer'Min(This.Last_X, Integer'Max(0, min_x));
       This.min_y := Integer'Min(This.Last_Y, Integer'Max(0, min_y));
       This.max_x := Integer'Min(This.Last_X, Integer'Max(0, max_x));
       This.max_y := Integer'Min(This.Last_Y, Integer'Max(0, max_y));
-
-      pragma Assert (This.min_x <= This.max_x);
-      pragma Assert (This.min_y <= This.max_y);
 
       --printf("new bounds: (%d,%d) -> (%d,%d)\n",
       --plan->min_x, plan->min_y,
@@ -321,7 +672,7 @@ package body Planner is
 
    function hypot (X, Y : Float) return Float is
    begin
-      return Ada.Numerics.Elementary_Functions.Sqrt(X*X + Y*Y);
+      return Sqrt(X*X + Y*Y);
    end;
 
    function Get_Variable_Dist_Kernel(This : Plan) return Dist_Kernel is
