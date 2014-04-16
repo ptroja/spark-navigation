@@ -1,0 +1,112 @@
+
+--     ----------------
+--     -- get_carrot --
+--     ----------------
+--
+--     function get_carrot
+--       (px, py : out Float;
+--        lx, ly : Float;
+--        maxdist : Float;
+--        distweight : Float)
+--        return Float
+--     is
+--     begin
+--        --  Generated stub: replace with real body!
+--        pragma Compile_Time_Warning (Standard.True, "get_carrot unimplemented");
+--        raise Program_Error;
+--        return get_carrot (px, py, lx, ly, maxdist, distweight);
+--     end get_carrot;
+
+   ----------------------------
+   -- compute_diffdrive_cmds --
+   ----------------------------
+
+--     function compute_diffdrive_cmds
+--       (vx, va : out Float;
+--        rotate_dir : Integer;
+--        lx, ly, la : Float;
+--        gx, gy, ga : Float;
+--        goal_d, goal_a : Float;
+--        maxd : Float;
+--        dweight : Float;
+--        txmin, tvmax : Float;
+--        avmin, avmax : Float;
+--        amin, amax : Float)
+--        return Integer
+--     is
+--     begin
+--        --  Generated stub: replace with real body!
+--        pragma Compile_Time_Warning (Standard.True, "compute_diffdrive_cmds unimplemented");
+--        raise Program_Error;
+--        return compute_diffdrive_cmds (vx, va, rotate_dir, lx, ly, la, gx, gy,
+--           ga, goal_d, goal_a, maxd, dweight, txmin, tvmax, avmin, avmax, amin,
+--           amax);
+--     end compute_diffdrive_cmds;
+
+--     --------------
+--     -- set_bbox --
+--     --------------
+--
+--     procedure set_bbox
+--       (This : in out Plan;
+--        padding : Float;
+--        min_size : Float;
+--        x0, y0, x1, y1 : Float)
+--     is
+--        gx0 : constant Integer := GXWX(this, x0);
+--        gy0 : constant Integer := GYWY(this, y0);
+--        gx1 : constant Integer := GXWX(this, x1);
+--        gy1 : constant Integer := GYWY(this, y1);
+--
+--        min_x, min_y, max_x, max_y : Integer;
+--        sx, sy : Natural;
+--        dx, dy : Integer;
+--        gmin_size : Integer;
+--        gpadding : Integer;
+--     begin
+--
+--        -- Make a bounding box to include both points.
+--        min_x := Integer'Min(gx0, gx1);
+--        min_y := Integer'Min(gy0, gy1);
+--        max_x := Integer'Max(gx0, gx1);
+--        max_y := Integer'Max(gy0, gy1);
+--
+--        -- Make sure the min_size is achievable
+--        gmin_size := Integer(Float'Ceiling(min_size / This.scale));
+--        gmin_size := Integer'Min(gmin_size, Integer'Min(This.Last_X, This.Last_Y));
+--
+--        -- Add padding
+--        gpadding := Integer(Float'Ceiling(padding / This.scale));
+--
+--        min_x := Integer'Max(min_x - gpadding / 2, 0);
+--        max_x := Integer'Min(max_x + gpadding / 2, This.Last_X);
+--        min_y := Integer'Max(min_y - gpadding / 2, 0);
+--        max_y := Integer'Min(max_y + gpadding / 2, This.Last_Y);
+--
+--        -- Grow the box if necessary to achieve the min_size
+--        sx := max_x - min_x;
+--        while sx < gmin_size loop
+--           dx := gmin_size - sx;
+--           min_x := min_x - Integer(Float'Ceiling(Float(dx) / 2.0)); -- TODO: this can be computed without floating-point
+--           max_x := max_x + Integer(Float'Ceiling(Float(dx) / 2.0));
+--
+--           min_x := Integer'Max(min_x, 0);
+--           max_x := Integer'Min(max_x, This.Last_X);
+--
+--           sx := max_x - min_x;
+--        end loop;
+--
+--        sy := max_y - min_y;
+--        while sy < gmin_size loop
+--           dy := gmin_size - sy;
+--           min_y := min_y - Integer(Float'Ceiling(Float(dy) / 2.0));
+--           max_y := max_y + Integer(Float'Ceiling(Float(dy) / 2.0));
+--
+--           min_y := Integer'Max(min_y, 0);
+--           max_y := Integer'Min(max_y, This.Last_Y);
+--
+--           sy := max_y - min_y;
+--        end loop;
+--
+--        set_bounds(This, min_x, min_y, max_x, max_y);
+--     end set_bbox;

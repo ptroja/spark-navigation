@@ -87,77 +87,6 @@ package body Planner is
       Plan_Paths.Clear(This.waypoints);
    end Reset;
 
-   --------------
-   -- set_bbox --
-   --------------
-
-   procedure set_bbox
-     (This : in out Plan;
-      padding : Float;
-      min_size : Float;
-      x0, y0, x1, y1 : Float)
-   is
-      gx0, gy0, gx1, gy1 : Integer;
-      min_x, min_y, max_x, max_y : Integer;
-      sx, sy : Integer;
-      dx, dy : Integer;
-      gmin_size : Integer;
-      gpadding : Integer;
-   begin
-
-      gx0 := GXWX(this, x0);
-      gy0 := GYWY(this, y0);
-      gx1 := GXWX(this, x1);
-      gy1 := GYWY(this, y1);
-
-      -- Make a bounding box to include both points.
-      min_x := Integer'Min(gx0, gx1);
-      min_y := Integer'Min(gy0, gy1);
-      max_x := Integer'Max(gx0, gx1);
-      max_y := Integer'Max(gy0, gy1);
-
-      -- Make sure the min_size is achievable
-      gmin_size := Integer(Float'Ceiling(min_size / This.scale));
-      gmin_size := Integer'Min(gmin_size, Integer'Min(This.Last_X, This.Last_Y));
-
-      -- Add padding
-      gpadding := Integer(Float'Ceiling(padding / This.scale));
-      min_x := min_x - gpadding / 2;
-      min_x := Integer'Max(min_x, 0);
-      max_x := max_x + gpadding / 2;
-      max_x := Integer'Min(max_x, This.Last_X);
-      min_y := min_y - gpadding / 2;
-      min_y := Integer'Max(min_y, 0);
-      max_y := max_y + gpadding / 2;
-      max_y := Integer'Min(max_y, This.Last_Y);
-
-      -- Grow the box if necessary to achieve the min_size
-      sx := max_x - min_x;
-      while sx < gmin_size loop
-         dx := gmin_size - sx;
-         min_x := min_x - Integer(Float'Ceiling(Float(dx) / 2.0)); -- TODO: this can be computed without floating-point
-         max_x := max_x + Integer(Float'Ceiling(Float(dx) / 2.0));
-
-         min_x := Integer'Max(min_x, 0);
-         max_x := Integer'Min(max_x, This.Last_X);
-
-         sx := max_x - min_x;
-      end loop;
-      sy := max_y - min_y;
-      while sy < gmin_size loop
-         dy := gmin_size - sy;
-         min_y := min_y - Integer(Float'Ceiling(Float(dy) / 2.0));
-         max_y := max_y + Integer(Float'Ceiling(Float(dy) / 2.0));
-
-         min_y := Integer'Max(min_y, 0);
-         max_y := Integer'Min(max_y, This.Last_Y);
-
-         sy := max_y - min_y;
-      end loop;
-
-      set_bounds(This, min_x, min_y, max_x, max_y);
-   end set_bbox;
-
    --------------------
    -- check_inbounds --
    --------------------
@@ -227,11 +156,11 @@ package body Planner is
 
       heap : Cell_Priority_Queue.Queue_Type(100);
 
-      procedure Push(This : Plan; Queue : in out Cell_Priority_Queue.Queue_Type; Element : Cell_Index);
+      procedure Push(Queue : in out Cell_Priority_Queue.Queue_Type; Element : Cell_Index);
 
       procedure Pop(Queue : in out Cell_Priority_Queue.Queue_Type; Element : out Cell_Ptr);
 
-      procedure Push(This : Plan; Queue : in out Cell_Priority_Queue.Queue_Type; Element : Cell_Index) is
+      procedure Push(Queue : in out Cell_Priority_Queue.Queue_Type; Element : Cell_Index) is
       begin
          Cell_Priority_Queue.Enqueue(Queue, Element);
       end;
@@ -285,7 +214,7 @@ package body Planner is
       end if;
 
       This.cells(gi,gj).Mark := True;
-      push(This, heap, (i => gi, j => gj));
+      push(heap, (i => gi, j => gj));
 
       loop
          declare
@@ -316,22 +245,21 @@ package body Planner is
                         declare
                            cost : Float := This.cells(cell.C.i,cell.C.j).Plan_Cost;
                         begin
-                           if This.cells(ni,nj).Lpathmark then
-                              cost := cost + This.Dist_Kernel_3x3(di,dj) * This.hysteresis_factor;
-                           else
-                              cost := cost + This.Dist_Kernel_3x3(di,dj);
-                           end if;
+                           cost := cost + This.Dist_Kernel_3x3(di,dj) *
+                             (if This.cells(ni,nj).Lpathmark
+                              then This.hysteresis_factor
+                              else 1.0);
 
                            if This.cells(ni,nj).Occ_Dist_Dyn < This.max_radius then
                               cost := cost + This.dist_penalty * (This.max_radius - This.cells(ni,nj).Occ_Dist_Dyn);
                            end if;
 
                            if cost < This.cells(ni,nj).Plan_Cost then
-                              This.cells(ni,nj).plan_cost := cost;
+                              This.cells(ni,nj).Plan_Cost := cost;
                               This.cells(ni,nj).plan_next := cell;
 
                               This.cells(ni,nj).Mark := True;
-                              push(This, heap, (i => ni, j => nj));
+                              push(heap, (i => ni, j => nj));
                            end if;
                         end;
                      end if;
@@ -345,7 +273,7 @@ package body Planner is
       This.cells(li,lj).occ_state_dyn := old_occ_state;
       This.cells(li,lj).occ_dist_dyn := old_occ_dist;
 
-      --puts("start was found");
+      -- puts("start was found");
       Result := (if This.cells(li,lj).plan_next.Opt = O_SOME
                  then Success
                  else Failure);
@@ -356,11 +284,97 @@ package body Planner is
                              lx, ly : Float;
                              Result : out Status)
    is
+      use Plan_Paths;
+      use type Cell_Count;
+
+      c_min : Cell_Count;
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "find_local_goal unimplemented");
-      raise Program_Error;
-      find_local_goal (This, gx, gy, lx, ly, Result);
+      -- FIXME: Result should be a discriminated record.
+      gx := 0.0;
+      gy := 0.0;
+
+      -- Must already have computed a global goal
+      if Plan_Paths.Is_Empty(This.path) then
+         -- Put_Line ("no global path");
+
+         Result := Failure;
+         return;
+      end if;
+
+      declare
+         li : constant Integer := GXWX(This, lx);
+         lj : constant Integer := GYWY(This, ly);
+      begin
+         if not VALID_BOUNDS(This, li, lj) then
+            Result := Failure;
+            return;
+         end if;
+
+         -- Find the closest place to jump on the global path
+         declare
+            -- FIXME: this initialization is not needed.
+            squared_d_min : Integer := Integer'Last;
+            Found : Boolean := False;
+         begin
+
+            for i in Cell_Count range First_Index(This.path) .. Last_Index(This.path) loop
+               declare
+                  idx : constant Cell_Index := Element(This.path, i);
+                  squared_d : constant Integer :=
+                    (idx.i - li) * (idx.i - li) +
+                    (idx.j - lj) * (idx.j - lj);
+               begin
+                  if (not Found) or else squared_d < squared_d_min then
+                     squared_d_min := squared_d;
+                     c_min := i;
+                     Found := True;
+                  end if;
+               end;
+            end loop;
+
+            pragma Assert (Found);
+         end;
+      end;
+
+      -- Follow the path to find the last cell that's inside the local planning
+      -- area
+      declare
+         last_inside : Cell_Count;
+      begin
+         for i in Cell_Count range c_min .. Last_Index(This.path) loop
+            declare
+               cell : constant Cell_Index := Element(This.path, i);
+            begin
+               -- printf("step %d: (%d,%d)\n", c, cell->ci, cell->cj);
+
+               if not (cell.i in This.min_x .. This.max_x and then
+                       cell.j in This.min_y .. This.max_y) then
+                  -- Did we move at least one cell along the path?
+                  if i = c_min then
+                     -- nope; the entire global path is outside the local region;
+                     -- can't fix that here
+                     -- Put_Line("global path not in local region");
+                     Result := Failure;
+                     return;
+                  else
+                     last_inside := i-1;
+                     exit;
+                  end if;
+               end if;
+            end;
+         end loop;
+
+         declare
+            idx : Cell_Index := Element(This.path, last_inside);
+         begin
+            -- printf("ci: %d cj: %d\n", cell->ci, cell->cj);
+            gx := WXGX(This, idx.i);
+            gy := WYGY(This, idx.j);
+         end;
+
+         Result := Success;
+         return;
+      end;
    end;
 
    ---------------
@@ -382,7 +396,7 @@ package body Planner is
 
       Plan_Paths.Clear(This.path);
 
-      update_plan(This, lx, ly, gx, gy, Result);
+      Update_Plan(This, lx, ly, gx, gy, Result);
       if Result = Failure then
          return;
       end if;
@@ -435,7 +449,7 @@ package body Planner is
 
          find_local_goal(This, gx, gy, lx, ly, Result);
          if Result = Failure then
-            -- puts("no local goal");
+            -- Put_Line ("no local goal");
             return;
          end if;
 
@@ -443,7 +457,7 @@ package body Planner is
 
          Plan_Paths.Clear(This.lpath);
 
-         update_plan(This, lx, ly, gx, gy, Result);
+         Update_Plan(This, lx, ly, gx, gy, Result);
          if Result = Failure then
             return;
          end if;
@@ -483,7 +497,7 @@ package body Planner is
    end;
 
    -- See if once cell is reachable from another.
-   function test_reachable(This : Plan; A, B : Cell_Index) return Boolean is
+   function reachable(This : Plan; A, B : Cell_Index) return Boolean is
       theta : constant Float := Arctan(Float(B.j - A.j),
                                        Float(B.i - A.i));
 
@@ -558,10 +572,9 @@ package body Planner is
             ncell : Cell_Ptr := Cell;
          begin
             while This.cells(ncell.C.i,ncell.C.j).plan_next.Opt /= O_NONE loop
-               if dist > 0.50 then
-                  if not test_reachable(This, cell.C, This.cells(ncell.C.i,ncell.C.j).plan_next.C) then
-                     exit;
-                  end if;
+               if dist > 0.50 and then
+                 not reachable(This, cell.C, This.cells(ncell.C.i,ncell.C.j).plan_next.C) then
+                  exit;
                end if;
                dist := dist + This.scale;
 
@@ -596,50 +609,6 @@ package body Planner is
       px := WXGX(This, waypoint.c.i);
       py := WYGY(This, waypoint.c.j);
    end convert_waypoint;
-
-   ----------------
-   -- get_carrot --
-   ----------------
-
-   function get_carrot
-     (px, py : out Float;
-      lx, ly : Float;
-      maxdist : Float;
-      distweight : Float)
-      return Float
-   is
-   begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "get_carrot unimplemented");
-      raise Program_Error;
-      return get_carrot (px, py, lx, ly, maxdist, distweight);
-   end get_carrot;
-
-   ----------------------------
-   -- compute_diffdrive_cmds --
-   ----------------------------
-
-   function compute_diffdrive_cmds
-     (vx, va : out Float;
-      rotate_dir : Integer;
-      lx, ly, la : Float;
-      gx, gy, ga : Float;
-      goal_d, goal_a : Float;
-      maxd : Float;
-      dweight : Float;
-      txmin, tvmax : Float;
-      avmin, avmax : Float;
-      amin, amax : Float)
-      return Integer
-   is
-   begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "compute_diffdrive_cmds unimplemented");
-      raise Program_Error;
-      return compute_diffdrive_cmds (vx, va, rotate_dir, lx, ly, la, gx, gy,
-         ga, goal_d, goal_a, maxd, dweight, txmin, tvmax, avmin, avmax, amin,
-         amax);
-   end compute_diffdrive_cmds;
 
    function PLAN_GXWX(This : Plan; X : Float) return Integer
    is

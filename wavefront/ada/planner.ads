@@ -2,9 +2,8 @@ with Ada.Containers.Formal_Vectors;
 
 package Planner is
 
-   type Occupancy is (Free, Unknown, Occ);
+   type Occupancy is (Free, Unknown, Occupied);
 
-   -- FIXME: discriminated record.
    type Cell_Index is
       record
          i, j : Integer;
@@ -56,7 +55,7 @@ package Planner is
 
    type Cell_Grid is array (Natural range <>, Natural range <>) of Cell;
 
-   subtype Cell_Count is Natural range 0 .. 1_000_000;
+   subtype Cell_Count is Ada.Containers.Count_Type range 0 .. 1_000_000;
 
    package Plan_Paths is new Ada.Containers.Formal_Vectors(Index_Type   => Cell_Count,
                                                            Element_Type => Cell_Index,
@@ -132,10 +131,10 @@ package Planner is
    procedure set_bounds(This : in out Plan;
                         min_x, min_y, max_x, max_y : Integer);
 
-   procedure set_bbox(This : in out Plan;
-                      padding : Float;
-                      min_size : Float;
-                      x0, y0, x1, y1 : Float);
+--     procedure set_bbox(This : in out Plan;
+--                        padding : Float;
+--                        min_size : Float;
+--                        x0, y0, x1, y1 : Float);
 
    function check_inbounds(This : in Plan; x, y : Float) return Boolean;
 
@@ -159,10 +158,10 @@ package Planner is
                          lx, ly, gx, gy : Float;
                          Result : out Status);
 
-   procedure find_local_goal(This : in out Plan;
-                             gx, gy : out Float;
-                             lx, ly : Float;
-                             Result : out Status);
+--     procedure find_local_goal(This : in out Plan;
+--                               gx, gy : out Float;
+--                               lx, ly : Float;
+--                               Result : out Status);
 
    -- Generate a path to the goal
    procedure update_waypoints(This : in out Plan;
@@ -172,24 +171,6 @@ package Planner is
    procedure convert_waypoint(This : Plan;
                               Waypoint : Cell;
                               px, py : out Float);
-
-   function get_carrot(px, py : out Float;
-                       lx, ly : Float;
-                       maxdist : Float;
-                       distweight : Float) return Float;
-
-   function compute_diffdrive_cmds(vx, va : out Float;
-                                   rotate_dir : Integer;
-                                   lx, ly, la : Float;
-                                   gx, gy, ga : Float;
-                                   goal_d, goal_a : Float;
-                                   maxd : Float;
-                                   dweight : Float;
-                                   txmin, tvmax : Float;
-                                   avmin, avmax : Float;
-                                   amin, amax : Float) return Integer;
-
-   --procedure set_obstacles(); --double* obs, size_t num);
 
 private
 
