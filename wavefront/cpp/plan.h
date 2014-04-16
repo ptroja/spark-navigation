@@ -224,10 +224,10 @@ private:
 
   // Cost multiplier for cells on the previous local path
   double hysteresis_factor;
-public:
+
   // Grid bounds (for limiting the search).
   int min_x, min_y, max_x, max_y;
-private:
+
   // Effective robot radius
   double abs_min_radius;
 
@@ -256,9 +256,5 @@ public:
 
   static double get_time(void);
 };
-
-/**************************************************************************
- * Plan manipulation macros
- **************************************************************************/
 
 #endif

@@ -110,13 +110,13 @@ plan_t::do_local(const pos2d<double> & l, double plan_halfwidth)
     return false;
   }
 
-  int li, lj;
-  li = GXWX(l.x);
-  lj = GYWY(l.y);
-
   // Reset path marks (TODO: find a smarter place to do this)
   for(int i = 0; i < size.x * size.y; i++)
     cells[i].lpathmark = false;
+
+  int li, lj;
+  li = GXWX(l.x);
+  lj = GYWY(l.y);
 
   // Cache the path
   for(plan_cell_t * cell = cells + INDEX(li,lj);
@@ -236,7 +236,6 @@ plan_t::update_plan(const pos2d<double> & l, const pos2d<double> & g)
   }
 
   // Restore the obstacle state for the cell I'm in
-  start_cell = cells + INDEX(li, lj);
   start_cell->occ_state_dyn = old_occ_state;
   start_cell->occ_dist_dyn = old_occ_dist;
 

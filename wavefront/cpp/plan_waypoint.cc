@@ -86,8 +86,6 @@ void plan_t::update_waypoints(const pos2d<double> & p)
     // no path
     waypoints.clear();
   }
-  
-  return;
 }
 
 
@@ -113,16 +111,15 @@ void plan_t::convert_waypoint(const plan_cell_t & waypoint, double *px, double *
 // See if once cell is reachable from another.
 bool plan_t::test_reachable(const plan_cell_t & cell_a, const plan_cell_t & cell_b) const
 {
-  double theta;
-  double sinth, costh;
+  const double theta = atan2((double)(cell_b.cj - cell_a.cj),
+                (double)(cell_b.ci - cell_a.ci));
+
+  // FIXME: use sincos where available
+  const double sinth = sin(theta);
+  const double costh = cos(theta);
+
   double i,j;
   int lasti, lastj;
-
-  theta = atan2((double)(cell_b.cj - cell_a.cj),
-                (double)(cell_b.ci - cell_a.ci));
-  // FIXME: use sincos where available
-  sinth = sin(theta);
-  costh = cos(theta);
 
   lasti = lastj = -1;
   i = (double)cell_a.ci;

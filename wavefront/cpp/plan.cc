@@ -261,23 +261,13 @@ void plan_t::reset()
 void
 plan_t::set_bounds(int min_x, int min_y, int max_x, int max_y)
 {
-  // TODO: name clashes with member data?
-  min_x = std::max(0,min_x);
-  min_x = std::min(size.x-1, min_x);
-  min_y = std::max(0,min_y);
-  min_y = std::min(size.y-1, min_y);
-  max_x = std::max(0,max_x);
-  max_x = std::min(size.x-1, max_x);
-  max_y = std::max(0,max_y);
-  max_y = std::min(size.y-1, max_y);
-
   assert(min_x <= max_x);
   assert(min_y <= max_y);
 
-  this->min_x = min_x;
-  this->min_y = min_y;
-  this->max_x = max_x;
-  this->max_y = max_y;
+  this->min_x = std::min(size.x-1, std::max(0,min_x));
+  this->min_y = std::min(size.y-1, std::max(0,min_y));
+  this->max_x = std::min(size.x-1, std::max(0,max_x));
+  this->max_y = std::min(size.y-1, std::max(0,max_y));
 
   //printf("new bounds: (%d,%d) -> (%d,%d)\n",
          //plan->min_x, plan->min_y,

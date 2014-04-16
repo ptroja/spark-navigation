@@ -230,7 +230,7 @@ plan_t::check_path(const plan_cell_t & s, const plan_cell_t & g) const
                cells[INDEX(x,y)].occ_dist_dyn));
   }
 
-  while(x != (x1 + xstep * 1))
+  while(x != x1 + xstep)
   {
     x += xstep;
     error += deltaerr;
