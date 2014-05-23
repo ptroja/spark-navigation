@@ -175,7 +175,7 @@ package body Algorithm is
                         neg_dir  : constant Float := This.Cell_Direction (x, y) - This.Cell_Enlarge (x, y);
                      begin
                         pragma Assert (Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
-                        for i in Integer range 0 .. (360 / This.SECTOR_ANGLE) - W1 loop
+                        for i in Integer range 0 .. (360 / This.SECTOR_ANGLE) - 1 loop
                            pragma Loop_Invariant (Length (This.Cell_Sector (cell_sector_tablenum, x, y)) <= Ada.Containers.Count_Type (i) and then
                                                   Capacity (This.Cell_Sector (cell_sector_tablenum, x, y)) = 360);
                            -- Set plus_sector and neg_sector to the angles to the two adjacent sectors
