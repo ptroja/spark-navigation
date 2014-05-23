@@ -105,8 +105,8 @@ package body Algorithm is
          --
          pragma Assert (Capacity (This.Min_Turning_Radius) = This.MIN_TURNING_VECTOR_CAPACITY);
          for x in Integer range 0 .. This.Current_Max_Speed loop
-            pragma Loop_Invariant (Length (This.Min_Turning_Radius) = Ada.Containers.Count_Type (x) and then
-                                   Capacity (This.Min_Turning_Radius) = Capacity (This.Min_Turning_Radius)'Loop_Entry);
+            pragma Loop_Invariant (Capacity (This.Min_Turning_Radius) = Capacity (This.Min_Turning_Radius'Loop_Entry) and then
+                                   Length (This.Min_Turning_Radius) = Ada.Containers.Count_Type (x));
             declare
                dx : constant Float := Float (x) / 1.0e6; -- dx in m/millisec
                dtheta : constant Float := ((M_PI / 180.0) * Float (GetMaxTurnrate (This, x))) / 1000.0; -- dTheta in radians/millisec
