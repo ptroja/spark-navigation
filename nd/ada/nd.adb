@@ -1487,7 +1487,8 @@ is
          --  (nd.objetivo.c1.y>=robot.Dimensiones(3)) and (nd.objetivo.c1.y<=robot.Dimensiones(1))) {
          --  */
          if  Hypot (objetivo.x - movimiento.SR1.posicion.x,
-                  objetivo.y - movimiento.SR1.posicion.y) < goal_tol then
+                    objetivo.y - movimiento.SR1.posicion.y) < goal_tol
+         then
             -- Ya hemos llegado.
             velocidades.v := 0.0;
             velocidades.w := 0.0;

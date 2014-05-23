@@ -289,7 +289,8 @@ package body Algorithm is
             iterL := First (This.gapVec);
 
             if ccwDiff (Element (This.gapVec, iterR).bearing, Element (This.gapVec, iterL).bearing) < 2.0 * This.robot.scan_Res and then
-              Element (This.gapVec, iterL).iDir = 1 and then Element (This.gapVec, iterR).iDir = 1 then
+              Element (This.gapVec, iterL).iDir = 1 and then Element (This.gapVec, iterR).iDir = 1
+            then
                if gDebug > 4 then
                   Put ("    Removed duplicate gap at ");
                   Put_Line (Print (Element (This.gapVec, iterR).bearing));
@@ -315,7 +316,8 @@ package body Algorithm is
                                  );
             pragma Loop_Variant (Decreases => To_Index (riterL));
             if ccwDiff (Element (This.gapVec, riterR).bearing, Element (This.gapVec, riterL).bearing) < 2.0 * This.robot.scan_Res and then
-              Element (This.gapVec, riterL).iDir = -1 and then Element (This.gapVec, riterR).iDir = -1 then
+              Element (This.gapVec, riterL).iDir = -1 and then Element (This.gapVec, riterR).iDir = -1
+            then
                if gDebug > 4 then
                   Put ("    Removed duplicate gap at ");
                   Put_Line (Print (Element (This.gapVec, Previous (This.gapVec, riterL)).bearing));
@@ -331,7 +333,8 @@ package body Algorithm is
             riterR := Last (This.gapVec);
 
             if ccwDiff (Element (This.gapVec, riterR).bearing, Element (This.gapVec, riterL).bearing) < 2.0 * This.robot.scan_Res and then
-              Element (This.gapVec, riterL).iDir = -1 and then Element (This.gapVec, riterR).iDir = -1 then
+              Element (This.gapVec, riterL).iDir = -1 and then Element (This.gapVec, riterR).iDir = -1
+            then
                if gDebug > 4 then
                   Put ("    Removed duplicate gap at ");
                   Put_Line (Print (Element (This.gapVec, Previous (This.gapVec, riterL)).bearing));
@@ -402,7 +405,8 @@ package body Algorithm is
 
                      --  Angular proximity
                      if abs (alDiff (Element (This.gapVec, iL).bearing,  bearing (distToGoal)))
-                       < abs (alDiff (Element (This.gapVec, Candidate_Valley_IDS.rising).bearing,  bearing (distToGoal))) then
+                       < abs (alDiff (Element (This.gapVec, Candidate_Valley_IDS.rising).bearing,  bearing (distToGoal)))
+                     then
                         Candidate_Valley_IDS := (Opt => O_SOME,
                                                  rising => iL, other => iR);
                      end if;
@@ -451,7 +455,8 @@ package body Algorithm is
 
                   --  Angular proximity
                   if abs (alDiff (Element (This.gapVec, Candidate_Valley_IDS.rising).bearing,  bearing (distToGoal)))
-                    < abs (alDiff (Element (This.gapVec, Best_Valley_IDS.rising).bearing,  bearing (distToGoal))) then
+                    < abs (alDiff (Element (This.gapVec, Best_Valley_IDS.rising).bearing,  bearing (distToGoal)))
+                  then
                      if gDebug > 3 then
                         Put ("    New best valley with rising ");
                         Put_Line (Gap_ID'Image (Candidate_Valley_IDS.rising));
@@ -748,7 +753,8 @@ package body Algorithm is
                                   pBestValley.Opt = O_SOME);
 
             if abs (alDiff (safeRisingGapAngle, pBestValley.value.risingGap.bearing))
-              < abs (alDiff (midValleyAngle, pBestValley.value.risingGap.bearing)) then
+              < abs (alDiff (midValleyAngle, pBestValley.value.risingGap.bearing))
+            then
                This.driveAngle := safeRisingGapAngle;
             else
                This.driveAngle := midValleyAngle;
