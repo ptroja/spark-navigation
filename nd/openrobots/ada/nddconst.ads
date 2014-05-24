@@ -1,9 +1,9 @@
 package nddConst is
 
---  #ifndef NDD_CONST_H
---  #define NDD_CONST_H
---
 --  #define NDD_DIST_MAX_SUBGOAL 2.0
+
+   NDD_DIST_MAX_SUBGOAL : constant Float := 2.0;
+
 --
 --  #   define NDD_MAX_LIN_SPEED 0
 --  #   define NDD_MAX_ANG_SPEED 0
@@ -72,6 +72,5 @@ package nddConst is
 
    NDD_DEFAULT_STOPTHRESHOLD : Float := 0.01; -- TODO: dimensions
 --
---  #endif  /* NDD_CONST_H */
 
 end nddConst;
