@@ -9,7 +9,9 @@ with Ada.Containers.Formal_Vectors;
 
 with Formal.Numerics;
 
-package Algorithm is
+package Algorithm with
+  SPARK_Mode
+is
 
    --  pragma Pure;
 

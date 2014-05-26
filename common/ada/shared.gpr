@@ -10,10 +10,9 @@ abstract project Shared is
 
       case Assertions is
 
-         --  do we still need the -gnatd.V switch?
-
+         --  Remove -gnatVa which leads to a compilation error with GNAT GPL 2014
          when "enabled" =>
-            for Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-g", "-O3", "-gnatn", "-gnatyAbBdIxafhikprStu", "-gnatf", "-gnatVa", "-gnato", "-gnata");
+            for Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-g", "-O3", "-gnatn", "-gnatyAbBdIxafhikprStu", "-gnatf", "-gnato", "-gnata");
 
          when "disabled" =>
             for Switches ("ada") use ("-gnat12", "-msse2", "-mfpmath=sse", "-g", "-O3", "-gnatn", "-gnatyAbBdIxafhikprStu", "-gnatf", "-gnatVn", "-gnatp");

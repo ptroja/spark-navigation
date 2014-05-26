@@ -12,6 +12,10 @@ use Spaces.Poses;
 
 package body Algorithm is
 
+   pragma Unevaluated_Use_Of_Old (Allow);
+   --  To allow uses of Var.Component'Loop_Entry on the right of "and then"
+   --  in loop invariants.
+
    use Debug_IO;
    use Robot_Iface;
 
@@ -268,6 +272,9 @@ package body Algorithm is
                   Put_Line (Print (Element (This.gapVec, iterR).bearing));
                end if;
 
+               --  Deleting the element pointed by iterR also sets iterR to
+               --  No_Element, which is not read afterwards.
+               pragma Warnings (Off, "unused assignment to ""iterR""");
                if iterR = First (This.gapVec) then
                   Delete (This.gapVec, iterR);
                   iterL := First (This.gapVec);
@@ -276,6 +283,7 @@ package body Algorithm is
                   Delete (This.gapVec, iterR);
                   Next (This.gapVec, iterL);
                end if;
+               pragma Warnings (On, "unused assignment to ""iterR""");
             end if;
 
             iterR := iterL;
@@ -295,7 +303,11 @@ package body Algorithm is
                   Put ("    Removed duplicate gap at ");
                   Put_Line (Print (Element (This.gapVec, iterR).bearing));
                end if;
+               --  Deleting the element pointed by iterR also sets iterR to
+               --  No_Element, which is not read afterwards.
+               pragma Warnings (Off, "unused assignment to ""iterR""");
                Delete (This.gapVec, iterR);
+               pragma Warnings (On, "unused assignment to ""iterR""");
             end if;
          end if;
       end forwardScan;
@@ -322,7 +334,11 @@ package body Algorithm is
                   Put ("    Removed duplicate gap at ");
                   Put_Line (Print (Element (This.gapVec, Previous (This.gapVec, riterL)).bearing));
                end if;
+               --  Deleting the element pointed by riterL also sets riterL to
+               --  No_Element, which is not read afterwards.
+               pragma Warnings (Off, "unused assignment to ""riterL""");
                Delete (This.gapVec, riterL);
+               pragma Warnings (On, "unused assignment to ""riterL""");
             end if;
 
             riterL := riterR;
@@ -339,7 +355,11 @@ package body Algorithm is
                   Put ("    Removed duplicate gap at ");
                   Put_Line (Print (Element (This.gapVec, Previous (This.gapVec, riterL)).bearing));
                end if;
+               --  Deleting the element pointed by riterL also sets riterL to
+               --  No_Element, which is not read afterwards.
+               pragma Warnings (Off, "unused assignment to ""riterL""");
                Gap_Vectors.Delete (This.gapVec, riterL);
+               pragma Warnings (On, "unused assignment to ""riterL""");
             end if;
          end if;
       end backwardScan;
@@ -505,8 +525,8 @@ package body Algorithm is
 
       subtype Zero_To_One is Float range 0.0 .. 1.0;
 
-      deltaMag : Zero_To_One := 0.0;
-      deltaAngle : Float := 0.0;
+      deltaMag : Zero_To_One;
+      deltaAngle : Float;
       deltaAreaSum : Formal.Numerics.NonNegative_Float := 0.0;
       obstacleAvoidDelta : Float := 0.0;
    begin
