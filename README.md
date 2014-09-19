@@ -17,7 +17,7 @@ references, see the list of Player [drivers][drivers].
 
 Implementations of VFH+ and ND are based on the latest code from the
 Player repository. Implementation of SND is based on the code from the
-author's [website][SND], as the code is Player repository seems
+author's [website][SND], as the code in Player repository seems
 outdated.
 
 For each algorithm there are `cpp` and `ada` folders with the original
